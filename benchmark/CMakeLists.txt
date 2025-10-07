@@ -1,26 +1,45 @@
-add_custom_target(${PROJECT_NAME}_bench)
+project(proxsuite-benchmark)
 
-macro(proxsuite_benchmark bench_name)
-  if(BUILD_BENCHMARK)
-    add_executable(${bench_name} ${bench_name}.cpp)
-  else(BUILD_BENCHMARK)
-    add_executable(${bench_name} EXCLUDE_FROM_ALL ${bench_name}.cpp)
-  endif(BUILD_BENCHMARK)
+add_executable(timings-box-constraints timings-box-constraints.cpp)
+target_link_libraries(timings-box-constraints PRIVATE proxsuite)
 
-  if(BUILD_WITH_VECTORIZATION_SUPPORT)
-    target_link_libraries(${bench_name} PUBLIC proxsuite-vectorized)
-  else()
-    target_link_libraries(${bench_name} PUBLIC proxsuite)
-  endif()
-  add_dependencies(${PROJECT_NAME}_bench ${bench_name})
-endmacro(proxsuite_benchmark)
+add_executable(timings-dense-backend timings-dense-backend.cpp)
+target_link_libraries(timings-dense-backend PRIVATE proxsuite)
 
-proxsuite_benchmark(timings-lp)
-proxsuite_benchmark(timings-box-constraints)
-proxsuite_benchmark(timings-dense-backend)
-proxsuite_benchmark(timings-diagonal-hessian)
+add_executable(timings-diagonal-hessian timings-diagonal-hessian.cpp)
+target_link_libraries(timings-diagonal-hessian PRIVATE proxsuite)
+
+add_executable(timings-lp timings-lp.cpp)
+target_link_libraries(timings-lp PRIVATE proxsuite)
+
+add_executable(timings-box-constraints-vectorized timings-box-constraints.cpp)
+target_link_libraries(
+  timings-box-constraints-vectorized
+  PRIVATE proxsuite-vectorized
+)
+
+add_executable(timings-dense-backend-vectorized timings-dense-backend.cpp)
+target_link_libraries(
+  timings-dense-backend-vectorized
+  PRIVATE proxsuite-vectorized
+)
+
+add_executable(timings-diagonal-hessian-vectorized timings-diagonal-hessian.cpp)
+target_link_libraries(
+  timings-diagonal-hessian-vectorized
+  PRIVATE proxsuite-vectorized
+)
+
+add_executable(timings-lp-vectorized timings-lp.cpp)
+target_link_libraries(timings-lp-vectorized PRIVATE proxsuite-vectorized)
 
 if(BUILD_WITH_OPENMP_SUPPORT)
-  proxsuite_benchmark(timings-parallel)
-  target_link_libraries(timings-parallel PRIVATE OpenMP::OpenMP_CXX)
-endif(BUILD_WITH_OPENMP_SUPPORT)
+  add_executable(timings-parallel timings-parallel.cpp)
+  target_link_libraries(timings-parallel PRIVATE proxsuite)
+
+  add_executable(timings-parallel-vectorized timings-parallel.cpp)
+  target_link_libraries(
+    timings-parallel-vectorized
+    PRIVATE proxsuite-vectorized
+  )
+endif()

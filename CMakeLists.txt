@@ -1,133 +1,58 @@
 #
-# Copyright (c) 2022-2023 INRIA
+# Copyright (c) 2022-2026 INRIA
 #
+cmake_minimum_required(VERSION 3.22...4.1)
 
-cmake_minimum_required(VERSION 3.22)
+project(
+  proxsuite
+  VERSION 0.7.2
+  DESCRIPTION "The Advanced Proximal Optimization Toolbox"
+  HOMEPAGE_URL "https://github.com/Simple-Robotics/proxsuite"
+)
 
-if(DEFINED PROJECT_NAME AND NOT PROJECT_WORKSPACE)
-  set(PROXSUITE_AS_SUBPROJECT ON)
-endif()
-
-set(PROJECT_NAME proxsuite)
-set(PROJECT_DESCRIPTION "The Advanced Proximal Optimization Toolbox")
-set(PROJECT_URL "http://github.com/Simple-Robotics/proxsuite")
-set(PROJECT_CUSTOM_HEADER_EXTENSION "hpp")
-set(PROJECT_USE_CMAKE_EXPORT TRUE)
-set(PROJECT_USE_KEYWORD_LINK_LIBRARIES TRUE)
-# To enable jrl-cmakemodules compatibility with workspace we must define the two
-# following lines
-set(PROJECT_AUTO_RUN_FINALIZE FALSE)
-set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
-
-# Check if the submodule cmake have been initialized
-set(JRL_CMAKE_MODULES "${CMAKE_CURRENT_LIST_DIR}/cmake-module")
-if(EXISTS "${JRL_CMAKE_MODULES}/base.cmake")
-  message(STATUS "JRL cmakemodules found in 'cmake/' git submodule")
-else()
-  find_package(jrl-cmakemodules QUIET CONFIG)
-  if(jrl-cmakemodules_FOUND)
-    get_property(
-      JRL_CMAKE_MODULES
-      TARGET jrl-cmakemodules::jrl-cmakemodules
-      PROPERTY INTERFACE_INCLUDE_DIRECTORIES
-    )
-    message(STATUS "JRL cmakemodules found on system at ${JRL_CMAKE_MODULES}")
-  elseif(${CMAKE_VERSION} VERSION_LESS "3.14.0")
-    message(
-      FATAL_ERROR
-      "\nCan't find jrl-cmakemodules. Please either:\n"
-      "  - use git submodule: 'git submodule update --init'\n"
-      "  - or install https://github.com/jrl-umi3218/jrl-cmakemodules\n"
-      "  - or upgrade your CMake version to >= 3.14 to allow automatic fetching\n"
-    )
-  else()
-    message(STATUS "JRL cmakemodules not found. Let's fetch it.")
-    include(FetchContent)
-    FetchContent_Declare(
-      "jrl-cmakemodules"
-      GIT_REPOSITORY "https://github.com/jrl-umi3218/jrl-cmakemodules.git"
-    )
-    FetchContent_MakeAvailable("jrl-cmakemodules")
-    FetchContent_GetProperties("jrl-cmakemodules" SOURCE_DIR JRL_CMAKE_MODULES)
-  endif()
-endif()
-
-# Disable -Werror on Unix for now.
-set(CXX_DISABLE_WERROR True)
-set(CMAKE_VERBOSE_MAKEFILE True)
-
-# Set CMake Policies
-if(POLICY CMP0068)
-  cmake_policy(SET CMP0068 NEW)
-endif(POLICY CMP0068)
-
-# ----------------------------------------------------
-# --- OPTIONS  ---------------------------------------
-# Need to be set before including base.cmake
-# ----------------------------------------------------
-option(BUILD_DOCUMENTATION "Build the documentation." OFF)
-option(BUILD_BENCHMARK "Build the benchmarks" OFF)
-option(INSTALL_DOCUMENTATION "Install the documentation" OFF)
-option(BUILD_PYTHON_INTERFACE "Build the Python bindings" OFF)
-set(DOXYGEN_USE_MATHJAX YES)
-set(DOXYGEN_USE_TEMPLATE_CSS YES)
-
-# install() DESTINATION paths are normalized (to remove in 3.31) (copied over
-# from Pinocchio)
-if(POLICY CMP0177)
-  cmake_policy(SET CMP0177 NEW)
-  set(CMAKE_POLICY_DEFAULT_CMP0177 NEW)
-endif()
-include(${JRL_CMAKE_MODULES}/base.cmake)
-COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
-project(${PROJECT_NAME} ${PROJECT_ARGS})
-
-include(${JRL_CMAKE_MODULES}/ide.cmake)
-include(${JRL_CMAKE_MODULES}/apple.cmake)
-
-if(NOT ${CMAKE_VERSION} VERSION_GREATER "3.26.0" OR WIN32)
-  set(
-    CMAKE_MODULE_PATH
-    ${JRL_CMAKE_MODULES}/find-external/OpenMP
-    ${CMAKE_MODULE_PATH}
-  )
-endif()
-include(${JRL_CMAKE_MODULES}/julia.cmake)
+# Import CMake-provided helper functions
+set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
+include(CTest)
 include(CMakeDependentOption)
 
-# If needed, set CMake policy for APPLE systems
-APPLY_DEFAULT_APPLE_CONFIGURATION()
-SET_DEFAULT_CMAKE_BUILD_TYPE(Release)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake-helpers.cmake)
+xxx_configure_default_build_type(RelWithDebInfo)
+xxx_configure_default_install_prefix("${CMAKE_BINARY_DIR}/install")
+xxx_configure_default_binary_dirs()
+xxx_configure_default_install_dirs()
 
-option(INITIALIZE_EIGEN_WITH_NAN "Initialize Eigen objects with NAN values" OFF)
-option(
+xxx_option(BUILD_TESTING "Build the tests" ON)
+xxx_option(BUILD_EXAMPLES "Build the examples" ON)
+xxx_option(BUILD_BENCHMARK "Build the benchmarks" ON)
+xxx_option(BUILD_DOCUMENTATION "Build the documentation." OFF)
+xxx_option(INSTALL_DOCUMENTATION "Install the documentation" OFF)
+xxx_option(INSTALL_HEADERS "Generate the install target" ON)
+
+xxx_option(BUILD_PYTHON_INTERFACE "Build the Python bindings" ON)
+xxx_option(INITIALIZE_EIGEN_WITH_NAN "Initialize Eigen objects with NAN values" ON)
+xxx_option(
   CHECK_RUNTIME_MALLOC
   "Check if some memory allocations are performed at runtime"
   OFF
 )
-option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
-
-option(
+xxx_option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
+xxx_option(
   BUILD_WITH_VECTORIZATION_SUPPORT
   "Build the library with the support of modern SIMD instructions."
   ON
 )
-option(
+xxx_option(
   BUILD_BINDINGS_WITH_AVX2_SUPPORT
   "Build the bindings with AVX2 support."
-  ON
-)
-option(
-  BUILD_BINDINGS_WITH_AVX512_SUPPORT
-  "Build the bindings with AVX512 support."
-  ON
-)
-option(TEST_JULIA_INTERFACE "Run the julia examples as unittest" OFF)
-option(
-  BUILD_WITH_OPENMP_SUPPORT
-  "Build the library with the OpenMP support"
   OFF
 )
+xxx_option(
+  BUILD_BINDINGS_WITH_AVX512_SUPPORT
+  "Build the bindings with AVX512 support."
+  OFF
+)
+xxx_option(TEST_JULIA_INTERFACE "Run the julia examples as unittest" OFF)
+xxx_option(BUILD_WITH_OPENMP_SUPPORT "Build the library with the OpenMP support" ON)
 cmake_dependent_option(
   LINK_PYTHON_INTERFACE_TO_OPENMP
   "Link OpenMP to the Python interface"
@@ -135,125 +60,324 @@ cmake_dependent_option(
   BUILD_WITH_OPENMP_SUPPORT
   OFF
 )
-
-if(BUILD_WITH_OPENMP_SUPPORT)
-  find_package(OpenMP REQUIRED)
-  separate_arguments(OpenMP_CXX_FLAGS UNIX_COMMAND "${OpenMP_CXX_FLAGS}")
-endif(BUILD_WITH_OPENMP_SUPPORT)
-
-set(
-  CMAKE_MODULE_PATH
-  "${JRL_CMAKE_MODULES}/find-external/Julia"
-  ${CMAKE_MODULE_PATH}
+cmake_dependent_option(
+  BUILD_WITH_SERIALIZATION
+  "Build with serialization support"
+  ON
+  BUILD_PYTHON_INTERFACE
+  ON
 )
-set(
-  CMAKE_MODULE_PATH
-  "${CMAKE_CURRENT_LIST_DIR}/cmake-external"
-  ${CMAKE_MODULE_PATH}
+xxx_option(GENERATE_PYTHON_STUBS "Generate Python stubs" OFF)
+xxx_option(
+  PYTHON_BINDING_CUSTOM_INSTALL_DIR
+  "Override the default <current-python-install-sitelib>/<project-name>"
+  ""
 )
 
-message(STATUS "CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
-if(INITIALIZE_EIGEN_WITH_NAN)
-  add_definitions(-DEIGEN_INITIALIZE_MATRICES_BY_NAN)
-endif(INITIALIZE_EIGEN_WITH_NAN)
-if(CHECK_RUNTIME_MALLOC)
-  message(STATUS "Check if some memory allocations are performed at runtime.")
-  add_definitions(-DPROXSUITE_EIGEN_CHECK_MALLOC)
-  add_definitions(-DEIGEN_RUNTIME_NO_MALLOC)
-endif(CHECK_RUNTIME_MALLOC)
+############################################################
+############################################################
 
-# set CXX standard
-if(DEFINED CMAKE_CXX_STANDARD)
-  CHECK_MINIMAL_CXX_STANDARD(14 ENFORCE)
-else()
-  set(CMAKE_CXX_STANDARD 17)
-endif()
-message(STATUS "[Proxsuite] Using C++ standard: ${CMAKE_CXX_STANDARD}")
+# Eigen3
+xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED EXPECTED_TARGETS Eigen3::Eigen)
 
-# Handle Windows context
-if(MSVC)
-  # add_definitions(-D_USE_MATH_DEFINES)
-  add_definitions(-DNOMINMAX)
+# Catch2
+if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
+    xxx_find_package(Catch2 CONFIG REQUIRED EXPECTED_TARGETS Catch2::Catch2 Catch2::Catch2WithMain)
+    include(${Catch2_DIR}/Catch.cmake)
 endif()
 
-# Look for dependencies
-ADD_PROJECT_DEPENDENCY(Eigen3 REQUIRED PKG_CONFIG_REQUIRES "eigen3 >= 3.0.5")
+# cereal (Serialization)
+if(BUILD_WITH_SERIALIZATION)
+  xxx_find_package(cereal CONFIG REQUIRED EXPECTED_TARGETS cereal::cereal)
+endif()
 
-set(
-  SIMDE_HINT_FAILURE
-  "Set BUILD_WITH_VECTORIZATION_SUPPORT=OFF or install Simde on your system.\n If Simde is already installed, ensure that the CMake variable CMAKE_MODULE_PATH correctly points toward the location of FindSimde.cmake file."
-)
+# nanobind (Python bindings)
+if(BUILD_PYTHON_INTERFACE)
+    xxx_find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module EXPECTED_TARGETS Python::Interpreter Python::Module)
+    get_target_property(Python_EXECUTABLE Python::Interpreter LOCATION)
+    # Python_SITELIB with sysconfig.get_path('purelib')
+    execute_process(
+      COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_path('purelib'))"
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      OUTPUT_VARIABLE Python_SITELIB
+    )
+    message(STATUS "[proxsuite] Python site-packages directory: ${Python_SITELIB}")
+    # Python_INCLUDE_DIRS with target include dirs
+    get_target_property(Python_INCLUDE_DIRS Python::Module INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "[proxsuite] Python include directories: ${Python_INCLUDE_DIRS}")
+    # Detect the installed nanobind package and import it into CMake
+    # ref: https://nanobind.readthedocs.io/en/latest/building.html#finding-nanobind
+    execute_process(
+      COMMAND ${Python_EXECUTABLE} -m nanobind --cmake_dir
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      OUTPUT_VARIABLE nanobind_ROOT
+    )
+    message(STATUS "[proxsuite] nanobind cmake directory: ${nanobind_ROOT}")
+    xxx_find_package(nanobind CONFIG REQUIRED)
+endif()
+
+
+# simde
 if(BUILD_WITH_VECTORIZATION_SUPPORT)
-  ADD_PROJECT_DEPENDENCY(
-    Simde
-    REQUIRED
-    FIND_EXTERNAL "Simde"
-    PKG_CONFIG_REQUIRES "simde"
+  xxx_find_package(simde REQUIRED
+      MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/simde
+      EXPECTED_TARGETS simde::simde 
   )
 endif()
 
-# Build the main library
-file(GLOB_RECURSE ${PROJECT_NAME}_HEADERS ${PROJECT_SOURCE_DIR}/include/*.hpp)
+# matio
+if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
+  xxx_find_package(matio REQUIRED
+    MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/matio
+    EXPECTED_TARGETS matio::matio
+  )
+endif()
+
+# OpenMP
+if(BUILD_WITH_OPENMP_SUPPORT)
+  xxx_find_package(OpenMP REQUIRED EXPECTED_TARGETS OpenMP::OpenMP_CXX)
+endif()
+
+# Doxygen + Graphviz (dot)
+if(BUILD_DOCUMENTATION AND PROJECT_IS_TOP_LEVEL)
+  xxx_find_package(Doxygen REQUIRED COMPONENTS dot EXPECTED_TARGETS Doxygen::Doxygen Doxygen::dot)
+endif()
+
+
+get_property(packages_found GLOBAL PROPERTY _xxx_${PROJECT_NAME}_packages_found)
+message(STATUS "[proxsuite] Packages found: ${packages_found}")
+
+############################################################
+############################################################
 
 add_library(proxsuite INTERFACE)
-if(MSVC)
-  target_compile_options(proxsuite INTERFACE /permissive-)
-  target_compile_options(proxsuite INTERFACE $<$<COMPILE_LANGUAGE:CXX>:/bigobj>)
-endif(MSVC)
-target_link_libraries(proxsuite PUBLIC INTERFACE Eigen3::Eigen)
+target_compile_features(proxsuite INTERFACE cxx_std_17)
+xxx_target_enforce_msvc_conformance(proxsuite)
+
 target_include_directories(
   proxsuite
   INTERFACE
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>"
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
-target_include_directories(
-  proxsuite
-  INTERFACE "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>"
-)
-set(EXPORTED_TARGETS_LIST proxsuite)
 
-ADD_HEADER_GROUP(${PROJECT_NAME}_HEADERS)
+xxx_target_generate_config_header(proxsuite)
+
+# xxx_target_set_standard_compile_options(proxsuite INTERFACE)
+# xxx_target_treat_all_warnings_as_errors(proxsuite INTERFACE)
+
+target_compile_definitions(
+  proxsuite
+  INTERFACE
+    $<$<BOOL:${INITIALIZE_EIGEN_WITH_NAN}>:EIGEN_INITIALIZE_MATRICES_BY_NAN>
+    $<$<BOOL:${CHECK_RUNTIME_MALLOC}>:EIGEN_RUNTIME_NO_MALLOC>
+    $<$<BOOL:${CHECK_RUNTIME_MALLOC}>:PROXSUITE_EIGEN_CHECK_MALLOC>
+    $<$<BOOL:${BUILD_WITH_OPENMP_SUPPORT}>:PROXSUITE_PYTHON_INTERFACE_WITH_OPENMP>
+)
+
+target_link_libraries(proxsuite INTERFACE Eigen3::Eigen)
+add_library(proxsuite::proxsuite ALIAS proxsuite)
+
+if(BUILD_WITH_OPENMP_SUPPORT)
+  target_link_libraries(proxsuite INTERFACE OpenMP::OpenMP_CXX)
+endif()
+
+if(BUILD_WITH_SERIALIZATION)
+  target_link_libraries(proxsuite INTERFACE cereal::cereal)
+endif()
+
+if(BUILD_PYTHON_INTERFACE)
+  add_subdirectory(bindings/python)
+endif()
 
 if(BUILD_WITH_VECTORIZATION_SUPPORT)
   add_library(proxsuite-vectorized INTERFACE)
-  target_link_libraries(proxsuite-vectorized PUBLIC INTERFACE proxsuite)
-  target_link_libraries(proxsuite-vectorized PUBLIC INTERFACE simde)
+  add_library(proxsuite::proxsuite-vectorized ALIAS proxsuite-vectorized)
+  target_link_libraries(proxsuite-vectorized INTERFACE proxsuite simde::simde)
   target_compile_definitions(proxsuite-vectorized INTERFACE PROXSUITE_VECTORIZE)
-  list(APPEND EXPORTED_TARGETS_LIST proxsuite-vectorized)
 endif()
 
-if(BUILD_TESTING OR BUILD_PYTHON_INTERFACE)
-  # Download cereal for pything bindings and unittests
-  find_package(cereal QUIET CONFIG)
-  if(NOT cereal_FOUND)
-    set(cereal_dir ${PROJECT_SOURCE_DIR}/external/cereal)
-    set(cereal ${cereal_dir}/README.md)
-    find_package(Git REQUIRED)
-    if(NOT EXISTS ${cereal})
-      execute_process(
-        COMMAND ${GIT_EXECUTABLE} submodule update --init ${cereal_dir}
-        WORKING_DIRECTORY ${cereal_dir}
-        COMMAND_ERROR_IS_FATAL ANY
-      )
-    endif()
-  endif()
-endif()
-
-install(
-  TARGETS ${EXPORTED_TARGETS_LIST}
-  EXPORT ${TARGETS_EXPORT_NAME}
-  LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR}
-)
-
-add_subdirectory(bindings)
-if(BUILD_TESTING AND NOT PROXSUITE_AS_SUBPROJECT)
+if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
+  message(STATUS "[proxsuite] Building tests")
   add_subdirectory(test)
+endif()
+
+if(BUILD_EXAMPLES AND PROJECT_IS_TOP_LEVEL)
+  message(STATUS "[proxsuite] Building examples")
   add_subdirectory(examples)
 endif()
 
-add_subdirectory(benchmark)
+if(BUILD_BENCHMARK AND PROJECT_IS_TOP_LEVEL)
+  message(STATUS "[proxsuite] Building benchmarks")
+  add_subdirectory(benchmark)
+endif()
 
-SETUP_PROJECT_FINALIZE()
+if(BUILD_DOCUMENTATION AND PROJECT_IS_TOP_LEVEL)
+  message(STATUS "[proxsuite] Building documentation")
+  add_subdirectory(doc)
+endif()
+
+xxx_declare_component(TARGETS proxsuite COMPONENT standard)
+
+if(BUILD_WITH_VECTORIZATION_SUPPORT)
+  xxx_declare_component(TARGETS proxsuite-vectorized COMPONENT vectorized)
+endif()
+
+if(INSTALL_HEADERS)
+  install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING
+    PATTERN "*.hpp"
+  )
+endif()
+
+xxx_cmake_module_files()
+
+return()
+
+# xxx_export_dependencies(
+#   TARGETS proxsuite
+#   EXPORT proxsuite-standard
+#   FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-dependencies.cmake
+# )
+
+# xxx_export_dependencies(
+#   TARGETS proxsuite-vectorized
+#   EXPORT proxsuite-vectorized
+#   FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-vectorized-dependencies.cmake
+# )
+
+
+# if(INSTALL_HEADERS)
+#   # Install Headers
+#   install(
+#     DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#     FILES_MATCHING
+#     PATTERN "*.hpp"
+#   )
+
+#   # xxx_setup_install(
+#   #   TARGETS proxsuite
+#   #   EXPORT proxsuite-standard
+#   #   HEADER_FILES
+#   #     include/proxsuite/fwd.hpp
+#   #   HEADER_DIRS
+#   #     include/proxsuite/helpers
+#   #     include/proxsuite/linalg
+#   #     include/proxsuite/proxqp
+      
+#   # )
+
+#   xxx_cmake_module_targets(
+#     TARGETS proxsuite
+#     EXPORT ${PROJECT_NAME}-standard-targets
+#     NAMESPACE ${PROJECT_NAME}::
+#     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-targets.cmake
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#   )
+#   if(BUILD_WITH_VECTORIZATION_SUPPORT)
+#     xxx_cmake_module_targets(
+#       TARGETS proxsuite-vectorized
+#       EXPORT ${PROJECT_NAME}-vectorized
+#       NAMESPACE ${PROJECT_NAME}::
+#       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-vectorized-targets.cmake
+#       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#     )
+#   endif()
+
+#   xxx_cmake_module_version(
+#     VERSION ${PROJECT_VERSION}
+#     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#   )
+
+#   # Declare the components for the project
+#   xxx_declare_component(TARGETS proxsuite COMPONENT standard)
+#   xxx_declare_component(TARGETS proxsuite-vectorized COMPONENT vectorized)
+
+#   # generate the CMake module:
+#   #   <package>-config.cmake
+#   # And for each component:
+#   #     <component>-targets.cmake
+#   #     <component>-dependencies.cmake
+#   xxx_cmake_module_config(
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#   )
+
+
+#   # xxx_generate_component_dependencies(TARGETS proxsuite
+#   #   EXPORT ${PROJECT_NAME}-standard-targets 
+#   #   FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-dependencies.cmake
+#   # )
+
+#   # Install libraries
+#   install(TARGETS proxsuite
+#         EXPORT ${PROJECT_NAME}-standard-targets
+#         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   )
+#   install(EXPORT ${PROJECT_NAME}-standard-targets
+#         FILE ${PROJECT_NAME}-standard-targets.cmake
+#         NAMESPACE ${PROJECT_NAME}::
+#         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#   )
+#   string(MD5 tmp_dest_dir ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+#   set(tmp_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${tmp_dest_dir}/${PROJECT_NAME}-standard-targets.cmake)
+#   file(COPY ${tmp_target_file} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
+#   unset(tmp_dest_dir)
+#   unset(tmp_target_file)
+  
+#   # export(EXPORT standard-targets 
+#   #       FILE ${CMAKE_CURRENT_BINARY_DIR}/standard-targets.cmake 
+#   #       NAMESPACE proxsuite::
+#   # )
+
+#   if(BUILD_WITH_VECTORIZATION_SUPPORT)
+#     install(TARGETS ${PROJECT_NAME}-vectorized
+#           EXPORT ${PROJECT_NAME}-vectorized
+#           ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#           LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#     )
+#     install(EXPORT ${PROJECT_NAME}-vectorized
+#           FILE ${PROJECT_NAME}-vectorized-targets.cmake
+#           NAMESPACE ${PROJECT_NAME}::
+#           DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#     )
+#   endif()
+
+#   include(CMakePackageConfigHelpers)
+
+#   set(components "")
+#   list(APPEND components standard)
+#   list(APPEND components vectorized)
+#   string(REPLACE ";" " " xxx_project_components "${components}")
+
+#   # <package>-config.cmake
+#   configure_package_config_file(
+#       ${PROJECT_SOURCE_DIR}/cmake/config.cmake.in
+#       ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
+#       INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#       NO_SET_AND_CHECK_MACRO
+#       NO_CHECK_REQUIRED_COMPONENTS_MACRO
+#   )
+
+#   # <package>-version.cmake
+#   write_basic_package_version_file(
+#       ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
+#       COMPATIBILITY AnyNewerVersion
+#   )
+
+#   # Install all generated cmake files
+#   install(
+#       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}
+#       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
+#       FILES_MATCHING PATTERN "*.cmake"
+#   )
+#   # Generate and install <package>-config.cmake, <package>-version.cmake and <package>-targets.cmake
+#   # xxx_generate_cmake_module_files()
+# endif()
+
+#xxx_print_dependency_summary()
+#xxx_print_option_summary()

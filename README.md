@@ -85,6 +85,25 @@ This approach is available on Linux and Mac OS X.
 
 Installation from source is presented [here](https://github.com/Simple-Robotics/proxsuite/blob/devel/doc/5-installation.md).
 
+### Build from source with Pixi
+
+[Pixi](https://prefix.dev/pixi) provides a reproducible, cross-platform environment for the complete C++ and Python toolchain used by ProxSuite. After installing Pixi, you can bootstrap an isolated build environment as follows:
+
+```bash
+pixi install
+pixi run configure-release
+pixi run build-release
+pixi run test
+```
+
+The environment contains the compilers, CMake, Ninja, Catch2, and the Python toolchain needed to compile the C++ library, run the tests, and build the Python bindings. Documentation dependencies are kept in a separate environment; when you need to generate the Doxygen documentation, activate them with:
+
+```bash
+pixi run -e docs doc
+```
+
+You can also open an interactive shell with all dependencies available via `pixi shell`. The Pixi configuration lives in `pixi.toml`, so contributors on Linux, macOS (Intel and Apple Silicon), and Windows share the same dependency set.
+
 ### Compiling a first example program
 For the fastest performance, use the following command to enable vectorization when compiling the simple [example](https://github.com/Simple-Robotics/proxsuite/blob/devel/examples/cpp/first_example_dense.cpp).
 ```bash

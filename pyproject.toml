@@ -5,24 +5,27 @@ description = "Quadratic Programming Solver for Robotics and beyond."
 readme = "README.md"
 requires-python = ">= 3.8"
 license = "BSD-2-Clause"
-dependencies = ["numpy","scipy"]
+dependencies = ["numpy", "scipy"]
 
 [project.urls]
 homepage = "https://github.com/Simple-Robotics/proxsuite"
 repository = "https://github.com/Simple-Robotics/proxsuite.git"
 
-[build-system]
-requires = [
-    "cmeel[build]",
-    "cmeel-eigen",
-    "cmeel-simde",
-    "typing-extensions",
-    ]
-build-backend = "cmeel.build"
+[project.optional-dependencies]
+test = ["pytest"]
 
-[tool.cmeel]
-configure-args = ["-DBUILD_TESTING:BOOL=OFF","-DBUILD_PYTHON_INTERFACE:BOOL=ON","-DBUILD_WITH_VECTORIZATION_SUPPORT:BOOL=ON","-DINSTALL_DOCUMENTATION:BOOL=OFF","-DBUILD_WITH_OPENMP_SUPPORT=OFF"]
+[build-system]
+requires = ["scikit-build-core", "nanobind"]
+build-backend = "scikit_build_core.build"
+
+# Our Python module is not in a standard directory
+[tool.scikit-build]
+wheel.packages = { "proxsuite" = "bindings/python/proxsuite" }
+
+[tool.scikit-build.cmake.define]
+BUILD_PYTHON_INTERFACE = true
+PYTHON_BINDING_CUSTOM_INSTALL_DIR = "proxsuite"
 
 [tool.ruff.lint]
-ignore = [ "E741" ]
-exclude = [ "cmake-module/*", "bindings/python/external/nanobind/*" ]
+ignore = ["E741"]
+exclude = ["cmake-module/*", "bindings/python/external/nanobind/*"]

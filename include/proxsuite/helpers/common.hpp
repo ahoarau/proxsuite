@@ -8,7 +8,7 @@
 #ifndef PROXSUITE_HELPERS_COMMON_HPP
 #define PROXSUITE_HELPERS_COMMON_HPP
 
-#include "proxsuite/config.hpp"
+// #include "proxsuite/config.hpp"
 #include <limits>
 
 namespace proxsuite {

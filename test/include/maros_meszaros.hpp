@@ -30,6 +30,9 @@ load_qp(char const* filename) -> MarosMeszarosQp
     proxsuite::linalg::veg::defer([&] { Mat_Close(mat_fp); });
   proxsuite::linalg::veg::unused(_mat_fp_cleanup);
 
+  Mat_LogInit("proxsuite-test");
+  Mat_SetDebug(1);
+
   auto load_mat = [&](char const* name) -> Mat {
     matvar_t* mat_var = Mat_VarRead(mat_fp, name);
     VEG_ASSERT(mat_var != nullptr);

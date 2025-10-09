@@ -1,0 +1,5 @@
+@xxx_modules@
+
+include(CMakeFindDependencyMacro)
+
+@xxx_find_dependencies@

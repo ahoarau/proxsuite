@@ -15,7 +15,6 @@ set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
 include(CTest)
 include(CMakeDependentOption)
 
-# Import Inria-provided helper functions
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake-helpers.cmake)
 xxx_configure_default_build_type(RelWithDebInfo)
 xxx_configure_default_install_prefix("${CMAKE_BINARY_DIR}/install")
@@ -79,7 +78,10 @@ xxx_option(
 ############################################################
 
 # Eigen3
-xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED EXPECTED_TARGETS Eigen3::Eigen EXPORT_IN_CONFIG)
+xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED 
+  EXPECTED_TARGETS Eigen3::Eigen 
+  EXPORT proxsuite-standard
+)
 
 # Catch2
 if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
@@ -88,11 +90,12 @@ if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
 endif()
 
 # cereal (Serialization)
-xxx_find_package(cereal CONFIG REQUIRED 
-  EXPECTED_TARGETS cereal::cereal
-  DEPENDS_ON BUILD_WITH_SERIALIZATION
-  EXPORT_IN_CONFIG
-)
+if(BUILD_WITH_SERIALIZATION)
+  xxx_find_package(cereal CONFIG REQUIRED 
+    EXPECTED_TARGETS cereal::cereal
+    EXPORT proxsuite-serialization
+  )
+endif()
 
 # nanobind (Python bindings)
 if(BUILD_PYTHON_INTERFACE)
@@ -121,32 +124,38 @@ endif()
 
 
 # simde
-xxx_find_package(simde REQUIRED
-    MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/simde
-    EXPECTED_TARGETS simde::simde 
-    DEPENDS_ON BUILD_WITH_VECTORIZATION_SUPPORT
-    EXPORT_IN_CONFIG 
-)
+if(BUILD_WITH_VECTORIZATION_SUPPORT)
+  xxx_find_package(simde REQUIRED
+      MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/simde
+      EXPECTED_TARGETS simde::simde 
+      EXPORT proxsuite-vectorized 
+  )
+endif()
 
 # matio
-xxx_find_package(matio REQUIRED
-  MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/matio
-  EXPECTED_TARGETS matio::matio
-  DEPENDS_ON BUILD_TESTING PROJECT_IS_TOP_LEVEL
-  EXPORT_IN_CONFIG
-)
+if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
+  xxx_find_package(matio REQUIRED
+    MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/matio
+    EXPECTED_TARGETS matio::matio
+  )
+endif()
 
 # OpenMP
-xxx_find_package(OpenMP REQUIRED 
-  EXPECTED_TARGETS OpenMP::OpenMP_CXX
-  DEPENDS_ON BUILD_WITH_OPENMP_SUPPORT
-  EXPORT_IN_CONFIG
-)
+if(BUILD_WITH_OPENMP_SUPPORT)
+  xxx_find_package(OpenMP REQUIRED 
+    EXPECTED_TARGETS OpenMP::OpenMP_CXX
+    EXPORT proxsuite-standard
+  )
+endif()
 
 # Doxygen + Graphviz (dot)
 if(BUILD_DOCUMENTATION AND PROJECT_IS_TOP_LEVEL)
   xxx_find_package(Doxygen REQUIRED COMPONENTS dot EXPECTED_TARGETS Doxygen::Doxygen Doxygen::dot)
 endif()
+
+
+get_property(packages_found GLOBAL PROPERTY _xxx_${PROJECT_NAME}_packages_found)
+message(STATUS "[proxsuite] Packages found: ${packages_found}")
 
 ############################################################
 ############################################################
@@ -218,6 +227,19 @@ if(BUILD_DOCUMENTATION AND PROJECT_IS_TOP_LEVEL)
   add_subdirectory(doc)
 endif()
 
+xxx_export_dependencies(
+  TARGETS proxsuite
+  EXPORT proxsuite-standard
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-dependencies.cmake
+)
+
+xxx_export_dependencies(
+  TARGETS proxsuite-vectorized
+  EXPORT proxsuite-vectorized
+  FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-vectorized-dependencies.cmake
+)
+
+
 if(PROXSUITE_INSTALL)
   # Install Headers
   install(
@@ -227,16 +249,70 @@ if(PROXSUITE_INSTALL)
     PATTERN "*.hpp"
   )
 
-  # Install libraries
-  xxx_install_target(proxsuite)
+  # xxx_generate_component_dependencies(TARGETS proxsuite
+  #   EXPORT ${PROJECT_NAME}-standard-targets 
+  #   FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-dependencies.cmake
+  # )
 
-  xxx_install_target(proxsuite-vectorized 
-    DEPENDS_ON BUILD_WITH_VECTORIZATION_SUPPORT
+  # Install libraries
+  install(TARGETS proxsuite
+        EXPORT ${PROJECT_NAME}-standard-targets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+  install(EXPORT ${PROJECT_NAME}-standard-targets
+        FILE ${PROJECT_NAME}-standard-targets.cmake
+        NAMESPACE ${PROJECT_NAME}::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+  )
+  # export(EXPORT standard-targets 
+  #       FILE ${CMAKE_CURRENT_BINARY_DIR}/standard-targets.cmake 
+  #       NAMESPACE proxsuite::
+  # )
+  if(BUILD_WITH_VECTORIZATION_SUPPORT)
+    install(TARGETS ${PROJECT_NAME}-vectorized
+          EXPORT ${PROJECT_NAME}-vectorized
+          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+    install(EXPORT ${PROJECT_NAME}-vectorized
+          FILE ${PROJECT_NAME}-vectorized-targets.cmake
+          NAMESPACE ${PROJECT_NAME}::
+          DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+    )
+  endif()
+
+  include(CMakePackageConfigHelpers)
+
+  set(components "")
+  list(APPEND components standard)
+  list(APPEND components vectorized)
+  string(REPLACE ";" " " xxx_project_components "${components}")
+
+  # <package>-config.cmake
+  configure_package_config_file(
+      ${PROJECT_SOURCE_DIR}/cmake/config.cmake.in
+      ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
+      INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+      NO_SET_AND_CHECK_MACRO
+      NO_CHECK_REQUIRED_COMPONENTS_MACRO
   )
 
+  # <package>-version.cmake
+  write_basic_package_version_file(
+      ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
+      COMPATIBILITY AnyNewerVersion
+  )
+
+  # Install all generated cmake files
+  install(
+      DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
+      FILES_MATCHING PATTERN "*.cmake"
+  )
   # Generate and install <package>-config.cmake, <package>-version.cmake and <package>-targets.cmake
-  xxx_generate_cmake_module_files()
+  # xxx_generate_cmake_module_files()
 endif()
 
 #xxx_print_dependency_summary()
-xxx_print_option_summary()
+#xxx_print_option_summary()

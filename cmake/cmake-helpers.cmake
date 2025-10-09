@@ -253,6 +253,16 @@ function(xxx_target_treat_all_warnings_as_errors target_name visibility)
     endif()
 endfunction()
 
+function(xxx_append_global_property property_name value)
+    get_property(prop GLOBAL PROPERTY ${property_name})
+    if(NOT prop)
+        set(prop "")
+    endif()
+    list(APPEND prop "${value}")
+    list(REMOVE_DUPLICATES prop)
+    set_property(GLOBAL PROPERTY ${property_name} "${prop}")
+endfunction()
+
 # Usage: xxx_find_package(<package> [version] [REQUIRED] [COMPONENTS ...] [EXPECTED_TARGETS <target1> <target2> ...])
 # Example: xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED EXPECTED_TARGETS Eigen3::Eigen)
 function(xxx_find_package)
@@ -262,28 +272,9 @@ function(xxx_find_package)
     message(DEBUG "Executing xxx_find_package with args ${ARGV}")
 
     set(options EXPORT_IN_CONFIG)
-    set(oneValueArgs MODULE_PATH)
+    set(oneValueArgs MODULE_PATH EXPORT)
     set(multiValueArgs EXPECTED_TARGETS DEPENDS_ON)    # Parse only EXPECTED_TARGET; leave everything else untouched
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-
-    # message("   EXPECTED_TARGETS   : ${arg_EXPECTED_TARGETS}")
-    # message("   MODULE_PATH        : ${arg_MODULE_PATH}")
-    # message("   DEPENDS_ON         : ${arg_DEPENDS_ON}")
-    # message("   UNPARSED_ARGUMENTS : ${arg_UNPARSED_ARGUMENTS}")
-    # message("   EXPORT_IN_CONFIG   : ${arg_EXPORT_IN_CONFIG}")
-
-    # Allow to skip find package
-    set(skip False)
-    foreach(cond ${arg_DEPENDS_ON})
-        if(NOT ${${cond}})
-            set(skip True)
-            break()
-        endif()
-    endforeach()
-    if(skip)
-        message("Skipping find_package(${ARGV0}) because one of the conditions in DEPENDS_ON ${arg_DEPENDS_ON} is false.")
-        return()
-    endif()
 
     # If all targets are already available, skip the find_package call)
     set(all_targets_available True)
@@ -324,27 +315,6 @@ function(xxx_find_package)
     # The actual call to find_package
     find_package(${arg_UNPARSED_ARGUMENTS})
 
-    if(NOT arg_EXPORT_IN_CONFIG)
-        return()
-    endif()
-
-    # Pkg name is the first argument of FIND_PACKAGE_ARGS
-    set(package_name ${ARGV0})
-
-    # Save package into the global summary property
-    get_property(package GLOBAL PROPERTY _xxx_project_packages)
-    if(NOT package)
-        set(package "")
-    endif()
-    list(APPEND package "${package_name}")
-    list(REMOVE_DUPLICATES package)
-    set_property(GLOBAL PROPERTY _xxx_project_packages "${package}")
-
-    # Save the package expected targets into a global summary property
-    set_property(GLOBAL PROPERTY _xxx_${package_name}_expected_targets "${arg_EXPECTED_TARGETS}")
-    set_property(GLOBAL PROPERTY _xxx_${package_name}_find_package_args "${arg_UNPARSED_ARGUMENTS}")
-    set_property(GLOBAL PROPERTY _xxx_${package_name}_module_path "${arg_MODULE_PATH}")
-
     # Check if the expected targets are available
     set(missing_targets "")
     foreach(target ${arg_EXPECTED_TARGETS})
@@ -356,10 +326,33 @@ function(xxx_find_package)
             message("Checking for target '${target}'... ✅ found.")
         endif()
     endforeach()
-
     if(missing_targets)
         string(REPLACE ";" ", " missing_targets_pp "${missing_targets}")
-        message(WARNING "The following expected targets from package '${package_name}' are missing: ${missing_targets_pp}")
+        message(SEND_ERROR "The following expected targets from package '${package_name}' are missing: ${missing_targets_pp}")
+        return()
+    endif()
+
+    set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_packages_found "${package_name}" APPEND)
+    
+    # In the project property, save all the calls to find_package with the arg hash
+    string(SHA256 args_hash "${arg_UNPARSED_ARGUMENTS}")
+    set_property(GLOBAL PROPERTY _xxx_${package_name}_expected_targets "${arg_EXPECTED_TARGETS}")
+    set_property(GLOBAL PROPERTY _xxx_${package_name}_find_package_args "${arg_UNPARSED_ARGUMENTS}")
+    set_property(GLOBAL PROPERTY _xxx_${package_name}_module_path "${arg_MODULE_PATH}")
+
+    set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_packages_hash_found "${args_hash}" APPEND)    
+    set_property(GLOBAL PROPERTY _xxx_${args_hash}_package_name "${package_name}")
+    set_property(GLOBAL PROPERTY _xxx_${args_hash}_expected_targets "${arg_EXPECTED_TARGETS}")
+    set_property(GLOBAL PROPERTY _xxx_${args_hash}_find_package_args "${arg_UNPARSED_ARGUMENTS}")
+    set_property(GLOBAL PROPERTY _xxx_${args_hash}_module_path "${arg_MODULE_PATH}")
+    # Save the link between the expected targets and the original package name
+    foreach(target ${arg_EXPECTED_TARGETS})
+        set_property(GLOBAL PROPERTY _xxx_${target}_package_name "${package_name}")
+        set_property(GLOBAL PROPERTY _xxx_${target}_package_hash "${args_hash}")
+    endforeach()
+
+    if(${arg_EXPORT})
+        set_property(GLOBAL PROPERTY _xxx_${arg_EXPORT}_external_dependencies "${args_hash}" APPEND)
     endif()
 endfunction()
 
@@ -405,11 +398,100 @@ function(xxx_print_dependency_summary)
     endforeach()
 endfunction()
 
+function(xxx_export_dependencies)
+    set(options)
+    set(oneValueArgs EXPORT FILE)
+    set(multiValueArgs TARGETS)
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+    
+    require_variable(arg_EXPORT "EXPORT argument is required.")
+    require_variable(arg_FILE "FILE argument is required.")
+    require_variable(arg_TARGETS "TARGETS argument is required.")
+
+    # Analyse the INTERFACE_LINK_LIBRARIES of each dependency to find the transitive dependencies
+    set(all_link_libraries "")
+    foreach(target ${arg_TARGETS})
+        get_target_property(link_libraries ${target} INTERFACE_LINK_LIBRARIES)
+        list(APPEND all_link_libraries ${link_libraries})
+        message("Linked libraries of target '${target}': ${link_libraries}")
+    endforeach()
+
+    message("All link libraries of targets '${arg_TARGETS}': ${all_link_libraries}")
+
+    set(packages_to_export "")
+    foreach(lib ${all_link_libraries})
+        get_property(package_hash GLOBAL PROPERTY _xxx_${lib}_package_hash)
+        get_property(package_name GLOBAL PROPERTY _xxx_${lib}_package_name)
+
+        if(NOT package_name)
+            continue()
+        endif()
+
+        message("Library '${lib}' comes from package '${package_name}' (hash: ${package_hash})")
+        list(APPEND packages_to_export "${package_name}")
+    endforeach()
+
+    message("Packages to export for EXPORT ${arg_EXPORT}: ${packages_to_export}")
+
+    set(modules "")
+    set(fd "")
+    foreach(package_name ${packages_to_export})
+        get_property(expected_targets GLOBAL PROPERTY _xxx_${package_name}_expected_targets)
+        get_property(find_package_args GLOBAL PROPERTY _xxx_${package_name}_find_package_args)
+        get_property(module_path GLOBAL PROPERTY _xxx_${package_name}_module_path)
+
+        require_variable(find_package_args "find_package_args must be defined for package ${package_name}")
+        require_variable(expected_targets "expected_targets must be defined for package ${package_name}")
+
+        string(REPLACE ";" " " find_package_args "${find_package_args}")
+
+        # Custom Modules
+        if(module_path)
+            list(APPEND modules "list(APPEND CMAKE_MODULE_PATH \${CMAKE_CURRENT_LIST_DIR}/modules/${package_name})")
+        endif()
+
+        # Find Dependencies
+        if(NOT expected_targets)
+            list(APPEND fd "find_dependency(${find_package_args})")
+        else()
+            set(cond "")
+            foreach(target IN LISTS expected_targets)
+                if(cond STREQUAL "")
+                    set(cond "NOT TARGET ${target}")
+                else()
+                    set(cond "${cond} OR NOT TARGET ${target}")
+                endif()
+            endforeach()
+
+            list(APPEND fd
+"if(${cond})
+    find_dependency(${find_package_args})
+endif()
+")
+        endif()
+
+        # # Custom Module file
+        # set(module_file "${module_path}/Find${package_name}.cmake")
+        # if(EXISTS "${module_file}")
+        #     install(
+        #         FILES ${module_file}
+        #         DESTINATION ${${PROJECT_NAME}_INSTALL_CONFIGDIR}/modules/${package_name}/
+        #     )
+        # endif()
+
+    endforeach()
+
+    string(REPLACE ";" "\n" xxx_modules "${modules}")
+    string(REPLACE ";" "\n" xxx_find_dependencies "${fd}")
+    
+    configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/dependencies.cmake.in ${arg_FILE} @ONLY)
+endfunction()
+
+
+
 function(xxx_generate_cmake_module_files)
     require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_generate_cmake_module_files")
     require_variable(PROJECT_VERSION "PROJECT_VERSION must be defined before calling xxx_generate_cmake_module_files")
-
-    include(CMakePackageConfigHelpers)
 
     get_property(packages GLOBAL PROPERTY _xxx_project_packages)
     if(NOT packages)
@@ -519,7 +601,7 @@ function(xxx_install_target target_name)
     require_variable(CMAKE_INSTALL_INCLUDEDIR "CMAKE_INSTALL_INCLUDEDIR must be defined before calling xxx_install_target")
 
     set(options)
-    set(oneValueArgs)
+    set(oneValueArgs EXPORT)
     set(multiValueArgs DEPENDS_ON)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
@@ -535,12 +617,22 @@ function(xxx_install_target target_name)
         return()
     endif()
 
+    # List the properties of the target
+    # get_target_property(type ${target_name} TYPE)
+    # get_target_property(link_libraries ${target_name} LINK_LIBRARIES)
+    # get_target_property(link_interface_libraries ${target_name} INTERFACE_LINK_LIBRARIES)
+    # message(FATAL_ERROR "link_libraries: ${link_libraries} | link_interface_libraries: ${link_interface_libraries}")
+
     if(NOT TARGET ${target_name})
         message(FATAL_ERROR "Target ${target_name} does not exist.")
     endif()
 
+    if(NOT arg_EXPORT)
+        set(arg_EXPORT ${PROJECT_NAME}-targets)
+    endif()
+
     install(TARGETS ${target_name}
-        EXPORT ${PROJECT_NAME}-targets
+        EXPORT ${arg_EXPORT}
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

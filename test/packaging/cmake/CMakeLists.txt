@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22...4.1)
 
 project(myproject)
-find_package(proxsuite CONFIG REQUIRED)
+find_package(proxsuite CONFIG REQUIRED COMPONENTS standard vectorized)
 
 add_executable(run-proxqp ${CMAKE_CURRENT_LIST_DIR}/../src/run-proxqp.cpp)
-target_link_libraries(run-proxqp PUBLIC proxsuite::proxsuite)
+target_link_libraries(run-proxqp PUBLIC proxsuite::proxsuite-vectorized)

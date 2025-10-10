@@ -271,8 +271,8 @@ function(xxx_find_package)
     set(CMAKE_MESSAGE_INDENT "  ")
     message(DEBUG "Executing xxx_find_package with args ${ARGV}")
 
-    set(options EXPORT_IN_CONFIG)
-    set(oneValueArgs MODULE_PATH EXPORT)
+    set(options)
+    set(oneValueArgs MODULE_PATH)
     set(multiValueArgs EXPECTED_TARGETS DEPENDS_ON)    # Parse only EXPECTED_TARGET; leave everything else untouched
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
@@ -315,6 +315,8 @@ function(xxx_find_package)
     # The actual call to find_package
     find_package(${arg_UNPARSED_ARGUMENTS})
 
+    # TODO: handle QUIET
+
     # Check if the expected targets are available
     set(missing_targets "")
     foreach(target ${arg_EXPECTED_TARGETS})
@@ -334,26 +336,15 @@ function(xxx_find_package)
 
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_packages_found "${package_name}" APPEND)
     
-    # In the project property, save all the calls to find_package with the arg hash
-    string(SHA256 args_hash "${arg_UNPARSED_ARGUMENTS}")
     set_property(GLOBAL PROPERTY _xxx_${package_name}_expected_targets "${arg_EXPECTED_TARGETS}")
     set_property(GLOBAL PROPERTY _xxx_${package_name}_find_package_args "${arg_UNPARSED_ARGUMENTS}")
     set_property(GLOBAL PROPERTY _xxx_${package_name}_module_path "${arg_MODULE_PATH}")
 
-    set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_packages_hash_found "${args_hash}" APPEND)    
-    set_property(GLOBAL PROPERTY _xxx_${args_hash}_package_name "${package_name}")
-    set_property(GLOBAL PROPERTY _xxx_${args_hash}_expected_targets "${arg_EXPECTED_TARGETS}")
-    set_property(GLOBAL PROPERTY _xxx_${args_hash}_find_package_args "${arg_UNPARSED_ARGUMENTS}")
-    set_property(GLOBAL PROPERTY _xxx_${args_hash}_module_path "${arg_MODULE_PATH}")
     # Save the link between the expected targets and the original package name
     foreach(target ${arg_EXPECTED_TARGETS})
-        set_property(GLOBAL PROPERTY _xxx_${target}_package_name "${package_name}")
-        set_property(GLOBAL PROPERTY _xxx_${target}_package_hash "${args_hash}")
+        set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${target}_package_name "${package_name}")
+        #set_property(TARGET ${target} PROPERTY _xxx_package_name "${package_name}")
     endforeach()
-
-    if(${arg_EXPORT})
-        set_property(GLOBAL PROPERTY _xxx_${arg_EXPORT}_external_dependencies "${args_hash}" APPEND)
-    endif()
 endfunction()
 
 function(xxx_print_dependency_summary)
@@ -407,6 +398,7 @@ function(xxx_export_dependencies)
     require_variable(arg_EXPORT)
     require_variable(arg_FILE)
     require_variable(arg_TARGETS)
+    require_variable(arg_DESTINATION)
 
     # Analyse the INTERFACE_LINK_LIBRARIES of each dependency to find the transitive dependencies
     set(all_link_libraries "")
@@ -420,14 +412,13 @@ function(xxx_export_dependencies)
 
     set(packages_to_export "")
     foreach(lib ${all_link_libraries})
-        get_property(package_hash GLOBAL PROPERTY _xxx_${lib}_package_hash)
-        get_property(package_name GLOBAL PROPERTY _xxx_${lib}_package_name)
+        get_property(package_name GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${lib}_package_name)
 
         if(NOT package_name)
             continue()
         endif()
 
-        message("Library '${lib}' comes from package '${package_name}' (hash: ${package_hash})")
+        message("Library '${lib}' comes from package '${package_name}'")
         list(APPEND packages_to_export "${package_name}")
     endforeach()
 
@@ -447,12 +438,16 @@ function(xxx_export_dependencies)
 
         # Custom Modules
         if(module_path)
-            list(APPEND modules "list(APPEND CMAKE_MODULE_PATH \${CMAKE_CURRENT_LIST_DIR}/modules/${package_name})")
+            string(APPEND modules "list(APPEND CMAKE_MODULE_PATH \${CMAKE_CURRENT_LIST_DIR}/modules/${package_name})\n")
+            install(
+                FILES ${module_path}/Find${package_name}.cmake
+                DESTINATION ${arg_DESTINATION}/modules/${package_name}
+            )
         endif()
 
         # Find Dependencies
         if(NOT expected_targets)
-            list(APPEND fd "find_dependency(${find_package_args})")
+            string(APPEND fd "find_dependency(${find_package_args})\n")
         else()
             set(cond "")
             foreach(target IN LISTS expected_targets)
@@ -463,26 +458,14 @@ function(xxx_export_dependencies)
                 endif()
             endforeach()
 
-            list(APPEND fd
-"if(${cond})
-    find_dependency(${find_package_args})
-endif()
-")
+            string(APPEND fd "if(${cond})\n")
+            string(APPEND fd "    find_dependency(${find_package_args})\n")
+            string(APPEND fd "endif()\n\n")
         endif()
-
-        # # Custom Module file
-        # set(module_file "${module_path}/Find${package_name}.cmake")
-        # if(EXISTS "${module_file}")
-        #     install(
-        #         FILES ${module_file}
-        #         DESTINATION ${${PROJECT_NAME}_INSTALL_CONFIGDIR}/modules/${package_name}/
-        #     )
-        # endif()
-
     endforeach()
 
-    string(REPLACE ";" "\n" xxx_modules "${modules}")
-    string(REPLACE ";" "\n" xxx_find_dependencies "${fd}")
+    set(xxx_modules ${modules})
+    set(xxx_find_dependencies ${fd})
     
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/dependencies.cmake.in ${arg_FILE} @ONLY)
     

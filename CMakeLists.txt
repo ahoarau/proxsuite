@@ -78,10 +78,7 @@ xxx_option(
 ############################################################
 
 # Eigen3
-xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED 
-  EXPECTED_TARGETS Eigen3::Eigen 
-  EXPORT proxsuite-standard
-)
+xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED EXPECTED_TARGETS Eigen3::Eigen )
 
 # Catch2
 if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
@@ -91,10 +88,7 @@ endif()
 
 # cereal (Serialization)
 if(BUILD_WITH_SERIALIZATION)
-  xxx_find_package(cereal CONFIG REQUIRED 
-    EXPECTED_TARGETS cereal::cereal
-    EXPORT proxsuite-serialization
-  )
+  xxx_find_package(cereal CONFIG REQUIRED EXPECTED_TARGETS cereal::cereal)
 endif()
 
 # nanobind (Python bindings)
@@ -128,7 +122,6 @@ if(BUILD_WITH_VECTORIZATION_SUPPORT)
   xxx_find_package(simde REQUIRED
       MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/simde
       EXPECTED_TARGETS simde::simde 
-      EXPORT proxsuite-vectorized 
   )
 endif()
 
@@ -142,10 +135,7 @@ endif()
 
 # OpenMP
 if(BUILD_WITH_OPENMP_SUPPORT)
-  xxx_find_package(OpenMP REQUIRED 
-    EXPECTED_TARGETS OpenMP::OpenMP_CXX
-    EXPORT proxsuite-standard
-  )
+  xxx_find_package(OpenMP REQUIRED EXPECTED_TARGETS OpenMP::OpenMP_CXX)
 endif()
 
 # Doxygen + Graphviz (dot)

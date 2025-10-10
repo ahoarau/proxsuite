@@ -646,117 +646,115 @@ function(xxx_cmake_module_config)
         # ref: https://github.com/Kitware/CMake/blob/master/Source/cmInstallExportGenerator.cxx#L50-L58
         string(MD5 destdir_hash ${DESTINATION})
         set(generated_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${destdir_hash}/${PROJECT_NAME}-${component}-targets.cmake)
-        file(COPY ${generated_target_file} 
-            DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
-  
+        file(COPY ${generated_target_file} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
     endforeach()
 endfunction()
 
 
-function(xxx_generate_cmake_module_files)
-    require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_generate_cmake_module_files")
-    require_variable(PROJECT_VERSION "PROJECT_VERSION must be defined before calling xxx_generate_cmake_module_files")
+# function(xxx_generate_cmake_module_files)
+#     require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_generate_cmake_module_files")
+#     require_variable(PROJECT_VERSION "PROJECT_VERSION must be defined before calling xxx_generate_cmake_module_files")
 
-    get_property(packages GLOBAL PROPERTY _xxx_project_packages)
-    if(NOT packages)
-        message(STATUS "No dependencies found via xxx_find_package.")
-        return()
-    endif()
+#     get_property(packages GLOBAL PROPERTY _xxx_project_packages)
+#     if(NOT packages)
+#         message(STATUS "No dependencies found via xxx_find_package.")
+#         return()
+#     endif()
 
-    #set(${PROJECT_NAME}_INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+#     #set(${PROJECT_NAME}_INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
-    set(modules "")
-    set(fd "")
-    foreach(package_name ${packages})
-        # Try to find the _xxx_<package_name>_expected_targets property
-        get_property(expected_targets GLOBAL PROPERTY _xxx_${package_name}_expected_targets)
-        get_property(find_package_args GLOBAL PROPERTY _xxx_${package_name}_find_package_args)
-        get_property(module_path GLOBAL PROPERTY _xxx_${package_name}_module_path)
-        string(REPLACE ";" " " find_package_args "${find_package_args}")
+#     set(modules "")
+#     set(fd "")
+#     foreach(package_name ${packages})
+#         # Try to find the _xxx_<package_name>_expected_targets property
+#         get_property(expected_targets GLOBAL PROPERTY _xxx_${package_name}_expected_targets)
+#         get_property(find_package_args GLOBAL PROPERTY _xxx_${package_name}_find_package_args)
+#         get_property(module_path GLOBAL PROPERTY _xxx_${package_name}_module_path)
+#         string(REPLACE ";" " " find_package_args "${find_package_args}")
 
-        # Custom Modules
-        if(module_path)
-            list(APPEND modules "list(APPEND CMAKE_MODULE_PATH \${CMAKE_CURRENT_LIST_DIR}/modules/${package_name})")
-        endif()
+#         # Custom Modules
+#         if(module_path)
+#             list(APPEND modules "list(APPEND CMAKE_MODULE_PATH \${CMAKE_CURRENT_LIST_DIR}/modules/${package_name})")
+#         endif()
 
-        # Find Dependencies
-        if(NOT expected_targets)
-            list(APPEND fd "find_dependency(${find_package_args})")
-        else()
-            set(cond "")
-            foreach(target IN LISTS expected_targets)
-                if(cond STREQUAL "")
-                    set(cond "NOT TARGET ${target}")
-                else()
-                    set(cond "${cond} OR NOT TARGET ${target}")
-                endif()
-            endforeach()
+#         # Find Dependencies
+#         if(NOT expected_targets)
+#             list(APPEND fd "find_dependency(${find_package_args})")
+#         else()
+#             set(cond "")
+#             foreach(target IN LISTS expected_targets)
+#                 if(cond STREQUAL "")
+#                     set(cond "NOT TARGET ${target}")
+#                 else()
+#                     set(cond "${cond} OR NOT TARGET ${target}")
+#                 endif()
+#             endforeach()
 
-            list(APPEND fd
-"if(${cond})
-    find_dependency(${find_package_args})
-endif()
-")
-        endif()
+#             list(APPEND fd
+# "if(${cond})
+#     find_dependency(${find_package_args})
+# endif()
+# ")
+#         endif()
 
-        # # Custom Module file
-        # set(module_file "${module_path}/Find${package_name}.cmake")
-        # if(EXISTS "${module_file}")
-        #     install(
-        #         FILES ${module_file}
-        #         DESTINATION ${${PROJECT_NAME}_INSTALL_CONFIGDIR}/modules/${package_name}/
-        #     )
-        # endif()
+#         # # Custom Module file
+#         # set(module_file "${module_path}/Find${package_name}.cmake")
+#         # if(EXISTS "${module_file}")
+#         #     install(
+#         #         FILES ${module_file}
+#         #         DESTINATION ${${PROJECT_NAME}_INSTALL_CONFIGDIR}/modules/${package_name}/
+#         #     )
+#         # endif()
 
-    endforeach()
+#     endforeach()
 
-    string(REPLACE ";" "\n" xxx_modules "${modules}")
-    string(REPLACE ";" "\n" xxx_find_dependencies "${fd}")
+#     string(REPLACE ";" "\n" xxx_modules "${modules}")
+#     string(REPLACE ";" "\n" xxx_find_dependencies "${fd}")
 
-    # <package>-targets.cmake
-    # Note: generate the export targets for the build tree. Note: The file created by this command 
-    # is specific to the build tree and should never be installed!
-    export(EXPORT ${PROJECT_NAME}-targets
-        FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-targets.cmake
-        NAMESPACE ${PROJECT_NAME}::
-    )
-    # Note: This needs to be done after all install(TARGETS ...) commands!
-    # generate and install export targets file
-    install(EXPORT ${PROJECT_NAME}-targets
-        FILE ${PROJECT_NAME}-targets.cmake
-        NAMESPACE ${PROJECT_NAME}::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
+#     # <package>-targets.cmake
+#     # Note: generate the export targets for the build tree. Note: The file created by this command 
+#     # is specific to the build tree and should never be installed!
+#     export(EXPORT ${PROJECT_NAME}-targets
+#         FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-targets.cmake
+#         NAMESPACE ${PROJECT_NAME}::
+#     )
+#     # Note: This needs to be done after all install(TARGETS ...) commands!
+#     # generate and install export targets file
+#     install(EXPORT ${PROJECT_NAME}-targets
+#         FILE ${PROJECT_NAME}-targets.cmake
+#         NAMESPACE ${PROJECT_NAME}::
+#         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#     )
 
-    # <package>-config.cmake
-    configure_package_config_file(
-        ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/config.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
-        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-        NO_SET_AND_CHECK_MACRO
-        NO_CHECK_REQUIRED_COMPONENTS_MACRO
-    )
+#     # <package>-config.cmake
+#     configure_package_config_file(
+#         ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/config.cmake.in
+#         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
+#         INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#         NO_SET_AND_CHECK_MACRO
+#         NO_CHECK_REQUIRED_COMPONENTS_MACRO
+#     )
 
-    # <package>-version.cmake
-    write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
-        COMPATIBILITY AnyNewerVersion
-    )
+#     # <package>-version.cmake
+#     write_basic_package_version_file(
+#         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
+#         COMPATIBILITY AnyNewerVersion
+#     )
 
-    # Install the 3 cmake module files
-    # install(
-    #     FILES
-    #         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
-    #         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
-    #         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-targets.cmake
-    #     DESTINATION ${${PROJECT_NAME}_INSTALL_CONFIGDIR}
-    # )
-    install(
-        DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
-        FILES_MATCHING PATTERN "*.cmake"
-    )
-endfunction()
+#     # Install the 3 cmake module files
+#     # install(
+#     #     FILES
+#     #         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
+#     #         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
+#     #         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-targets.cmake
+#     #     DESTINATION ${${PROJECT_NAME}_INSTALL_CONFIGDIR}
+#     # )
+#     install(
+#         DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}
+#         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
+#         FILES_MATCHING PATTERN "*.cmake"
+#     )
+# endfunction()
 
 function(xxx_install_target target_name)
     require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_install_target")

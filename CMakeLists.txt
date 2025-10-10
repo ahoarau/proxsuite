@@ -233,9 +233,6 @@ if(BUILD_WITH_VECTORIZATION_SUPPORT)
   xxx_declare_component(TARGETS proxsuite-vectorized COMPONENT vectorized)
 endif()
 
-xxx_cmake_module_config()
-xxx_cmake_module_version()
-
 if(INSTALL_HEADERS)
   install(
     DIRECTORY ${PROJECT_SOURCE_DIR}/include/
@@ -244,6 +241,9 @@ if(INSTALL_HEADERS)
     PATTERN "*.hpp"
   )
 endif()
+
+xxx_cmake_module_config()
+xxx_cmake_module_version()
 
 return()
 

@@ -26,7 +26,7 @@ xxx_option(BUILD_EXAMPLES "Build the examples" ON)
 xxx_option(BUILD_BENCHMARK "Build the benchmarks" ON)
 xxx_option(BUILD_DOCUMENTATION "Build the documentation." OFF)
 xxx_option(INSTALL_DOCUMENTATION "Install the documentation" OFF)
-xxx_option(PROXSUITE_INSTALL "Generate the install target" ON)
+xxx_option(INSTALL_HEADERS "Generate the install target" ON)
 
 xxx_option(BUILD_PYTHON_INTERFACE "Build the Python bindings" ON)
 xxx_option(INITIALIZE_EIGEN_WITH_NAN "Initialize Eigen objects with NAN values" ON)
@@ -227,92 +227,168 @@ if(BUILD_DOCUMENTATION AND PROJECT_IS_TOP_LEVEL)
   add_subdirectory(doc)
 endif()
 
-xxx_export_dependencies(
-  TARGETS proxsuite
-  EXPORT proxsuite-standard
-  FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-dependencies.cmake
-)
+xxx_declare_component(TARGETS proxsuite COMPONENT standard)
 
-xxx_export_dependencies(
-  TARGETS proxsuite-vectorized
-  EXPORT proxsuite-vectorized
-  FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-vectorized-dependencies.cmake
-)
+if(BUILD_WITH_VECTORIZATION_SUPPORT)
+  xxx_declare_component(TARGETS proxsuite-vectorized COMPONENT vectorized)
+endif()
 
+xxx_cmake_module_config()
+xxx_cmake_module_version()
 
-if(PROXSUITE_INSTALL)
-  # Install Headers
+if(INSTALL_HEADERS)
   install(
     DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING
     PATTERN "*.hpp"
   )
-
-  # xxx_generate_component_dependencies(TARGETS proxsuite
-  #   EXPORT ${PROJECT_NAME}-standard-targets 
-  #   FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-dependencies.cmake
-  # )
-
-  # Install libraries
-  install(TARGETS proxsuite
-        EXPORT ${PROJECT_NAME}-standard-targets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-  install(EXPORT ${PROJECT_NAME}-standard-targets
-        FILE ${PROJECT_NAME}-standard-targets.cmake
-        NAMESPACE ${PROJECT_NAME}::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-  )
-  # export(EXPORT standard-targets 
-  #       FILE ${CMAKE_CURRENT_BINARY_DIR}/standard-targets.cmake 
-  #       NAMESPACE proxsuite::
-  # )
-  if(BUILD_WITH_VECTORIZATION_SUPPORT)
-    install(TARGETS ${PROJECT_NAME}-vectorized
-          EXPORT ${PROJECT_NAME}-vectorized
-          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    )
-    install(EXPORT ${PROJECT_NAME}-vectorized
-          FILE ${PROJECT_NAME}-vectorized-targets.cmake
-          NAMESPACE ${PROJECT_NAME}::
-          DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-    )
-  endif()
-
-  include(CMakePackageConfigHelpers)
-
-  set(components "")
-  list(APPEND components standard)
-  list(APPEND components vectorized)
-  string(REPLACE ";" " " xxx_project_components "${components}")
-
-  # <package>-config.cmake
-  configure_package_config_file(
-      ${PROJECT_SOURCE_DIR}/cmake/config.cmake.in
-      ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
-      INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-      NO_SET_AND_CHECK_MACRO
-      NO_CHECK_REQUIRED_COMPONENTS_MACRO
-  )
-
-  # <package>-version.cmake
-  write_basic_package_version_file(
-      ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
-      COMPATIBILITY AnyNewerVersion
-  )
-
-  # Install all generated cmake files
-  install(
-      DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
-      FILES_MATCHING PATTERN "*.cmake"
-  )
-  # Generate and install <package>-config.cmake, <package>-version.cmake and <package>-targets.cmake
-  # xxx_generate_cmake_module_files()
 endif()
+
+return()
+
+# xxx_export_dependencies(
+#   TARGETS proxsuite
+#   EXPORT proxsuite-standard
+#   FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-dependencies.cmake
+# )
+
+# xxx_export_dependencies(
+#   TARGETS proxsuite-vectorized
+#   EXPORT proxsuite-vectorized
+#   FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-vectorized-dependencies.cmake
+# )
+
+
+# if(INSTALL_HEADERS)
+#   # Install Headers
+#   install(
+#     DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#     FILES_MATCHING
+#     PATTERN "*.hpp"
+#   )
+
+#   # xxx_setup_install(
+#   #   TARGETS proxsuite
+#   #   EXPORT proxsuite-standard
+#   #   HEADER_FILES
+#   #     include/proxsuite/fwd.hpp
+#   #   HEADER_DIRS
+#   #     include/proxsuite/helpers
+#   #     include/proxsuite/linalg
+#   #     include/proxsuite/proxqp
+      
+#   # )
+
+#   xxx_cmake_module_targets(
+#     TARGETS proxsuite
+#     EXPORT ${PROJECT_NAME}-standard-targets
+#     NAMESPACE ${PROJECT_NAME}::
+#     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-targets.cmake
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#   )
+#   if(BUILD_WITH_VECTORIZATION_SUPPORT)
+#     xxx_cmake_module_targets(
+#       TARGETS proxsuite-vectorized
+#       EXPORT ${PROJECT_NAME}-vectorized
+#       NAMESPACE ${PROJECT_NAME}::
+#       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-vectorized-targets.cmake
+#       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#     )
+#   endif()
+
+#   xxx_cmake_module_version(
+#     VERSION ${PROJECT_VERSION}
+#     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#   )
+
+#   # Declare the components for the project
+#   xxx_declare_component(TARGETS proxsuite COMPONENT standard)
+#   xxx_declare_component(TARGETS proxsuite-vectorized COMPONENT vectorized)
+
+#   # generate the CMake module:
+#   #   <package>-config.cmake
+#   # And for each component:
+#   #     <component>-targets.cmake
+#   #     <component>-dependencies.cmake
+#   xxx_cmake_module_config(
+#     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#   )
+
+
+#   # xxx_generate_component_dependencies(TARGETS proxsuite
+#   #   EXPORT ${PROJECT_NAME}-standard-targets 
+#   #   FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-standard-dependencies.cmake
+#   # )
+
+#   # Install libraries
+#   install(TARGETS proxsuite
+#         EXPORT ${PROJECT_NAME}-standard-targets
+#         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#   )
+#   install(EXPORT ${PROJECT_NAME}-standard-targets
+#         FILE ${PROJECT_NAME}-standard-targets.cmake
+#         NAMESPACE ${PROJECT_NAME}::
+#         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#   )
+#   string(MD5 tmp_dest_dir ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+#   set(tmp_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${tmp_dest_dir}/${PROJECT_NAME}-standard-targets.cmake)
+#   file(COPY ${tmp_target_file} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
+#   unset(tmp_dest_dir)
+#   unset(tmp_target_file)
+  
+#   # export(EXPORT standard-targets 
+#   #       FILE ${CMAKE_CURRENT_BINARY_DIR}/standard-targets.cmake 
+#   #       NAMESPACE proxsuite::
+#   # )
+
+#   if(BUILD_WITH_VECTORIZATION_SUPPORT)
+#     install(TARGETS ${PROJECT_NAME}-vectorized
+#           EXPORT ${PROJECT_NAME}-vectorized
+#           ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#           LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#     )
+#     install(EXPORT ${PROJECT_NAME}-vectorized
+#           FILE ${PROJECT_NAME}-vectorized-targets.cmake
+#           NAMESPACE ${PROJECT_NAME}::
+#           DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#     )
+#   endif()
+
+#   include(CMakePackageConfigHelpers)
+
+#   set(components "")
+#   list(APPEND components standard)
+#   list(APPEND components vectorized)
+#   string(REPLACE ";" " " xxx_project_components "${components}")
+
+#   # <package>-config.cmake
+#   configure_package_config_file(
+#       ${PROJECT_SOURCE_DIR}/cmake/config.cmake.in
+#       ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
+#       INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
+#       NO_SET_AND_CHECK_MACRO
+#       NO_CHECK_REQUIRED_COMPONENTS_MACRO
+#   )
+
+#   # <package>-version.cmake
+#   write_basic_package_version_file(
+#       ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
+#       COMPATIBILITY AnyNewerVersion
+#   )
+
+#   # Install all generated cmake files
+#   install(
+#       DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}
+#       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
+#       FILES_MATCHING PATTERN "*.cmake"
+#   )
+#   # Generate and install <package>-config.cmake, <package>-version.cmake and <package>-targets.cmake
+#   # xxx_generate_cmake_module_files()
+# endif()
 
 #xxx_print_dependency_summary()
 #xxx_print_option_summary()

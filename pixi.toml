@@ -61,7 +61,7 @@ cmd = ["cmake", "--install", "build/RelWithDebInfo"]
 
 [tasks.test-packaging]
 depends-on = ["install"]
-cmd = "cmake -S test/packaging/cmake -B build/RelWithDebInfo/test-packaging && cmake --build build/RelWithDebInfo/test-packaging"
+cmd = "cmake -S test/packaging/cmake -B build/RelWithDebInfo/test-packaging -DCMAKE_VERBOSE_MAKEFILE=1 &&  cmake --build build/RelWithDebInfo/test-packaging"
 
 [tasks.doc]
 depends-on = ["configure"]

@@ -400,13 +400,13 @@ endfunction()
 
 function(xxx_export_dependencies)
     set(options)
-    set(oneValueArgs EXPORT FILE)
+    set(oneValueArgs EXPORT FILE DESTINATION)
     set(multiValueArgs TARGETS)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
     
-    require_variable(arg_EXPORT "EXPORT argument is required.")
-    require_variable(arg_FILE "FILE argument is required.")
-    require_variable(arg_TARGETS "TARGETS argument is required.")
+    require_variable(arg_EXPORT)
+    require_variable(arg_FILE)
+    require_variable(arg_TARGETS)
 
     # Analyse the INTERFACE_LINK_LIBRARIES of each dependency to find the transitive dependencies
     set(all_link_libraries "")
@@ -485,8 +485,172 @@ endif()
     string(REPLACE ";" "\n" xxx_find_dependencies "${fd}")
     
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/dependencies.cmake.in ${arg_FILE} @ONLY)
+    
+    install(
+        FILES ${arg_FILE}
+        DESTINATION ${arg_DESTINATION}
+    )
 endfunction()
 
+function(xxx_cmake_module_version)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs)
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+    include(CMakePackageConfigHelpers)
+    require_variable(PROJECT_NAME)
+    require_variable(PROJECT_VERSION)
+
+    # NOTE: Expose as options if needed
+    set(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake)
+    set(VERSION ${PROJECT_VERSION})     # <major.minor.patch>
+    set(COMPATIBILITY AnyNewerVersion) # <AnyNewerVersion|SameMajorVersion|SameMinorVersion|ExactVersion>
+    set(ARCH_INDEPENDENT "")
+    set(DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+
+    write_basic_package_version_file(
+      ${OUTPUT}
+      VERSION ${VERSION}
+      COMPATIBILITY ${COMPATIBILITY}
+      ${ARCH_INDEPENDENT}
+    )
+
+    install(
+        FILES ${OUTPUT}
+        DESTINATION ${DESTINATION}
+    )
+endfunction()
+
+function(xxx_declare_component)
+    set(options)
+    set(oneValueArgs COMPONENT)
+    set(multiValueArgs TARGETS)
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+    require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_declare_component")
+    require_variable(arg_TARGETS "TARGETS argument is required.")
+    require_variable(arg_COMPONENT "COMPONENT argument is required.")
+
+    # Check component is not already declared
+    get_property(components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
+    if(${arg_COMPONENT} IN_LIST components)
+        message(FATAL_ERROR "Component '${arg_COMPONENT}' is already declared for project '${PROJECT_NAME}'.")
+    endif()
+    
+    message("[${PROJECT_NAME}] Declaring component '${arg_COMPONENT}' with targets: ${arg_TARGETS}")
+    set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components ${arg_COMPONENT} APPEND)
+    #set_property(TARGET ${target} PROPERTY _xxx_${PROJECT_NAME}_components ${arg_COMPONENT} APPEND)
+    set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${arg_COMPONENT}_targets ${arg_TARGETS})
+endfunction()
+
+# function(xxx_cmake_module_targets)
+#     set(options)
+#     set(oneValueArgs EXPORT NAMESPACE OUTPUT DESTINATION)
+#     set(multiValueArgs TARGETS)
+#     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+#     require_variable(arg_EXPORT)
+#     require_variable(arg_NAMESPACE)
+#     require_variable(arg_OUTPUT)
+#     require_variable(arg_DESTINATION)
+#     require_variable(arg_TARGETS)
+
+#     # Note: generate the export targets for the build tree. Note: The file created by this command 
+#     # is specific to the build tree and should never be installed!
+#     export(EXPORT ${arg_EXPORT}
+#         FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${arg_OUTPUT}
+#         NAMESPACE ${arg_NAMESPACE}
+#         TARGETS ${arg_TARGETS}
+#     )
+#     # Note: This needs to be done after all install(TARGETS ...) commands!
+#     # generate and install export targets file
+#     install(EXPORT ${arg_EXPORT}
+#         FILE ${arg_OUTPUT}
+#         NAMESPACE ${arg_NAMESPACE}
+#         DESTINATION ${arg_DESTINATION}
+#     )
+#     string(MD5 tmp_dest_dir ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+#     set(tmp_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${tmp_dest_dir}/${PROJECT_NAME}-standard-targets.cmake)
+#     file(COPY ${tmp_target_file} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
+  
+# endfunction()
+
+function(xxx_cmake_module_config)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs)
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+    include(CMakePackageConfigHelpers)
+    require_variable(PROJECT_NAME)
+    require_variable(CMAKE_INSTALL_LIBDIR)
+
+    get_property(declared_components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
+    if(NOT declared_components)
+        message(FATAL_ERROR "No components declared for project '${PROJECT_NAME}'.")
+    endif()
+
+    string(REPLACE ";" " " xxx_project_components "${declared_components}")
+
+    # NOTE: Expose as options if needed
+    set(INPUT ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/config.cmake.in)
+    set(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake)
+    set(DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+    set(NO_SET_AND_CHECK_MACRO "NO_SET_AND_CHECK_MACRO")
+    set(NO_CHECK_REQUIRED_COMPONENTS_MACRO "NO_CHECK_REQUIRED_COMPONENTS_MACRO")
+    set(NAMESPACE "${PROJECT_NAME}::")
+    
+    configure_package_config_file(
+      ${INPUT}
+      ${OUTPUT}
+      INSTALL_DESTINATION ${DESTINATION}
+      ${NO_SET_AND_CHECK_MACRO}
+      ${NO_CHECK_REQUIRED_COMPONENTS_MACRO}
+    )
+    install(
+        FILES ${OUTPUT}
+        DESTINATION ${DESTINATION}
+    )
+
+    foreach(component ${declared_components})
+        message("Generating cmake module files for component '${component}'")
+        
+        get_property(targets GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${component}_targets)
+        if(NOT targets)
+            message(FATAL_ERROR "No targets found for component '${component}'")
+        endif()
+
+        # <package>-<component>-dependencies.cmake
+        xxx_export_dependencies(
+            TARGETS ${targets}
+            EXPORT ${PROJECT_NAME}-${component}
+            FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-${component}-dependencies.cmake
+            DESTINATION ${DESTINATION}
+        )
+        # Create the export for the component targets
+        install(TARGETS ${targets} 
+            EXPORT ${PROJECT_NAME}-${component}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        )
+        # <package>-<component>-targets.cmake
+        install(EXPORT ${PROJECT_NAME}-${component}
+            FILE ${PROJECT_NAME}-${component}-targets.cmake
+            NAMESPACE ${NAMESPACE}
+            DESTINATION ${DESTINATION}
+        )
+        # HACK: Copy the generated targets file to the generated cmake directory, so that we can install all cmake files in one go
+        # ref: https://github.com/Kitware/CMake/blob/master/Source/cmInstallExportGenerator.cxx#L50-L58
+        string(MD5 destdir_hash ${DESTINATION})
+        set(generated_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${destdir_hash}/${PROJECT_NAME}-${component}-targets.cmake)
+        file(COPY ${generated_target_file} 
+            DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
+  
+    endforeach()
+endfunction()
 
 
 function(xxx_generate_cmake_module_files)

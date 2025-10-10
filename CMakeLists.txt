@@ -232,8 +232,7 @@ if(INSTALL_HEADERS)
   )
 endif()
 
-xxx_cmake_module_config()
-xxx_cmake_module_version()
+xxx_cmake_module_files()
 
 return()
 

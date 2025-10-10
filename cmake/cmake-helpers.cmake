@@ -15,43 +15,6 @@ function(require_variable varname)
     endif()
 endfunction()
 
-
-function(xxx_declare_standard_options)
-    option(BUILD_TESTING "Build the tests" ${PROJECT_IS_TOP_LEVEL})
-    option(BUILD_EXAMPLES "Build the examples" ${PROJECT_IS_TOP_LEVEL})
-    option(BUILD_BENCHMARK "Build the benchmarks" ${PROJECT_IS_TOP_LEVEL})
-    option(BUILD_DOCUMENTATION "Build the documentation." OFF)
-    option(INSTALL_LIBRARY "Install the project (library + config files)" ON)
-    option(INSTALL_DOCUMENTATION "Install the documentation" OFF)
-    option(INSTALL_PACKAGE_XML "Install package.xml file" OFF)
-    option(INSTALL_AMENT_XML "Install amentxml file" OFF)
-endfunction()
-
-function(xxx_display_debug_infos)
-    message(DEBUG "
-CMake version    | CMAKE_VERSION                        => ${CMAKE_VERSION}
-CMake path       | CMAKE_COMMAND                        => ${CMAKE_COMMAND}
-CMake generator  | CMAKE_GENERATOR                      => ${CMAKE_GENERATOR}
-CMake build tool | CMAKE_BUILD_TOOL                     => ${CMAKE_BUILD_TOOL}
-C compiler       | CMAKE_C_COMPILER                     => ${CMAKE_C_COMPILER}
-C compiler ID    | CMAKE_C_COMPILER_ID                  => ${CMAKE_C_COMPILER_ID}
-C compiler FE    | CMAKE_C_COMPILER_FRONTEND_VARIANT    => ${CMAKE_C_COMPILER_FRONTEND_VARIANT}
-C compiler Ver   | CMAKE_C_COMPILER_VERSION             => ${CMAKE_C_COMPILER_VERSION}
-C++ compiler     | CMAKE_CXX_COMPILER                   => ${CMAKE_CXX_COMPILER}
-C++ compiler ID  | CMAKE_CXX_COMPILER_ID                => ${CMAKE_CXX_COMPILER_ID}
-C++ compiler FE  | CMAKE_CXX_COMPILER_FRONTEND_VARIANT  => ${CMAKE_CXX_COMPILER_FRONTEND_VARIANT}
-C++ compiler Ver | CMAKE_CXX_COMPILER_VERSION           => ${CMAKE_CXX_COMPILER_VERSION}
-CMake build tool | CMAKE_BUILD_TOOL                     => ${CMAKE_BUILD_TOOL}
-Host   OS        | CMAKE_HOST_SYSTEM_NAME               => ${CMAKE_HOST_SYSTEM_NAME}
-       Arch      | CMAKE_HOST_SYSTEM_PROCESSOR          => ${CMAKE_HOST_SYSTEM_PROCESSOR}
-Target OS        | CMAKE_SYSTEM_NAME                    => ${CMAKE_SYSTEM_NAME}
-       Arch      | CMAKE_SYSTEM_PROCESSOR               => ${CMAKE_SYSTEM_PROCESSOR}
-Cross Compiling  | CMAKE_CROSSCOMPILING                 => ${CMAKE_CROSSCOMPILING}
-Toolchain file   | CMAKE_TOOLCHAIN_FILE                 => ${CMAKE_TOOLCHAIN_FILE}
-    ")
-endfunction()
-xxx_display_debug_infos()
-
 # Usage: xxx_configure_default_build_type(<default_build_type>)
 # Valid values for <default_build_type> are: Debug, Release, MinSizeRel, RelWithDebInfo
 # Example: xxx_configure_default_build_type(RelWithDebInfo)
@@ -104,21 +67,10 @@ endfunction()
 
 function(xxx_configure_default_install_dirs)
     include(GNUInstallDirs)
-
+    # On Windows, libraries are installed in the same directory as executables
     if(WIN32)
         set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_BINDIR} CACHE PATH "Installation directory for dlls" FORCE)
     endif()
-
-    message("
-
-    CMAKE_INSTALL_PREFIX        : ${CMAKE_INSTALL_PREFIX}
-    CMAKE_INSTALL_BINDIR        : ${CMAKE_INSTALL_BINDIR}
-    CMAKE_INSTALL_LIBDIR        : ${CMAKE_INSTALL_LIBDIR}
-    CMAKE_INSTALL_INCLUDEDIR    : ${CMAKE_INSTALL_INCLUDEDIR}
-    CMAKE_INSTALL_DATAROOTDIR   : ${CMAKE_INSTALL_DATAROOTDIR}
-    CMAKE_INSTALL_DOCDIR        : ${CMAKE_INSTALL_DOCDIR}
-
-    ")
 endfunction()
 
 
@@ -134,7 +86,6 @@ function(xxx_configure_default_install_prefix default_install_prefix)
     endif()
 endfunction()
 
-# Usage: xxx_target_generate_config_header()
 function(xxx_target_generate_config_header target_name)
     require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_target_generate_config_header")
     require_variable(PROJECT_VERSION "PROJECT_VERSION must be defined before calling xxx_target_generate_config_header")
@@ -343,7 +294,6 @@ function(xxx_find_package)
     # Save the link between the expected targets and the original package name
     foreach(target ${arg_EXPECTED_TARGETS})
         set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${target}_package_name "${package_name}")
-        #set_property(TARGET ${target} PROPERTY _xxx_package_name "${package_name}")
     endforeach()
 endfunction()
 
@@ -527,38 +477,6 @@ function(xxx_declare_component)
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${arg_COMPONENT}_targets ${arg_TARGETS})
 endfunction()
 
-# function(xxx_cmake_module_targets)
-#     set(options)
-#     set(oneValueArgs EXPORT NAMESPACE OUTPUT DESTINATION)
-#     set(multiValueArgs TARGETS)
-#     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-
-#     require_variable(arg_EXPORT)
-#     require_variable(arg_NAMESPACE)
-#     require_variable(arg_OUTPUT)
-#     require_variable(arg_DESTINATION)
-#     require_variable(arg_TARGETS)
-
-#     # Note: generate the export targets for the build tree. Note: The file created by this command 
-#     # is specific to the build tree and should never be installed!
-#     export(EXPORT ${arg_EXPORT}
-#         FILE ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${arg_OUTPUT}
-#         NAMESPACE ${arg_NAMESPACE}
-#         TARGETS ${arg_TARGETS}
-#     )
-#     # Note: This needs to be done after all install(TARGETS ...) commands!
-#     # generate and install export targets file
-#     install(EXPORT ${arg_EXPORT}
-#         FILE ${arg_OUTPUT}
-#         NAMESPACE ${arg_NAMESPACE}
-#         DESTINATION ${arg_DESTINATION}
-#     )
-#     string(MD5 tmp_dest_dir ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
-#     set(tmp_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${tmp_dest_dir}/${PROJECT_NAME}-standard-targets.cmake)
-#     file(COPY ${tmp_target_file} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
-  
-# endfunction()
-
 function(xxx_cmake_module_config)
     set(options)
     set(oneValueArgs)
@@ -633,157 +551,56 @@ function(xxx_cmake_module_config)
     endforeach()
 endfunction()
 
+function(xxx_cmake_module_files)
+    xxx_cmake_module_config()
+    xxx_cmake_module_version()
+endfunction()
 
-# function(xxx_generate_cmake_module_files)
-#     require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_generate_cmake_module_files")
-#     require_variable(PROJECT_VERSION "PROJECT_VERSION must be defined before calling xxx_generate_cmake_module_files")
+# function(xxx_install_target target_name)
+#     require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_install_target")
+#     require_variable(CMAKE_INSTALL_LIBDIR "CMAKE_INSTALL_LIBDIR must be defined before calling xxx_install_target")
+#     require_variable(CMAKE_INSTALL_BINDIR "CMAKE_INSTALL_BINDIR must be defined before calling xxx_install_target")
+#     require_variable(CMAKE_INSTALL_INCLUDEDIR "CMAKE_INSTALL_INCLUDEDIR must be defined before calling xxx_install_target")
 
-#     get_property(packages GLOBAL PROPERTY _xxx_project_packages)
-#     if(NOT packages)
-#         message(STATUS "No dependencies found via xxx_find_package.")
+#     set(options)
+#     set(oneValueArgs EXPORT)
+#     set(multiValueArgs DEPENDS_ON)
+#     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+#     # Allow to skip find package
+#     set(skip False)
+#     foreach(cond ${arg_DEPENDS_ON})
+#         if(NOT ${${cond}})
+#             set(skip True)
+#             break()
+#         endif()
+#     endforeach()
+#     if(skip)
 #         return()
 #     endif()
 
-#     #set(${PROJECT_NAME}_INSTALL_CONFIGDIR ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+#     # List the properties of the target
+#     # get_target_property(type ${target_name} TYPE)
+#     # get_target_property(link_libraries ${target_name} LINK_LIBRARIES)
+#     # get_target_property(link_interface_libraries ${target_name} INTERFACE_LINK_LIBRARIES)
+#     # message(FATAL_ERROR "link_libraries: ${link_libraries} | link_interface_libraries: ${link_interface_libraries}")
 
-#     set(modules "")
-#     set(fd "")
-#     foreach(package_name ${packages})
-#         # Try to find the _xxx_<package_name>_expected_targets property
-#         get_property(expected_targets GLOBAL PROPERTY _xxx_${package_name}_expected_targets)
-#         get_property(find_package_args GLOBAL PROPERTY _xxx_${package_name}_find_package_args)
-#         get_property(module_path GLOBAL PROPERTY _xxx_${package_name}_module_path)
-#         string(REPLACE ";" " " find_package_args "${find_package_args}")
+#     if(NOT TARGET ${target_name})
+#         message(FATAL_ERROR "Target ${target_name} does not exist.")
+#     endif()
 
-#         # Custom Modules
-#         if(module_path)
-#             list(APPEND modules "list(APPEND CMAKE_MODULE_PATH \${CMAKE_CURRENT_LIST_DIR}/modules/${package_name})")
-#         endif()
+#     if(NOT arg_EXPORT)
+#         set(arg_EXPORT ${PROJECT_NAME}-targets)
+#     endif()
 
-#         # Find Dependencies
-#         if(NOT expected_targets)
-#             list(APPEND fd "find_dependency(${find_package_args})")
-#         else()
-#             set(cond "")
-#             foreach(target IN LISTS expected_targets)
-#                 if(cond STREQUAL "")
-#                     set(cond "NOT TARGET ${target}")
-#                 else()
-#                     set(cond "${cond} OR NOT TARGET ${target}")
-#                 endif()
-#             endforeach()
-
-#             list(APPEND fd
-# "if(${cond})
-#     find_dependency(${find_package_args})
-# endif()
-# ")
-#         endif()
-
-#         # # Custom Module file
-#         # set(module_file "${module_path}/Find${package_name}.cmake")
-#         # if(EXISTS "${module_file}")
-#         #     install(
-#         #         FILES ${module_file}
-#         #         DESTINATION ${${PROJECT_NAME}_INSTALL_CONFIGDIR}/modules/${package_name}/
-#         #     )
-#         # endif()
-
-#     endforeach()
-
-#     string(REPLACE ";" "\n" xxx_modules "${modules}")
-#     string(REPLACE ";" "\n" xxx_find_dependencies "${fd}")
-
-#     # <package>-targets.cmake
-#     # Note: generate the export targets for the build tree. Note: The file created by this command 
-#     # is specific to the build tree and should never be installed!
-#     export(EXPORT ${PROJECT_NAME}-targets
-#         FILE ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-targets.cmake
-#         NAMESPACE ${PROJECT_NAME}::
-#     )
-#     # Note: This needs to be done after all install(TARGETS ...) commands!
-#     # generate and install export targets file
-#     install(EXPORT ${PROJECT_NAME}-targets
-#         FILE ${PROJECT_NAME}-targets.cmake
-#         NAMESPACE ${PROJECT_NAME}::
-#         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-#     )
-
-#     # <package>-config.cmake
-#     configure_package_config_file(
-#         ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/config.cmake.in
-#         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
-#         INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-#         NO_SET_AND_CHECK_MACRO
-#         NO_CHECK_REQUIRED_COMPONENTS_MACRO
-#     )
-
-#     # <package>-version.cmake
-#     write_basic_package_version_file(
-#         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
-#         COMPATIBILITY AnyNewerVersion
-#     )
-
-#     # Install the 3 cmake module files
-#     # install(
-#     #     FILES
-#     #         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake
-#     #         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake
-#     #         ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-targets.cmake
-#     #     DESTINATION ${${PROJECT_NAME}_INSTALL_CONFIGDIR}
-#     # )
-#     install(
-#         DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}
-#         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake
-#         FILES_MATCHING PATTERN "*.cmake"
+#     install(TARGETS ${target_name}
+#         EXPORT ${arg_EXPORT}
+#         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+#         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 #     )
 # endfunction()
-
-function(xxx_install_target target_name)
-    require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_install_target")
-    require_variable(CMAKE_INSTALL_LIBDIR "CMAKE_INSTALL_LIBDIR must be defined before calling xxx_install_target")
-    require_variable(CMAKE_INSTALL_BINDIR "CMAKE_INSTALL_BINDIR must be defined before calling xxx_install_target")
-    require_variable(CMAKE_INSTALL_INCLUDEDIR "CMAKE_INSTALL_INCLUDEDIR must be defined before calling xxx_install_target")
-
-    set(options)
-    set(oneValueArgs EXPORT)
-    set(multiValueArgs DEPENDS_ON)
-    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-
-    # Allow to skip find package
-    set(skip False)
-    foreach(cond ${arg_DEPENDS_ON})
-        if(NOT ${${cond}})
-            set(skip True)
-            break()
-        endif()
-    endforeach()
-    if(skip)
-        return()
-    endif()
-
-    # List the properties of the target
-    # get_target_property(type ${target_name} TYPE)
-    # get_target_property(link_libraries ${target_name} LINK_LIBRARIES)
-    # get_target_property(link_interface_libraries ${target_name} INTERFACE_LINK_LIBRARIES)
-    # message(FATAL_ERROR "link_libraries: ${link_libraries} | link_interface_libraries: ${link_interface_libraries}")
-
-    if(NOT TARGET ${target_name})
-        message(FATAL_ERROR "Target ${target_name} does not exist.")
-    endif()
-
-    if(NOT arg_EXPORT)
-        set(arg_EXPORT ${PROJECT_NAME}-targets)
-    endif()
-
-    install(TARGETS ${target_name}
-        EXPORT ${arg_EXPORT}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-endfunction()
 
 # xxx_option(<option_name> <description> <default_value>)
 # Example: xxx_option(BUILD_TESTING "Build the tests" ON)

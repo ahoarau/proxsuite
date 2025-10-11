@@ -1,13 +1,13 @@
 # gersemi: off
 cmake_minimum_required(VERSION 3.22..4.1)
 
-# Usage: require_variable(<varname> [<message>])
+# Usage: require_variable(<var> [<message>])
 # Example: require_variable(MY_VAR "MY_VAR must be set to build this project")
 # Example: require_variable(MY_VAR) # Will print "MY_VAR is not defined."
-function(require_variable varname)
-    if(NOT DEFINED ${varname})
+function(require_variable var)
+    if(NOT DEFINED ${var})
         if(ARGC EQUAL 1)
-            set(msg "${ARGV0} is not defined.")
+            set(msg "Required variable '${ARGV0}' is not defined.")
         else()
             set(msg "${ARGV1}.")
         endif()
@@ -209,9 +209,9 @@ function(xxx_append_global_property property_name value)
     if(NOT prop)
         set(prop "")
     endif()
-    list(APPEND prop "${value}")
+    list(APPEND prop ${value})
     list(REMOVE_DUPLICATES prop)
-    set_property(GLOBAL PROPERTY ${property_name} "${prop}")
+    set_property(GLOBAL PROPERTY ${property_name} ${prop})
 endfunction()
 
 # Usage: xxx_find_package(<package> [version] [REQUIRED] [COMPONENTS ...] [EXPECTED_TARGETS <target1> <target2> ...])
@@ -224,7 +224,7 @@ function(xxx_find_package)
 
     set(options)
     set(oneValueArgs MODULE_PATH)
-    set(multiValueArgs EXPECTED_TARGETS DEPENDS_ON)    # Parse only EXPECTED_TARGET; leave everything else untouched
+    set(multiValueArgs EXPECTED_TARGETS)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
     # If all targets are already available, skip the find_package call)
@@ -273,15 +273,15 @@ function(xxx_find_package)
     foreach(target ${arg_EXPECTED_TARGETS})
         message("Checking for target '${target}'...")
         if(NOT TARGET ${target})
-            list(APPEND missing_targets "${target}")
+            list(APPEND missing_targets ${target})
             message("Checking for target '${target}'... ❌ not found.")
         else()
             message("Checking for target '${target}'... ✅ found.")
         endif()
     endforeach()
     if(missing_targets)
-        string(REPLACE ";" ", " missing_targets_pp "${missing_targets}")
-        message(SEND_ERROR "The following expected targets from package '${package_name}' are missing: ${missing_targets_pp}")
+        string(REPLACE ";" ", " missing_targets "${missing_targets}")
+        message(SEND_ERROR "The following expected targets from package '${package_name}' are missing: ${missing_targets}")
         return()
     endif()
 
@@ -350,26 +350,44 @@ function(xxx_export_dependencies)
     require_variable(arg_TARGETS)
     require_variable(arg_DESTINATION)
 
-    # Analyse the INTERFACE_LINK_LIBRARIES of each dependency to find the transitive dependencies
-    set(all_link_libraries "")
+    set(all_link_libraries_only_targets "")
     foreach(target ${arg_TARGETS})
-        get_target_property(link_libraries ${target} INTERFACE_LINK_LIBRARIES)
-        list(APPEND all_link_libraries ${link_libraries})
-        message("Linked libraries of target '${target}': ${link_libraries}")
+        # Note: On CMake 3.23, we have LINK_LIBRARIES_ONLY_TARGETS that might be useful
+        set(ll "")
+        get_target_property(interface_link_libraries ${target} INTERFACE_LINK_LIBRARIES)
+        list(APPEND ll ${interface_link_libraries})
+
+        get_target_property(link_libraries ${target} LINK_LIBRARIES)
+        list(APPEND ll ${link_libraries})
+        
+        message("Linked libraries of target '${target}':
+            LINK_LIBRARIES          : ${link_libraries}
+            INTERFACE_LINK_LIBRARIES: ${interface_link_libraries}
+        ")
+
+        # Filter only targets
+        set(link_libraries_only_targets "")
+        foreach(l ${ll})
+            if(TARGET ${l})
+                list(APPEND link_libraries_only_targets ${l})
+            endif()
+        endforeach()
+
+        list(APPEND all_link_libraries_only_targets ${link_libraries_only_targets})
     endforeach()
 
-    message("All link libraries of targets '${arg_TARGETS}': ${all_link_libraries}")
+    message("All link libraries of targets '${arg_TARGETS}': ${link_libraries_only_targets}")
 
     set(packages_to_export "")
-    foreach(lib ${all_link_libraries})
-        get_property(package_name GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${lib}_package_name)
+    foreach(target ${link_libraries_only_targets})
+        get_property(package_name GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${target}_package_name)
 
         if(NOT package_name)
             continue()
         endif()
 
-        message("Library '${lib}' comes from package '${package_name}'")
-        list(APPEND packages_to_export "${package_name}")
+        message("Library '${target}' comes from package '${package_name}'")
+        list(APPEND packages_to_export ${package_name})
     endforeach()
 
     message("Packages to export for EXPORT ${arg_EXPORT}: ${packages_to_export}")
@@ -461,9 +479,9 @@ function(xxx_declare_component)
     set(multiValueArgs TARGETS)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-    require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_declare_component")
-    require_variable(arg_TARGETS "TARGETS argument is required.")
-    require_variable(arg_COMPONENT "COMPONENT argument is required.")
+    require_variable(PROJECT_NAME)
+    require_variable(arg_TARGETS)
+    require_variable(arg_COMPONENT)
 
     # Check component is not already declared
     get_property(components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
@@ -471,9 +489,8 @@ function(xxx_declare_component)
         message(FATAL_ERROR "Component '${arg_COMPONENT}' is already declared for project '${PROJECT_NAME}'.")
     endif()
     
-    message("[${PROJECT_NAME}] Declaring component '${arg_COMPONENT}' with targets: ${arg_TARGETS}")
+    message("Declaring component '${arg_COMPONENT}' with targets: ${arg_TARGETS}")
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components ${arg_COMPONENT} APPEND)
-    #set_property(TARGET ${target} PROPERTY _xxx_${PROJECT_NAME}_components ${arg_COMPONENT} APPEND)
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${arg_COMPONENT}_targets ${arg_TARGETS})
 endfunction()
 
@@ -492,8 +509,6 @@ function(xxx_cmake_module_config)
         message(FATAL_ERROR "No components declared for project '${PROJECT_NAME}'.")
     endif()
 
-    string(REPLACE ";" " " xxx_project_components "${declared_components}")
-
     # NOTE: Expose as options if needed
     set(INPUT ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/config.cmake.in)
     set(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake)
@@ -502,6 +517,7 @@ function(xxx_cmake_module_config)
     set(NO_CHECK_REQUIRED_COMPONENTS_MACRO "NO_CHECK_REQUIRED_COMPONENTS_MACRO")
     set(NAMESPACE "${PROJECT_NAME}::")
     
+    string(REPLACE ";" " " xxx_project_components "${declared_components}")
     configure_package_config_file(
       ${INPUT}
       ${OUTPUT}
@@ -518,9 +534,7 @@ function(xxx_cmake_module_config)
         message("Generating cmake module files for component '${component}'")
         
         get_property(targets GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${component}_targets)
-        if(NOT targets)
-            message(FATAL_ERROR "No targets found for component '${component}'")
-        endif()
+        require_variable(targets)
 
         # <package>-<component>-dependencies.cmake
         xxx_export_dependencies(
@@ -606,19 +620,18 @@ endfunction()
 # Example: xxx_option(BUILD_TESTING "Build the tests" ON)
 # Override cmake option() to get a nice summary at the end of the configuration step
 function(xxx_option option_name description default_value)
+    require_variable(option_name)
+    require_variable(description)
+    require_variable(default_value)
+
+    # The call to the original option()
     option(${ARGV})
-    # Save the option into a global property for later summary
-    get_property(options GLOBAL PROPERTY _xxx_project_options)
-    if(NOT options)
-        set(options "")
-    endif()
+
     # Save the default value in a property
-    set_property(GLOBAL PROPERTY _xxx_${option_name}_default_value ${default_value})
+    set_property(GLOBAL PROPERTY _xxx_option_${option_name}_default_value ${default_value})
 
     # Save the option name in the list
-    list(APPEND options "${option_name}")
-    list(REMOVE_DUPLICATES options)
-    set_property(GLOBAL PROPERTY _xxx_project_options ${options})
+    set_property(GLOBAL PROPERTY _xxx_project_option_names ${option_name} APPEND)
 endfunction()
 
 # Helper function: pad or truncate a string to a fixed width
@@ -641,8 +654,8 @@ function(pad_string input width output_var)
 endfunction()
 
 function(xxx_print_option_summary)
-    get_property(options GLOBAL PROPERTY _xxx_project_options)
-    if(NOT options)
+    get_property(option_names GLOBAL PROPERTY _xxx_project_option_names)
+    if(NOT option_names)
         message(STATUS "No options defined via xxx_option.")
         return()
     endif()
@@ -659,13 +672,13 @@ function(xxx_print_option_summary)
     message( "${_menu_option} | ${_menu_type} | ${_menu_value} | ${_menu_description}")
     message( "------------------------------------------------------------------------------")
 
-    foreach(_opt ${options})
-        get_property(_type CACHE ${_opt} PROPERTY TYPE)
-        get_property(_val CACHE ${_opt} PROPERTY VALUE)
-        get_property(_default GLOBAL PROPERTY _xxx_${_opt}_default_value)
-        get_property(_help CACHE ${_opt} PROPERTY HELPSTRING)
+    foreach(option_name ${option_names})
+        get_property(_type CACHE ${option_name} PROPERTY TYPE)
+        get_property(_val CACHE ${option_name} PROPERTY VALUE)
+        get_property(_default GLOBAL PROPERTY _xxxoption_nameion_${option_name}_default_value)
+        get_property(_help CACHE ${option_name} PROPERTY HELPSTRING)
 
-        pad_string("${_opt}"      40 _name)
+        pad_string("${option_name}"      40 _name)
         pad_string("${_type}"     5 _type)
         pad_string("${_val}"      8 _val)
         pad_string("${_default}"  5 _default)

@@ -78,7 +78,7 @@ xxx_option(
 ############################################################
 
 # Eigen3
-xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED EXPECTED_TARGETS Eigen3::Eigen )
+xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED EXPECTED_TARGETS Eigen3::Eigen)
 
 # Catch2
 if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)

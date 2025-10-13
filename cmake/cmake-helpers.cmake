@@ -262,11 +262,25 @@ function(xxx_find_package)
     # Call find_package with the provided arguments
     string(REPLACE ";" " " fp_pp "${arg_UNPARSED_ARGUMENTS}")
     message("Executing find_package(${fp_pp})")
+    message("Expecting targets: ${arg_EXPECTED_TARGETS} to be present")
+
+    # Saving the list of imported targets before the call to find_package
+    get_property(_imported_targets_before DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
 
     # The actual call to find_package
     find_package(${arg_UNPARSED_ARGUMENTS})
 
     # TODO: handle QUIET
+
+    # Saving the list of imported targets after the call to find_package
+    get_property(_imported_targets_after DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
+    set(_new_targets "")
+    foreach(it IN LISTS _imported_targets_after)
+        if(NOT it IN_LIST _imported_targets_before)
+        list(APPEND _new_targets ${it})
+        endif()
+    endforeach()
+    message("(Detecting imported targets : ${_new_targets})")
 
     # Check if the expected targets are available
     set(missing_targets "")

@@ -128,3 +128,27 @@ add_dependencies(proxsuite-examples-cpp update_dense_qp)
 add_executable(update_sparse_qp update_sparse_qp.cpp)
 target_link_libraries(update_sparse_qp PRIVATE proxsuite)
 add_dependencies(proxsuite-examples-cpp update_sparse_qp)
+
+if(RUST_INTEGRATION_EXAMPLE)
+  include(FetchContent)
+
+  FetchContent_Declare(
+      corrosion
+      URL https://github.com/corrosion-rs/corrosion/archive/refs/tags/v0.5.2.zip
+      URL_HASH MD5=d66ba69824047c1faab49a78be02bae3
+  )
+  FetchContent_MakeAvailable(corrosion)
+  
+
+  FetchContent_Declare(
+    faer
+    GIT_REPOSITORY https://github.com/sarah-quinones/faer-rs
+    GIT_TAG main
+  )
+  FetchContent_MakeAvailable(faer)
+  message("faer source dir: ${faer_SOURCE_DIR}")
+  corrosion_import_crate(MANIFEST_PATH ${faer_SOURCE_DIR}/Cargo.toml)
+
+  add_executable(proxsuite-rust-integration-example PRIVATE rust_integration_example.cpp)
+  target_link_libraries(proxsuite-rust-integration-example PRIVATE faer)
+endif()

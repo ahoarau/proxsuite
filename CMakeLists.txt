@@ -27,7 +27,7 @@ xxx_option(BUILD_BENCHMARK "Build the benchmarks" ON)
 xxx_option(BUILD_DOCUMENTATION "Build the documentation." OFF)
 xxx_option(INSTALL_DOCUMENTATION "Install the documentation" OFF)
 xxx_option(INSTALL_HEADERS "Generate the install target" ON)
-
+xxx_option(RUST_INTEGRATION_EXAMPLE "Build the Rust integration example" OFF)
 xxx_option(BUILD_PYTHON_INTERFACE "Build the Python bindings" ON)
 xxx_option(INITIALIZE_EIGEN_WITH_NAN "Initialize Eigen objects with NAN values" ON)
 xxx_option(

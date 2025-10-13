@@ -67,10 +67,10 @@ endfunction()
 
 function(xxx_configure_default_install_dirs)
     include(GNUInstallDirs)
-    # On Windows, libraries are installed in the same directory as executables
-    if(WIN32)
-        set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_BINDIR} CACHE PATH "Installation directory for dlls" FORCE)
-    endif()
+    # # On Windows, libraries are installed in the same directory as executables
+    # if(WIN32)
+    #     set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_BINDIR} CACHE PATH "Installation directory for dlls" FORCE)
+    # endif()
 endfunction()
 
 
@@ -557,11 +557,16 @@ function(xxx_cmake_module_config)
             NAMESPACE ${NAMESPACE}
             DESTINATION ${DESTINATION}
         )
-        # HACK: Copy the generated targets file to the generated cmake directory, so that we can install all cmake files in one go
-        # ref: https://github.com/Kitware/CMake/blob/master/Source/cmInstallExportGenerator.cxx#L50-L58
-        string(MD5 destdir_hash ${DESTINATION})
-        set(generated_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${destdir_hash}/${PROJECT_NAME}-${component}-targets.cmake)
-        file(COPY ${generated_target_file} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
+        # # HACK: Copy the generated targets file to the generated cmake directory, so that we can install all cmake files in one go
+        # # ref: https://github.com/Kitware/CMake/blob/master/Source/cmInstallExportGenerator.cxx#L50-L58
+        # string(MD5 destdir_hash ${DESTINATION})
+        # set(generated_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${destdir_hash}/${PROJECT_NAME}-${component}-targets.cmake)
+        # if(EXISTS ${generated_target_file})
+        #     #message("Copying generated targets file '${generated_target_file}' to '${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}'")
+        #     #file(COPY ${generated_target_file} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
+        # else()
+        #     message(WARNING "Generated targets file '${generated_target_file}' does not exist.")
+        # endif()
     endforeach()
 endfunction()
 

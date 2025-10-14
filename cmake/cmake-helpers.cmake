@@ -457,35 +457,36 @@ function(xxx_export_dependencies)
     )
 endfunction()
 
-function(xxx_cmake_module_version)
-    set(options)
-    set(oneValueArgs)
-    set(multiValueArgs)
-    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+# NOTE: Do we need this function to be standalone ?
+# function(xxx_cmake_module_version)
+#     set(options)
+#     set(oneValueArgs)
+#     set(multiValueArgs)
+#     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-    include(CMakePackageConfigHelpers)
-    require_variable(PROJECT_NAME)
-    require_variable(PROJECT_VERSION)
+#     include(CMakePackageConfigHelpers)
+#     require_variable(PROJECT_NAME)
+#     require_variable(PROJECT_VERSION)
 
-    # NOTE: Expose as options if needed
-    set(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake)
-    set(VERSION ${PROJECT_VERSION})     # <major.minor.patch>
-    set(COMPATIBILITY AnyNewerVersion) # <AnyNewerVersion|SameMajorVersion|SameMinorVersion|ExactVersion>
-    set(ARCH_INDEPENDENT "")
-    set(DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
+#     # NOTE: Expose as options if needed
+#     set(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake)
+#     set(VERSION ${PROJECT_VERSION})     # <major.minor.patch>
+#     set(COMPATIBILITY AnyNewerVersion) # <AnyNewerVersion|SameMajorVersion|SameMinorVersion|ExactVersion>
+#     set(ARCH_INDEPENDENT "")
+#     set(DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
 
-    write_basic_package_version_file(
-      ${OUTPUT}
-      VERSION ${VERSION}
-      COMPATIBILITY ${COMPATIBILITY}
-      ${ARCH_INDEPENDENT}
-    )
+#     write_basic_package_version_file(
+#       ${OUTPUT}
+#       VERSION ${VERSION}
+#       COMPATIBILITY ${COMPATIBILITY}
+#       ${ARCH_INDEPENDENT}
+#     )
 
-    install(
-        FILES ${OUTPUT}
-        DESTINATION ${DESTINATION}
-    )
-endfunction()
+#     install(
+#         FILES ${OUTPUT}
+#         DESTINATION ${DESTINATION}
+#     )
+# endfunction()
 
 function(xxx_declare_component)
     set(options)
@@ -508,7 +509,7 @@ function(xxx_declare_component)
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${arg_COMPONENT}_targets ${arg_TARGETS})
 endfunction()
 
-function(xxx_cmake_module_config)
+function(xxx_generate_package_module_files)
     set(options)
     set(oneValueArgs)
     set(multiValueArgs)
@@ -516,6 +517,7 @@ function(xxx_cmake_module_config)
 
     include(CMakePackageConfigHelpers)
     require_variable(PROJECT_NAME)
+    require_variable(PROJECT_VERSION)
     require_variable(CMAKE_INSTALL_LIBDIR)
 
     get_property(declared_components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
@@ -524,20 +526,38 @@ function(xxx_cmake_module_config)
     endif()
 
     # NOTE: Expose as options if needed
-    set(INPUT ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/config.cmake.in)
-    set(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake)
+    set(PACKAGE_CONFIG_INPUT ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/config.cmake.in)
+    set(PACKAGE_CONFIG_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-config.cmake)
+    set(PACKAGE_VERSION ${PROJECT_VERSION})
+    set(PACKAGE_VERSION_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake)
+    set(PACKAGE_VERSION_COMPATIBILITY AnyNewerVersion)
+    set(PACKAGE_VERSION_ARCH_INDEPENDENT "")
     set(DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
     set(NO_SET_AND_CHECK_MACRO "NO_SET_AND_CHECK_MACRO")
     set(NO_CHECK_REQUIRED_COMPONENTS_MACRO "NO_CHECK_REQUIRED_COMPONENTS_MACRO")
     set(NAMESPACE "${PROJECT_NAME}::")
     
     string(REPLACE ";" " " xxx_project_components "${declared_components}")
+
+    # <package>-config.cmake
     configure_package_config_file(
-      ${INPUT}
-      ${OUTPUT}
+      ${PACKAGE_CONFIG_INPUT}
+      ${PACKAGE_CONFIG_OUTPUT}
       INSTALL_DESTINATION ${DESTINATION}
       ${NO_SET_AND_CHECK_MACRO}
       ${NO_CHECK_REQUIRED_COMPONENTS_MACRO}
+    )
+    install(
+        FILES ${PACKAGE_CONFIG_OUTPUT}
+        DESTINATION ${DESTINATION}
+    )
+
+    # <package>-version.cmake
+    write_basic_package_version_file(
+      ${PACKAGE_VERSION_OUTPUT}
+      VERSION ${PACKAGE_VERSION}
+      COMPATIBILITY ${PACKAGE_VERSION_COMPATIBILITY}
+      ${PACKAGE_VERSION_ARCH_INDEPENDENT}
     )
     install(
         FILES ${OUTPUT}
@@ -571,6 +591,8 @@ function(xxx_cmake_module_config)
             NAMESPACE ${NAMESPACE}
             DESTINATION ${DESTINATION}
         )
+        # FIXME: The generated files appear at the end of the configuration step, so we cannot copy them when we are executing this function
+        # Let's find a way to put a hook at the end of the configuration step
         # # HACK: Copy the generated targets file to the generated cmake directory, so that we can install all cmake files in one go
         # # ref: https://github.com/Kitware/CMake/blob/master/Source/cmInstallExportGenerator.cxx#L50-L58
         # string(MD5 destdir_hash ${DESTINATION})
@@ -583,57 +605,6 @@ function(xxx_cmake_module_config)
         # endif()
     endforeach()
 endfunction()
-
-function(xxx_cmake_module_files)
-    xxx_cmake_module_config()
-    xxx_cmake_module_version()
-endfunction()
-
-# function(xxx_install_target target_name)
-#     require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_install_target")
-#     require_variable(CMAKE_INSTALL_LIBDIR "CMAKE_INSTALL_LIBDIR must be defined before calling xxx_install_target")
-#     require_variable(CMAKE_INSTALL_BINDIR "CMAKE_INSTALL_BINDIR must be defined before calling xxx_install_target")
-#     require_variable(CMAKE_INSTALL_INCLUDEDIR "CMAKE_INSTALL_INCLUDEDIR must be defined before calling xxx_install_target")
-
-#     set(options)
-#     set(oneValueArgs EXPORT)
-#     set(multiValueArgs DEPENDS_ON)
-#     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-
-#     # Allow to skip find package
-#     set(skip False)
-#     foreach(cond ${arg_DEPENDS_ON})
-#         if(NOT ${${cond}})
-#             set(skip True)
-#             break()
-#         endif()
-#     endforeach()
-#     if(skip)
-#         return()
-#     endif()
-
-#     # List the properties of the target
-#     # get_target_property(type ${target_name} TYPE)
-#     # get_target_property(link_libraries ${target_name} LINK_LIBRARIES)
-#     # get_target_property(link_interface_libraries ${target_name} INTERFACE_LINK_LIBRARIES)
-#     # message(FATAL_ERROR "link_libraries: ${link_libraries} | link_interface_libraries: ${link_interface_libraries}")
-
-#     if(NOT TARGET ${target_name})
-#         message(FATAL_ERROR "Target ${target_name} does not exist.")
-#     endif()
-
-#     if(NOT arg_EXPORT)
-#         set(arg_EXPORT ${PROJECT_NAME}-targets)
-#     endif()
-
-#     install(TARGETS ${target_name}
-#         EXPORT ${arg_EXPORT}
-#         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-#         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-#         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-#     )
-# endfunction()
 
 # xxx_option(<option_name> <description> <default_value>)
 # Example: xxx_option(BUILD_TESTING "Build the tests" ON)
@@ -672,6 +643,9 @@ function(pad_string input width output_var)
     set(${output_var} "${_padded}" PARENT_SCOPE)
 endfunction()
 
+
+# Print all options defined via xxx_option() in a nice table
+# Usage: xxx_print_option_summary()
 function(xxx_print_option_summary)
     get_property(option_names GLOBAL PROPERTY _xxx_project_option_names)
     if(NOT option_names)
@@ -679,7 +653,6 @@ function(xxx_print_option_summary)
         return()
     endif()
 
-    # Prepare pretty output
     message( "")
     message( "================= Configuration Summary ======================================")
     message( "")    

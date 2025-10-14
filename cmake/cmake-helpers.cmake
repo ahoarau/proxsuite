@@ -127,8 +127,13 @@ function(xxx_target_generate_config_header target_name)
     install(FILES ${output_file} DESTINATION ${install_location})
 endfunction()
 
+# Enable the most common warnings for MSVC, GCC and Clang
+# Adding some extra warning on msvc to mimic gcc/clang behavior
+# Usage: xxx_target_set_standard_compile_options(<target_name> <visibility>)
+# visibility is either PRIVATE, PUBLIC or INTERFACE
+# Example: xxx_target_set_standard_compile_options(my_target INTERFACE)
 function(xxx_target_set_standard_compile_options target_name visibility)
-    # visibility is either PRIVATE, PUBLIC or INTERFACE
+
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT visibility IN_LIST vs)
         message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
@@ -141,45 +146,43 @@ function(xxx_target_set_standard_compile_options target_name visibility)
         set(CXX_COMPILER_ID "MSVC")
     endif()
 
-    if(CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_options(${target_name} ${visibility}
-            /W4 # Enable most warnings
+    target_compile_options(${target_name} ${visibility}
+        $<$<CXX_COMPILER_ID:MSVC>:
+            /W4     # Enable most warnings
             /wd4250 # "Inherits via dominance" - happens with diamond inheritance, not really an issue
             /wd4706 # assignment within conditional expression
             /wd5030 # pointer or reference to potentially throwing function used in noexcept context
             /wd4996 # function may be unsafe
             /we4834 # discarding return value of function with 'nodiscard' attribute
             /we4062 # enumerator 'xyz' in switch of enum 'abc' is not handled
-        )
-    elseif(CXX_COMPILER_ID STREQUAL "GNU" OR CXX_COMPILER_ID STREQUAL "Clang")
-        target_compile_options(${target_name} ${visibility}
-            -Wall   # Enable most warnings
-            -Wextra # Enable extra warnings
-            -Wconversion # Warn on type conversions that may lose information
-            -Wpedantic # Warn on non-standard C++ usage
-        )
-    endif()
+        >
+        $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:
+            -Wall           # Enable most warnings
+            -Wextra         # Enable extra warnings
+            -Wconversion    # Warn on type conversions that may lose information
+            -Wpedantic      # Warn on non-standard C++ usage
+        >
+    )
 endfunction()
 
 
 # Description: Enforce MSVC c++ conformance mode so msvc behaves more like gcc and clang
-function(xxx_target_enforce_msvc_conformance target_name)
-    if(NOT TARGET ${target_name})
-        message(FATAL_ERROR "Target ${target_name} does not exist.")
-    endif()
+# Usage: xxx_target_enforce_msvc_conformance(<target_name> <visibility>)
+# visibility is either PRIVATE, PUBLIC or INTERFACE
+# Example: xxx_target_enforce_msvc_conformance(my_target INTERFACE)
+function(xxx_target_enforce_msvc_conformance target_name visibility)
 
-    get_target_property(type ${target_name} TYPE)
-    set(visibility PRIVATE)
-    if(${type} STREQUAL "INTERFACE_LIBRARY")
-        set(visibility INTERFACE)
+    set(vs PRIVATE PUBLIC INTERFACE)
+    if(NOT visibility IN_LIST vs)
+        message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
     endif()
 
     target_compile_options(${target_name} ${visibility}
         $<$<CXX_COMPILER_ID:MSVC>:
-        /permissive-  # Standards conformance
+        /permissive-    # Standards conformance
         /Zc:__cplusplus # Needed to have __cplusplus set correctly
-        /EHsc  # Enable C++ exceptions standard conformance
-        /bigobj # To avoid "fatal error C1128: number of sections exceeded object file format limit"
+        /EHsc           # Enable C++ exceptions standard conformance
+        /bigobj         # To avoid "fatal error C1128: number of sections exceeded object file format limit"
         >
     )
 endfunction()
@@ -191,14 +194,10 @@ endfunction()
 # visibility is either PRIVATE, PUBLIC or INTERFACE
 # Example: xxx_target_treat_all_warnings_as_errors(my_target PRIVATE)
 function(xxx_target_treat_all_warnings_as_errors target_name visibility)
-    # visibility is either PRIVATE, PUBLIC or INTERFACE
+
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT visibility IN_LIST vs)
         message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
-    endif()
-
-    if(NOT TARGET ${target_name})
-        message(FATAL_ERROR "Target ${target_name} does not exist.")
     endif()
 
     target_compile_options(${target_name} ${visibility}

@@ -326,8 +326,7 @@ endfunction()
 function(xxx_print_dependency_summary)
     include(CMakePrintHelpers)
 
-    # Get the list of packages found via xxx_find_package via the global property _xxx_project_packages
-    get_property(packages GLOBAL PROPERTY _xxx_project_packages)
+    get_property(packages GLOBAL PROPERTY _xxx_${PROJECT_NAME}_packages_found)
     if(NOT packages)
         message(STATUS "No dependencies found via xxx_find_package.")
         return()

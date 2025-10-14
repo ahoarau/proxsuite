@@ -251,5 +251,5 @@ endif()
 
 xxx_generate_package_module_files()
 
-#xxx_print_dependency_summary()
-#xxx_print_option_summary()
+xxx_print_dependency_summary()
+xxx_print_option_summary()

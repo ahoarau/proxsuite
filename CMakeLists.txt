@@ -26,6 +26,8 @@ xxx_option(BUILD_EXAMPLES "Build the examples" ON)
 xxx_option(BUILD_BENCHMARK "Build the benchmarks" ON)
 xxx_option(BUILD_DOCUMENTATION "Build the documentation." OFF)
 xxx_option(BUILD_MAROS_MESZAROS_TESTS "Build the Maros-Meszaros tests, needs matio library" ON)
+xxx_option(ENABLE_WARNINGS "Enable warnings during compilation" OFF)
+xxx_option(ENABLE_WARNINGS_AS_ERRORS "Treat all warnings as errors" OFF)
 xxx_option(BUILD_PYTHON_INTERFACE "Build the Python bindings" ON)
 xxx_option(INSTALL_DOCUMENTATION "Install the documentation" OFF)
 xxx_option(INSTALL_HEADERS "Generate the install target" ON)
@@ -159,8 +161,13 @@ target_include_directories(
 
 xxx_target_generate_config_header(proxsuite)
 
-# xxx_target_set_standard_compile_options(proxsuite INTERFACE)
-# xxx_target_treat_all_warnings_as_errors(proxsuite INTERFACE)
+if(ENABLE_WARNINGS)
+  xxx_target_set_standard_compile_options(proxsuite INTERFACE)
+endif()
+
+if(ENABLE_WARNINGS_AS_ERRORS)
+  xxx_target_treat_all_warnings_as_errors(proxsuite INTERFACE)
+endif()
 
 target_compile_definitions(
   proxsuite

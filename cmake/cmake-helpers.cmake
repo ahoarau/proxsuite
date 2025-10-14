@@ -193,6 +193,7 @@ endfunction()
 # Usage: xxx_target_treat_all_warnings_as_errors(<target_name> <visibility>)
 # visibility is either PRIVATE, PUBLIC or INTERFACE
 # Example: xxx_target_treat_all_warnings_as_errors(my_target PRIVATE)
+# NOTE: in CMake 3.24, we have the new CMAKE_COMPILE_WARNING_AS_ERROR option, but for the whole project and subprojects
 function(xxx_target_treat_all_warnings_as_errors target_name visibility)
 
     set(vs PRIVATE PUBLIC INTERFACE)

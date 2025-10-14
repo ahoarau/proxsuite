@@ -143,10 +143,6 @@ if(BUILD_DOCUMENTATION AND PROJECT_IS_TOP_LEVEL)
   xxx_find_package(Doxygen REQUIRED COMPONENTS dot EXPECTED_TARGETS Doxygen::Doxygen Doxygen::dot)
 endif()
 
-
-get_property(packages_found GLOBAL PROPERTY _xxx_${PROJECT_NAME}_packages_found)
-message(STATUS "[proxsuite] Packages found: ${packages_found}")
-
 ############################################################
 ############################################################
 

@@ -159,7 +159,7 @@ target_include_directories(
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-xxx_target_generate_config_header(proxsuite)
+xxx_target_generate_config_header(proxsuite INTERFACE)
 
 if(ENABLE_WARNINGS)
   xxx_target_set_standard_compile_options(proxsuite INTERFACE)

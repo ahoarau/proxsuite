@@ -161,6 +161,8 @@ function(xxx_target_set_standard_compile_options target_name visibility)
     endif()
 endfunction()
 
+
+# Description: Enforce MSVC c++ conformance mode so msvc behaves more like gcc and clang
 function(xxx_target_enforce_msvc_conformance target_name)
     if(NOT TARGET ${target_name})
         message(FATAL_ERROR "Target ${target_name} does not exist.")

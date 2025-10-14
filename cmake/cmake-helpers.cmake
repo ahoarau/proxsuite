@@ -199,15 +199,10 @@ function(xxx_target_treat_all_warnings_as_errors target_name visibility)
         message(FATAL_ERROR "Target ${target_name} does not exist.")
     endif()
 
-    if(CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_options(${target_name} ${visibility}
-            /WX # Treat all warnings as errors
-        )
-    elseif(CXX_COMPILER_ID STREQUAL "GNU" OR CXX_COMPILER_ID STREQUAL "Clang")
-        target_compile_options(${target_name} ${visibility}
-            -Werror # Treat all warnings as errors
-        )
-    endif()
+    target_compile_options(${target_name} ${visibility}
+        $<$<CXX_COMPILER_ID:MSVC>:/WX>
+        $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-Werror>
+    )
 endfunction()
 
 function(xxx_append_global_property property_name value)

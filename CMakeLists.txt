@@ -152,7 +152,7 @@ message(STATUS "[proxsuite] Packages found: ${packages_found}")
 
 add_library(proxsuite INTERFACE)
 target_compile_features(proxsuite INTERFACE cxx_std_17)
-xxx_target_enforce_msvc_conformance(proxsuite)
+xxx_target_enforce_msvc_conformance(proxsuite INTERFACE)
 
 target_include_directories(
   proxsuite
@@ -163,7 +163,7 @@ target_include_directories(
 
 xxx_target_generate_config_header(proxsuite)
 
-# xxx_target_set_standard_compile_options(proxsuite INTERFACE)
+#xxx_target_set_standard_compile_options(proxsuite INTERFACE)
 # xxx_target_treat_all_warnings_as_errors(proxsuite INTERFACE)
 
 target_compile_definitions(

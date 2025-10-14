@@ -56,7 +56,9 @@ if(BUILD_WITH_SERIALIZATION)
   target_compile_definitions(proxsuite-test-cpp-serialization PRIVATE TEST_SERIALIZATION_FOLDER="${CMAKE_BINARY_DIR}/serialization-data")
 endif()
 
-proxsuite_add_test(NAME proxsuite-test-cpp-dense-maros_meszaros SOURCES src/dense_maros_meszaros.cpp INCLUDE_DIRECTORIES include LINK_LIBRARIES proxsuite matio::matio)
-target_compile_definitions(proxsuite-test-cpp-dense-maros_meszaros PRIVATE MAROS_MESZAROS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/maros_meszaros_data/")
+if(BUILD_MAROS_MESZAROS_TESTS)
+  proxsuite_add_test(NAME proxsuite-test-cpp-dense-maros_meszaros SOURCES src/dense_maros_meszaros.cpp INCLUDE_DIRECTORIES include LINK_LIBRARIES proxsuite matio::matio)
+  target_compile_definitions(proxsuite-test-cpp-dense-maros_meszaros PRIVATE MAROS_MESZAROS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/maros_meszaros_data/")
+endif()
 
 # gersemi: on

@@ -25,10 +25,10 @@ xxx_option(BUILD_TESTING "Build the tests" ON)
 xxx_option(BUILD_EXAMPLES "Build the examples" ON)
 xxx_option(BUILD_BENCHMARK "Build the benchmarks" ON)
 xxx_option(BUILD_DOCUMENTATION "Build the documentation." OFF)
+xxx_option(BUILD_MAROS_MESZAROS_TESTS "Build the Maros-Meszaros tests, needs matio library" ON)
+xxx_option(BUILD_PYTHON_INTERFACE "Build the Python bindings" ON)
 xxx_option(INSTALL_DOCUMENTATION "Install the documentation" OFF)
 xxx_option(INSTALL_HEADERS "Generate the install target" ON)
-
-xxx_option(BUILD_PYTHON_INTERFACE "Build the Python bindings" ON)
 xxx_option(INITIALIZE_EIGEN_WITH_NAN "Initialize Eigen objects with NAN values" ON)
 xxx_option(
   CHECK_RUNTIME_MALLOC
@@ -126,7 +126,7 @@ if(BUILD_WITH_VECTORIZATION_SUPPORT)
 endif()
 
 # matio
-if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
+if(BUILD_MAROS_MESZAROS_TESTS AND BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
   xxx_find_package(matio REQUIRED
     MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/matio
     EXPECTED_TARGETS matio::matio

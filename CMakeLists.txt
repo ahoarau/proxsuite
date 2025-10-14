@@ -163,7 +163,7 @@ target_include_directories(
 
 xxx_target_generate_config_header(proxsuite)
 
-#xxx_target_set_standard_compile_options(proxsuite INTERFACE)
+# xxx_target_set_standard_compile_options(proxsuite INTERFACE)
 # xxx_target_treat_all_warnings_as_errors(proxsuite INTERFACE)
 
 target_compile_definitions(
@@ -229,7 +229,21 @@ if(INSTALL_HEADERS)
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING
     PATTERN "*.hpp"
+    PATTERN "serialization/*" EXCLUDE
   )
+
+  # Install header per components.
+  # standard: everything except the vectorized headers and serialization
+  if(BUILD_WITH_VECTORIZATION_SUPPORT)
+    install(
+      DIRECTORY ${PROJECT_SOURCE_DIR}/include/serialization
+      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+      FILES_MATCHING 
+      PATTERN "*.hpp"
+    )
+  endif()
+
+
 endif()
 
 xxx_generate_package_module_files()

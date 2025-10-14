@@ -182,6 +182,12 @@ function(xxx_target_enforce_msvc_conformance target_name)
     )
 endfunction()
 
+# Description: Treat all warnings as errors for a targets (/WX for MSVC, -Werror for GCC/Clang)
+# Can be disabled by on the cmake cli with --compile-no-warning-as-error 
+# ref: https://cmake.org/cmake/help/latest/manual/cmake.1.html#cmdoption-cmake-compile-no-warning-as-error
+# Usage: xxx_target_treat_all_warnings_as_errors(<target_name> <visibility>)
+# visibility is either PRIVATE, PUBLIC or INTERFACE
+# Example: xxx_target_treat_all_warnings_as_errors(my_target PRIVATE)
 function(xxx_target_treat_all_warnings_as_errors target_name visibility)
     # visibility is either PRIVATE, PUBLIC or INTERFACE
     set(vs PRIVATE PUBLIC INTERFACE)

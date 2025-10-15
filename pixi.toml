@@ -32,6 +32,8 @@ cmd = [
   "-S", ".",
   "-B", "build/RelWithDebInfo",
   "-G", "Ninja",
+  "--profiling-output=build/RelWithDebInfo/cmake-profiling.json",
+  "--profiling-format=google-trace",
   "-DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX",
   "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
   "-DBUILD_WITH_VECTORIZATION_SUPPORT=ON",

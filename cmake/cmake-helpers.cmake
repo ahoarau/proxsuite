@@ -749,20 +749,29 @@ function(xxx_generate_package_module_files)
             NAMESPACE ${NAMESPACE}
             DESTINATION ${DESTINATION}
         )
-        # FIXME: The generated files appear at the end of the configuration step, so we cannot copy them when we are executing this function
-        # Let's find a way to put a hook at the end of the configuration step
-        # # HACK: Copy the generated targets file to the generated cmake directory, so that we can install all cmake files in one go
-        # # ref: https://github.com/Kitware/CMake/blob/master/Source/cmInstallExportGenerator.cxx#L50-L58
-        # string(MD5 destdir_hash ${DESTINATION})
-        # set(generated_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${destdir_hash}/${PROJECT_NAME}-${component}-targets.cmake)
-        # if(EXISTS ${generated_target_file})
-        #     #message("Copying generated targets file '${generated_target_file}' to '${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}'")
-        #     #file(COPY ${generated_target_file} DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
-        # else()
-        #     message(WARNING "Generated targets file '${generated_target_file}' does not exist.")
-        # endif()
+
+        # HACK: Copy the generated targets file to the generated cmake directory, so that we can install all cmake files in one go
+        # ref: https://github.com/Kitware/CMake/blob/master/Source/cmInstallExportGenerator.cxx#L50-L58
+        string(MD5 destdir_hash ${DESTINATION})
+        set(generated_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${destdir_hash}/${PROJECT_NAME}-${component}-targets.cmake)
+        set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_generated_target_file ${generated_target_file} APPEND)
+        cmake_language(DEFER DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} CALL _xxx_copy_generated_target_files())
     endforeach()
 endfunction()
+
+# Copy all generated target files accumulated in the _xxx_<project>_generated_target_file property
+# cf: function xxx_generate_package_module_files()
+# note: this function is called via cmake_language(DEFER ...)
+# /!\ DO NOT CALL THIS FUNCTION DIRECTLY /!\
+function(_xxx_copy_generated_target_files)
+    get_property(generated_files GLOBAL PROPERTY _xxx_${PROJECT_NAME}_generated_target_file)
+    set(destination ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME})
+    foreach(f ${generated_files})
+        message(DEBUG "Copying generated targets file '${f}' to '${destination}'")
+        file(COPY ${f} DESTINATION ${destination})
+    endforeach()
+endfunction()
+
 
 # xxx_option(<option_name> <description> <default_value>)
 # Example: xxx_option(BUILD_TESTING "Build the tests" ON)

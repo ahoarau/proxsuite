@@ -15,6 +15,13 @@ function(require_variable var)
     endif()
 endfunction()
 
+# Check if a target exists, otherwise raise a fatal error
+function(require_target target_name)
+    if(NOT TARGET ${target_name})
+        message(FATAL_ERROR "Target '${target_name}' does not exist.")
+    endif()
+endfunction()
+
 # Usage: xxx_configure_default_build_type(<default_build_type>)
 # Valid values for <default_build_type> are: Debug, Release, MinSizeRel, RelWithDebInfo
 # Example: xxx_configure_default_build_type(RelWithDebInfo)
@@ -108,10 +115,7 @@ function(xxx_target_generate_config_header target_name visibility)
         message(FATAL_ERROR "Target ${target_name} does not exist.")
     endif()
 
-    # The generated header file location in the build directory
     set(default_output_file ${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/config.hpp)
-
-    # The default install destination
     set(default_install_destination ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
     # We need PROJECT_NAME in uppercase to match the maestro convention for macro names
@@ -525,10 +529,143 @@ function(xxx_declare_component)
         endforeach()
     endforeach()
     
-
     message("Declaring component '${arg_COMPONENT}' with targets: ${arg_TARGETS}")
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components ${arg_COMPONENT} APPEND)
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${arg_COMPONENT}_targets ${arg_TARGETS})
+endfunction()
+
+# Declare headers for target (to be installed later)
+# xxx_target_headers(<target>
+#   HEADERS <list_of_headers>
+#   BASE_DIRS <list_of_base_dirs> # Optional, default is empty
+# )
+function(xxx_target_headers target)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs HEADERS BASE_DIRS)
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+    require_variable(arg_HEADERS)
+    require_target(${target})
+
+    if(NOT arg_BASE_DIRS)
+        set(arg_BASE_DIRS "")
+    endif()
+
+    # Save the headers in a property of the target
+    set_property(TARGET ${target} PROPERTY _xxx_headers "${arg_HEADERS}")
+    set_property(TARGET ${target} PROPERTY _xxx_header_base_dirs "${arg_BASE_DIRS}")
+endfunction()
+
+function(xxx_target_install_headers target)
+    set(options)
+    set(oneValueArgs DESTINATION)
+    set(multiValueArgs)
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+    
+    require_target(${target})
+    
+    if(NOT arg_DESTINATION)
+        set(install_destination ${CMAKE_INSTALL_INCLUDEDIR})
+    else()
+        set(install_destination ${arg_DESTINATION})
+    endif()
+
+    # Retrieve headers and base directories from target properties
+    get_property(headers TARGET ${target} PROPERTY _xxx_headers)
+    get_property(base_dirs TARGET ${target} PROPERTY _xxx_header_base_dirs)
+    
+    if(NOT headers)
+        message(WARNING "No headers declared for target '${target}'. Use xxx_target_headers() first.")
+        return()
+    endif()
+
+    # Install headers, preserving directory structure
+    foreach(header ${headers})
+        cmake_path(IS_ABSOLUTE header is_abs)
+        message("HEADER '${header}' is absolute ?: ${is_abs}")
+        if(is_abs)
+            message(FATAL_ERROR "Header '${header}' is an absolute path. It should be a relative path to the source directory.")
+        endif()
+
+        # Determine the relative path from base_dirs
+        set(relative_path "")
+        foreach(base_dir ${base_dirs})
+            message("Checking if header '${header}' is under base dir '${base_dir}'")
+            string(FIND ${header} ${base_dir} pos)
+            if(pos EQUAL 0)
+                # base_dir is a prefix of header
+                string(REPLACE ${base_dir} "" relative_path ${header})
+                # Remove leading '/' or '\' if present
+                string(REGEX REPLACE "^[\\/]" "" relative_path ${relative_path})
+                message("Header '${header}' is under base dir '${base_dir}', relative path is '${relative_path}'.")
+                break()
+            else()
+                message("Header '${header}' is NOT under base dir '${base_dir}'.")
+            endif()
+        endforeach()
+        
+        if(relative_path)
+            get_filename_component(header_dir ${relative_path} DIRECTORY)
+            message("           HEADER_DIR '${header_dir}'")
+            cmake_path(GET relative_path PARENT_PATH header_dir)
+            message("           HEADER_DIR '${header_dir}'")
+
+            install(FILES ${header} DESTINATION ${install_destination}/${header_dir})
+        else()
+            # No base directory matched, install without subdirectory
+            install(FILES ${header} DESTINATION ${install_destination})
+        endif()
+    endforeach()
+endfunction()
+
+function(xxx_install_headers)
+    set(options)
+    set(oneValueArgs DESTINATION)
+    set(multiValueArgs COMPONENTS)
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+
+    require_variable(PROJECT_NAME)
+
+    if(arg_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unrecognized arguments: ${arg_UNPARSED_ARGUMENTS}")
+    endif()
+
+    if(NOT arg_DESTINATION)
+        set(install_destination ${CMAKE_INSTALL_INCLUDEDIR})
+    else()
+        set(install_destination ${arg_DESTINATION})
+    endif()
+
+    get_property(declared_components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
+
+    set(components "")
+    if(arg_COMPONENTS)
+        set(components ${arg_COMPONENTS})
+    else()
+        if(NOT declared_components)
+            message(FATAL_ERROR "No components declared for project '${PROJECT_NAME}'. Cannot install headers. Use xxx_declare_component() first.")
+        endif()
+        set(components ${declared_components})
+        message("No components specified, installing headers for all declared components. Declared components: ${declared_components}")
+    endif()
+
+    foreach(component ${components})
+        if(NOT component IN_LIST declared_components)
+            message(FATAL_ERROR "Component '${component}' is not declared for project '${PROJECT_NAME}'.")
+        endif()
+
+        get_property(targets GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${component}_targets)
+        if(NOT targets)
+            message(WARNING "No targets found for component '${component}'. Skipping.")
+            continue()
+        endif()
+
+        foreach(target ${targets})
+            message("Installing headers for target '${target}' of component '${component}' to '${install_destination}'")
+            xxx_target_install_headers(${target} DESTINATION ${install_destination})
+        endforeach()
+    endforeach()
 endfunction()
 
 function(xxx_generate_package_module_files)
@@ -590,7 +727,6 @@ function(xxx_generate_package_module_files)
         message("Generating cmake module files for component '${component}'")
         
         get_property(targets GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${component}_targets)
-        require_variable(targets)
 
         # <package>-<component>-dependencies.cmake
         xxx_export_dependencies(
@@ -689,7 +825,7 @@ function(xxx_print_option_summary)
     foreach(option_name ${option_names})
         get_property(_type CACHE ${option_name} PROPERTY TYPE)
         get_property(_val CACHE ${option_name} PROPERTY VALUE)
-        get_property(_default GLOBAL PROPERTY _xxxoption_nameion_${option_name}_default_value)
+        get_property(_default GLOBAL PROPERTY _xxx_option_${option_name}_default_value)
         get_property(_help CACHE ${option_name} PROPERTY HELPSTRING)
 
         pad_string("${option_name}"      40 _name)

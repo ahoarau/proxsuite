@@ -185,10 +185,6 @@ if(BUILD_WITH_OPENMP_SUPPORT)
   target_link_libraries(proxsuite INTERFACE OpenMP::OpenMP_CXX)
 endif()
 
-if(BUILD_WITH_SERIALIZATION)
-  target_link_libraries(proxsuite INTERFACE cereal::cereal)
-endif()
-
 if(BUILD_PYTHON_INTERFACE)
   add_subdirectory(bindings/python)
 endif()
@@ -198,6 +194,12 @@ if(BUILD_WITH_VECTORIZATION_SUPPORT)
   add_library(proxsuite::proxsuite-vectorized ALIAS proxsuite-vectorized)
   target_link_libraries(proxsuite-vectorized INTERFACE proxsuite simde::simde)
   target_compile_definitions(proxsuite-vectorized INTERFACE PROXSUITE_VECTORIZE)
+endif()
+
+if(BUILD_WITH_SERIALIZATION)
+  add_library(proxsuite-serialization INTERFACE)
+  add_library(proxsuite::proxsuite-serialization ALIAS proxsuite-serialization)
+  target_link_libraries(proxsuite-serialization INTERFACE proxsuite cereal::cereal)
 endif()
 
 if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
@@ -220,36 +222,147 @@ if(BUILD_DOCUMENTATION AND PROJECT_IS_TOP_LEVEL)
   add_subdirectory(doc)
 endif()
 
-xxx_declare_component(TARGETS proxsuite COMPONENT standard)
+xxx_declare_component(TARGETS proxsuite COMPONENT proxsuite)
 
 if(BUILD_WITH_VECTORIZATION_SUPPORT)
   xxx_declare_component(TARGETS proxsuite-vectorized COMPONENT vectorized)
 endif()
 
-if(INSTALL_HEADERS)
-  install(
-    DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING
-    PATTERN "*.hpp"
-    PATTERN "serialization/*" EXCLUDE
-  )
-
-  # Install header per components.
-  # standard: everything except the vectorized headers and serialization
-  if(BUILD_WITH_VECTORIZATION_SUPPORT)
-    install(
-      DIRECTORY ${PROJECT_SOURCE_DIR}/include/serialization
-      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-      FILES_MATCHING 
-      PATTERN "*.hpp"
-    )
-  endif()
-
-
+if(BUILD_WITH_SERIALIZATION)
+  xxx_declare_component(TARGETS proxsuite-serialization COMPONENT serialization)
 endif()
+
+# if(INSTALL_HEADERS)
+#   install(
+#     DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#     FILES_MATCHING
+#     PATTERN "*.hpp"
+#     PATTERN "serialization/*" EXCLUDE
+#   )
+
+#   # Install header per components.
+#   # proxsuite: everything except the vectorized headers and serialization
+#   if(BUILD_WITH_VECTORIZATION_SUPPORT)
+#     install(
+#       DIRECTORY ${PROJECT_SOURCE_DIR}/include/serialization
+#       DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#       FILES_MATCHING 
+#       PATTERN "*.hpp"
+#     )
+#   endif()
+
+
+# endif()
+
+xxx_target_headers(proxsuite
+  HEADERS
+    include/proxsuite/helpers/common.hpp
+    include/proxsuite/helpers/instruction-set.hpp
+    include/proxsuite/helpers/optional.hpp
+    include/proxsuite/helpers/version.hpp
+    include/proxsuite/linalg/dense/core.hpp
+    include/proxsuite/linalg/dense/factorize.hpp
+    include/proxsuite/linalg/dense/ldlt.hpp
+    include/proxsuite/linalg/dense/modify.hpp
+    include/proxsuite/linalg/dense/solve.hpp
+    include/proxsuite/linalg/dense/update.hpp
+    include/proxsuite/linalg/sparse/core.hpp
+    include/proxsuite/linalg/sparse/factorize.hpp
+    include/proxsuite/linalg/sparse/rowmod.hpp
+    include/proxsuite/linalg/sparse/update.hpp
+    include/proxsuite/linalg/veg/internal/external/hedley.ext.hpp
+    include/proxsuite/linalg/veg/internal/external/unhedley.ext.hpp
+    include/proxsuite/linalg/veg/internal/assert_impl.hpp
+    include/proxsuite/linalg/veg/internal/collection_algo.hpp
+    include/proxsuite/linalg/veg/internal/dbg.hpp
+    include/proxsuite/linalg/veg/internal/delete_special_members.hpp
+    include/proxsuite/linalg/veg/internal/dyn_index.hpp
+    include/proxsuite/linalg/veg/internal/epilogue.hpp
+    include/proxsuite/linalg/veg/internal/fix_index.hpp
+    include/proxsuite/linalg/veg/internal/has_asan.hpp
+    include/proxsuite/linalg/veg/internal/integer_seq.hpp
+    include/proxsuite/linalg/veg/internal/macros.hpp
+    include/proxsuite/linalg/veg/internal/narrow.hpp
+    include/proxsuite/linalg/veg/internal/preprocessor.hpp
+    include/proxsuite/linalg/veg/internal/prologue.hpp
+    include/proxsuite/linalg/veg/internal/std.hpp
+    include/proxsuite/linalg/veg/internal/terminate.hpp
+    include/proxsuite/linalg/veg/internal/typedefs.hpp
+    include/proxsuite/linalg/veg/memory/address.hpp
+    include/proxsuite/linalg/veg/memory/alloc.hpp
+    include/proxsuite/linalg/veg/memory/dynamic_stack.hpp
+    include/proxsuite/linalg/veg/memory/placement.hpp
+    include/proxsuite/linalg/veg/memory/stack_alloc.hpp
+    include/proxsuite/linalg/veg/type_traits/alloc.hpp
+    include/proxsuite/linalg/veg/type_traits/assignable.hpp
+    include/proxsuite/linalg/veg/type_traits/constructible.hpp
+    include/proxsuite/linalg/veg/type_traits/core.hpp
+    include/proxsuite/linalg/veg/type_traits/invocable.hpp
+    include/proxsuite/linalg/veg/type_traits/primitives.hpp
+    include/proxsuite/linalg/veg/type_traits/tags.hpp
+    include/proxsuite/linalg/veg/util/assert.hpp
+    include/proxsuite/linalg/veg/util/dbg.hpp
+    include/proxsuite/linalg/veg/util/defer.hpp
+    include/proxsuite/linalg/veg/util/dynstack_alloc.hpp
+    include/proxsuite/linalg/veg/util/get.hpp
+    include/proxsuite/linalg/veg/util/index.hpp
+    include/proxsuite/linalg/veg/util/unreachable.hpp
+    include/proxsuite/linalg/veg/ref.hpp
+    include/proxsuite/linalg/veg/slice.hpp
+    include/proxsuite/linalg/veg/tuple.hpp
+    include/proxsuite/linalg/veg/vec.hpp
+    include/proxsuite/proxqp/dense/preconditioner/identity.hpp
+    include/proxsuite/proxqp/dense/preconditioner/ruiz.hpp
+    include/proxsuite/proxqp/dense/backward_data.hpp
+    include/proxsuite/proxqp/dense/compute_ECJ.hpp
+    include/proxsuite/proxqp/dense/dense.hpp
+    include/proxsuite/proxqp/dense/fwd.hpp
+    include/proxsuite/proxqp/dense/helpers.hpp
+    include/proxsuite/proxqp/dense/linesearch.hpp
+    include/proxsuite/proxqp/dense/model.hpp
+    include/proxsuite/proxqp/dense/solver.hpp
+    include/proxsuite/proxqp/dense/utils.hpp
+    include/proxsuite/proxqp/dense/views.hpp
+    include/proxsuite/proxqp/dense/workspace.hpp
+    include/proxsuite/proxqp/dense/wrapper.hpp
+    include/proxsuite/proxqp/parallel/omp.hpp
+    include/proxsuite/proxqp/parallel/qp_solve.hpp
+    include/proxsuite/proxqp/sparse/fwd.hpp
+    include/proxsuite/proxqp/sparse/helpers.hpp
+    include/proxsuite/proxqp/sparse/model.hpp
+    include/proxsuite/proxqp/sparse/solver.hpp
+    include/proxsuite/proxqp/sparse/sparse.hpp
+    include/proxsuite/proxqp/sparse/utils.hpp
+    include/proxsuite/proxqp/sparse/views.hpp
+    include/proxsuite/proxqp/sparse/workspace.hpp
+    include/proxsuite/proxqp/sparse/wrapper.hpp
+    include/proxsuite/proxqp/utils/prints.hpp
+    include/proxsuite/proxqp/utils/random_qp_problems.hpp
+    include/proxsuite/proxqp/results.hpp
+    include/proxsuite/proxqp/settings.hpp
+    include/proxsuite/proxqp/status.hpp
+    include/proxsuite/proxqp/timings.hpp
+    include/proxsuite/fwd.hpp
+  BASE_DIRS include
+)
+
+xxx_target_headers(proxsuite-serialization
+  HEADERS
+    include/proxsuite/serialization/archive.hpp
+    include/proxsuite/serialization/eigen.hpp
+    include/proxsuite/serialization/model.hpp
+    include/proxsuite/serialization/results.hpp
+    include/proxsuite/serialization/ruiz.hpp
+    include/proxsuite/serialization/settings.hpp
+    include/proxsuite/serialization/workspace.hpp
+    include/proxsuite/serialization/wrapper.hpp
+  BASE_DIRS include
+)
+
+xxx_install_headers()
 
 xxx_generate_package_module_files()
 
-xxx_print_dependency_summary()
-xxx_print_option_summary()
+# xxx_print_dependency_summary()
+# xxx_print_option_summary()

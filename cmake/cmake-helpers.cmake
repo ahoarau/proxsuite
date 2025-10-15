@@ -576,14 +576,12 @@ function(xxx_target_install_headers target)
     get_property(base_dirs TARGET ${target} PROPERTY _xxx_header_base_dirs)
     
     if(NOT headers)
-        message(WARNING "No headers declared for target '${target}'. Use xxx_target_headers() first.")
         return()
     endif()
 
     # Install headers, preserving directory structure
     foreach(header ${headers})
         cmake_path(IS_ABSOLUTE header is_abs)
-        message("HEADER '${header}' is absolute ?: ${is_abs}")
         if(is_abs)
             message(FATAL_ERROR "Header '${header}' is an absolute path. It should be a relative path to the source directory.")
         endif()
@@ -591,26 +589,18 @@ function(xxx_target_install_headers target)
         # Determine the relative path from base_dirs
         set(relative_path "")
         foreach(base_dir ${base_dirs})
-            message("Checking if header '${header}' is under base dir '${base_dir}'")
             string(FIND ${header} ${base_dir} pos)
             if(pos EQUAL 0)
                 # base_dir is a prefix of header
                 string(REPLACE ${base_dir} "" relative_path ${header})
                 # Remove leading '/' or '\' if present
                 string(REGEX REPLACE "^[\\/]" "" relative_path ${relative_path})
-                message("Header '${header}' is under base dir '${base_dir}', relative path is '${relative_path}'.")
                 break()
-            else()
-                message("Header '${header}' is NOT under base dir '${base_dir}'.")
             endif()
         endforeach()
         
         if(relative_path)
-            get_filename_component(header_dir ${relative_path} DIRECTORY)
-            message("           HEADER_DIR '${header_dir}'")
             cmake_path(GET relative_path PARENT_PATH header_dir)
-            message("           HEADER_DIR '${header_dir}'")
-
             install(FILES ${header} DESTINATION ${install_destination}/${header_dir})
         else()
             # No base directory matched, install without subdirectory

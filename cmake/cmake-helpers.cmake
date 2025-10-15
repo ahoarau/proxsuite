@@ -148,10 +148,10 @@ endfunction()
 
 # Enable the most common warnings for MSVC, GCC and Clang
 # Adding some extra warning on msvc to mimic gcc/clang behavior
-# Usage: xxx_target_set_standard_compile_options(<target_name> <visibility>)
+# Usage: xxx_target_set_default_compile_options(<target_name> <visibility>)
 # visibility is either PRIVATE, PUBLIC or INTERFACE
-# Example: xxx_target_set_standard_compile_options(my_target INTERFACE)
-function(xxx_target_set_standard_compile_options target_name visibility)
+# Example: xxx_target_set_default_compile_options(my_target INTERFACE)
+function(xxx_target_set_default_compile_options target_name visibility)
 
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT visibility IN_LIST vs)

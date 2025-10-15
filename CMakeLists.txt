@@ -162,7 +162,7 @@ target_include_directories(
 xxx_target_generate_config_header(proxsuite INTERFACE)
 
 if(ENABLE_WARNINGS)
-  xxx_target_set_standard_compile_options(proxsuite INTERFACE)
+  xxx_target_set_default_compile_options(proxsuite INTERFACE)
 endif()
 
 if(ENABLE_WARNINGS_AS_ERRORS)

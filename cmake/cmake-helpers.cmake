@@ -510,11 +510,22 @@ function(xxx_declare_component)
     require_variable(arg_COMPONENT)
 
     # Check component is not already declared
-    get_property(components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
-    if(${arg_COMPONENT} IN_LIST components)
+    get_property(existing_components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
+    if(${arg_COMPONENT} IN_LIST existing_components)
         message(FATAL_ERROR "Component '${arg_COMPONENT}' is already declared for project '${PROJECT_NAME}'.")
     endif()
     
+    # Check if target is already in a component
+    foreach(component ${existing_components})
+        get_property(component_targets GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${component}_targets)
+        foreach(target ${arg_TARGETS})
+            if(${target} IN_LIST component_targets)
+                message(FATAL_ERROR "Target '${target}' is already part of component '${component}'. Cannot add it to component '${arg_COMPONENT}'.")
+            endif()
+        endforeach()
+    endforeach()
+    
+
     message("Declaring component '${arg_COMPONENT}' with targets: ${arg_TARGETS}")
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components ${arg_COMPONENT} APPEND)
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${arg_COMPONENT}_targets ${arg_TARGETS})

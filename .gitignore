@@ -7,3 +7,4 @@ Xcode*
 compile_commands.json
 .ruff_cache
 .DS_Store
+cmake-profiling.json

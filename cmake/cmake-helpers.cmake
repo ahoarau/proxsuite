@@ -398,6 +398,9 @@ function(xxx_export_dependencies)
     require_variable(arg_TARGETS)
     require_variable(arg_DESTINATION)
 
+    # Get all BUILDSYSTEM_TARGETS of the current project
+    get_property(buildsystem_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY BUILDSYSTEM_TARGETS)
+
     set(all_link_libraries_only_targets "")
     foreach(target ${arg_TARGETS})
         # Note: On CMake 3.23, we have LINK_LIBRARIES_ONLY_TARGETS that might be useful
@@ -417,20 +420,40 @@ function(xxx_export_dependencies)
         set(link_libraries_only_targets "")
         foreach(l ${ll})
             if(TARGET ${l})
-                list(APPEND link_libraries_only_targets ${l})
+                get_target_property(original_target ${l} ALIASED_TARGET)
+                if(original_target)
+                    list(APPEND link_libraries_only_targets ${original_target})
+                else()
+                    list(APPEND link_libraries_only_targets ${l})
+                endif()
             endif()
         endforeach()
 
         list(APPEND all_link_libraries_only_targets ${link_libraries_only_targets})
     endforeach()
 
-    message("All link libraries of targets '${arg_TARGETS}': ${link_libraries_only_targets}")
+    # filter buildsystem targets and imported targets
+    set(link_imported_libraries "")
+    set(link_buildsystem_libraries "")
+    foreach(l ${all_link_libraries_only_targets})
+        if(l IN_LIST buildsystem_targets)
+            list(APPEND link_buildsystem_libraries ${l})
+        else()
+            list(APPEND link_imported_libraries ${l})
+        endif()
+    endforeach()
+
+    message("All link libraries of targets '${arg_TARGETS}': 
+        Imported Libraries              : ${link_imported_libraries}
+        BuildSystem(Internal) Libraries : ${link_buildsystem_libraries}
+    ")
 
     set(packages_to_export "")
-    foreach(target ${link_libraries_only_targets})
+    foreach(target ${link_imported_libraries})
         get_property(package_name GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${target}_package_name)
 
         if(NOT package_name)
+            message(WARNING "Could not find the package name for target '${target}'. Cannot automatically export dependency. Did you forget to use xxx_find_package() ?")
             continue()
         endif()
 

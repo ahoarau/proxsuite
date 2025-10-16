@@ -322,7 +322,9 @@ xxx_target_headers(proxsuite-serialization
   BASE_DIRS include
 )
 
-xxx_install_headers()
+if(INSTALL_HEADERS)
+  xxx_install_headers()
+endif()
 
 xxx_generate_package_module_files()
 

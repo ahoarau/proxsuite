@@ -22,8 +22,8 @@ function(require_target target_name)
     endif()
 endfunction()
 
+# Include CTest but simply prevent adding a lot of useless targets. Useful for IDEs.
 function(xxx_include_ctest)
-    # prevent CTest from adding a lot of useless targets. Usefull for IDEs.
     set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
     include(CTest)
 endfunction()
@@ -87,7 +87,7 @@ function(xxx_configure_default_install_dirs)
     # endif()
 endfunction()
 
-
+# If not provided by the user, set a default CMAKE_INSTALL_PREFIX. Useful for IDEs.
 function(xxx_configure_default_install_prefix default_install_prefix)
     if(NOT default_install_prefix)
         message(FATAL_ERROR "Use: xxx_configure_default_install_prefix(<default_install_prefix>)")
@@ -98,63 +98,6 @@ function(xxx_configure_default_install_prefix default_install_prefix)
         set(CMAKE_INSTALL_PREFIX ${default_install_prefix} CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
         mark_as_advanced(CMAKE_INSTALL_PREFIX)
     endif()
-endfunction()
-
-function(xxx_target_generate_config_header target_name visibility)
-    set(options SKIP_INSTALL)
-    set(oneValueArgs OUTPUT INSTALL_DESTINATION)
-    set(multiValueArgs)
-    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-    require_variable(PROJECT_NAME "PROJECT_NAME must be defined before calling xxx_target_generate_config_header")
-    require_variable(PROJECT_VERSION "PROJECT_VERSION must be defined before calling xxx_target_generate_config_header")
-    require_variable(PROJECT_VERSION_MAJOR "PROJECT_VERSION_MAJOR must be defined before calling xxx_target_generate_config_header")
-    require_variable(PROJECT_VERSION_MINOR "PROJECT_VERSION_MINOR must be defined before calling xxx_target_generate_config_header")
-    require_variable(PROJECT_VERSION_PATCH "PROJECT_VERSION_PATCH must be defined before calling xxx_target_generate_config_header")
-    require_variable(CMAKE_BINARY_DIR "CMAKE_BINARY_DIR must be defined before calling xxx_target_generate_config_header")
-    require_variable(CMAKE_INSTALL_INCLUDEDIR "CMAKE_INSTALL_INCLUDEDIR must be defined before calling xxx_target_generate_config_header with INSTALL option")
-
-    set(vs PRIVATE PUBLIC INTERFACE)
-    if(NOT visibility IN_LIST vs)
-        message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
-    endif()
-
-    if(NOT TARGET ${target_name})
-        message(FATAL_ERROR "Target ${target_name} does not exist.")
-    endif()
-
-    set(default_output_file ${CMAKE_BINARY_DIR}/generated/include/${PROJECT_NAME}/config.hpp)
-    set(default_install_destination ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
-
-    # We need PROJECT_NAME in uppercase to match the maestro convention for macro names
-    string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UPPERCASE)
-
-    # ref: https://cmake.org/cmake/help/latest/variable/CMAKE_CURRENT_FUNCTION_LIST_DIR.html
-    set(input_file ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/config.hpp.in)
-
-    if(NOT EXISTS ${input_file})
-        message(FATAL_ERROR "Input file ${input_file} does not exist.")
-    endif()
-
-    if(${arg_OUTPUT})
-        set(output_file ${arg_OUTPUT})
-    else()
-        set(output_file ${default_output_file})
-    endif()
-
-    configure_file(${input_file} ${output_file} @ONLY)
-
-    target_include_directories(${target_name} ${visibility} $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated/include>)
-
-    if(${arg_SKIP_INSTALL})
-        return()
-    endif()
-
-    if(${arg_INSTALL_DESTINATION})
-        set(install_destination ${arg_INSTALL_DESTINATION})
-    else()
-        set(install_destination ${default_install_destination})
-    endif()
-    install(FILES ${output_file} DESTINATION ${install_destination})
 endfunction()
 
 # Enable the most common warnings for MSVC, GCC and Clang
@@ -255,6 +198,77 @@ function(xxx_target_treat_all_warnings_as_errors target_name visibility)
     else()
         message(WARNING "Unknown compiler '${CXX_COMPILER_ID}'. No warning as error flag set.")
     endif()
+endfunction()
+
+#[[[
+# @brief Generates a configuration header for a given target.
+#
+# This function creates a `config.hpp` file within the build directory for the
+# specified target. This header can be used to propagate preprocessor definitions
+# and other configuration details to the source code.
+#
+# @param target_name The name of the target for which the configuration header
+#                    is being generated.
+# @param visibility  Specifies the visibility of the include directory for the
+#                    generated header (e.g., PUBLIC, PRIVATE, INTERFACE).
+#]]
+function(xxx_target_generate_config_header target_name visibility)
+    set(options SKIP_INSTALL)
+    set(oneValueArgs OUTPUT INSTALL_DESTINATION)
+    set(multiValueArgs)
+    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+    require_variable(PROJECT_NAME)
+    require_variable(PROJECT_VERSION)
+    require_variable(PROJECT_VERSION_MAJOR)
+    require_variable(PROJECT_VERSION_MINOR)
+    require_variable(PROJECT_VERSION_PATCH)
+    require_variable(CMAKE_CURRENT_BINARY_DIR)
+    require_variable(CMAKE_INSTALL_INCLUDEDIR)
+
+    set(vs PRIVATE PUBLIC INTERFACE)
+    if(NOT visibility IN_LIST vs)
+        message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
+    endif()
+
+    if(NOT TARGET ${target_name})
+        message(FATAL_ERROR "Target ${target_name} does not exist.")
+    endif()
+
+    set(default_output_file ${CMAKE_CURRENT_BINARY_DIR}/generated/include/${PROJECT_NAME}/config.hpp)
+    set(default_install_destination ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+
+    # We need PROJECT_NAME in uppercase to match the maestro convention for macro names
+    string(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UPPERCASE)
+
+    # ref: https://cmake.org/cmake/help/latest/variable/CMAKE_CURRENT_FUNCTION_LIST_DIR.html
+    set(input_file ${CMAKE_CURRENT_FUNCTION_LIST_DIR}/config.hpp.in)
+
+    if(NOT EXISTS ${input_file})
+        message(FATAL_ERROR "Input file ${input_file} does not exist.")
+    endif()
+
+    if(arg_OUTPUT)
+        set(output_file ${arg_OUTPUT})
+    else()
+        set(output_file ${default_output_file})
+    endif()
+
+    configure_file(${input_file} ${output_file} @ONLY)
+
+    target_include_directories(${target_name} ${visibility} 
+        $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated/include>
+    )
+
+    if(arg_SKIP_INSTALL)
+        return()
+    endif()
+
+    if(${arg_INSTALL_DESTINATION})
+        set(install_destination ${arg_INSTALL_DESTINATION})
+    else()
+        set(install_destination ${default_install_destination})
+    endif()
+    install(FILES ${output_file} DESTINATION ${install_destination})
 endfunction()
 
 # Usage: xxx_find_package(<package> [version] [REQUIRED] [COMPONENTS ...] MODULE_PATH <path_to_find_module>)

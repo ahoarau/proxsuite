@@ -572,8 +572,10 @@ function(xxx_target_headers target)
     endif()
 
     # Save the headers in a property of the target
-    set_property(TARGET ${target} PROPERTY _xxx_headers "${arg_HEADERS}")
-    set_property(TARGET ${target} PROPERTY _xxx_header_base_dirs "${arg_BASE_DIRS}")
+    # NOTE: The PUBLIC_HEADER technically works, but does not support base_dirs
+    # cf: https://cmake.org/cmake/help/latest/command/install.html#install
+    set_target_properties(${target} PROPERTIES _xxx_headers "${arg_HEADERS}")
+    set_target_properties(${target} PROPERTIES _xxx_header_base_dirs "${arg_BASE_DIRS}")
 endfunction()
 
 function(xxx_target_install_headers target)

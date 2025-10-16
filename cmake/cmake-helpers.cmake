@@ -237,31 +237,21 @@ function(xxx_target_treat_all_warnings_as_errors target_name visibility)
     )
 endfunction()
 
-# Usage: xxx_find_package(<package> [version] [REQUIRED] [COMPONENTS ...] [EXPECTED_TARGETS <target1> <target2> ...])
-# Example: xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED EXPECTED_TARGETS Eigen3::Eigen)
-function(xxx_find_package)
+# Usage: xxx_find_package(<package> [version] [REQUIRED] [COMPONENTS ...] MODULE_PATH <path_to_find_module>)
+# ref: https://cmake.org/cmake/help/latest/command/find_package.html
+# This function allows to automatically retrieve the imported targets provided by the package
+# and store info in global properties for later use (e.g. when exporting dependencies)
+# Note: This function needs to be a macro and not a function, 
+# as some packages leak variables that need to be visible in the parent scope.
+macro(xxx_find_package)
     string(ASCII 27 Esc)
     message("${Esc}[1;34m" "[${ARGV0}]" "${Esc}[m")
-    set(CMAKE_MESSAGE_INDENT "  ")
     message(DEBUG "Executing xxx_find_package with args ${ARGV}")
 
     set(options)
     set(oneValueArgs MODULE_PATH)
-    set(multiValueArgs EXPECTED_TARGETS)
-    cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-
-    # If all targets are already available, skip the find_package call)
-    set(all_targets_available True)
-    foreach(target ${arg_EXPECTED_TARGETS})
-        if(NOT TARGET ${target})
-            set(all_targets_available False)
-            break()
-        endif()
-    endforeach()
-    if(all_targets_available AND arg_EXPECTED_TARGETS)
-        message("All expected targets from package '${ARGV0}' are already available, skipping find_package call.")
-        return()
-    endif()
+    set(multiValueArgs)
+    cmake_parse_arguments(arg "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     # Pkg name is the first argument of find_package(<pkg_name> ...)
     set(package_name ${ARGV0})
@@ -279,16 +269,15 @@ function(xxx_find_package)
 
         # Add the parent path to the CMAKE_MODULE_PATH
         list(APPEND CMAKE_MODULE_PATH ${arg_MODULE_PATH})
-        message("Using custom module file: ${module_file}")
+        message("   Using custom module file: ${module_file}")
     endif()
 
     # Call find_package with the provided arguments
     string(REPLACE ";" " " fp_pp "${arg_UNPARSED_ARGUMENTS}")
-    message("Executing find_package(${fp_pp})")
-    message("Expecting targets: ${arg_EXPECTED_TARGETS} to be present")
+    message("   Executing find_package(${fp_pp})")
 
     # Saving the list of imported targets before the call to find_package
-    get_property(_imported_targets_before DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
+    get_property(imported_targets_before DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
 
     # The actual call to find_package
     find_package(${arg_UNPARSED_ARGUMENTS})
@@ -296,43 +285,32 @@ function(xxx_find_package)
     # TODO: handle QUIET
 
     # Saving the list of imported targets after the call to find_package
-    get_property(_imported_targets_after DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
-    set(_new_targets "")
-    foreach(it IN LISTS _imported_targets_after)
-        if(NOT it IN_LIST _imported_targets_before)
-        list(APPEND _new_targets ${it})
+    get_property(imported_targets_after DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
+    set(imported_targets "")
+    foreach(it IN LISTS imported_targets_after)
+        if(NOT it IN_LIST imported_targets_before)
+            list(APPEND imported_targets ${it})
         endif()
     endforeach()
-    message("(Detecting imported targets : ${_new_targets})")
-
-    # Check if the expected targets are available
-    set(missing_targets "")
-    foreach(target ${arg_EXPECTED_TARGETS})
-        message("Checking for target '${target}'...")
-        if(NOT TARGET ${target})
-            list(APPEND missing_targets ${target})
-            message("Checking for target '${target}'... ❌ not found.")
-        else()
-            message("Checking for target '${target}'... ✅ found.")
-        endif()
-    endforeach()
-    if(missing_targets)
-        string(REPLACE ";" ", " missing_targets "${missing_targets}")
-        message(SEND_ERROR "The following expected targets from package '${package_name}' are missing: ${missing_targets}")
-        return()
-    endif()
+    string(REPLACE ";" ", " imported_targets_pp "${imported_targets}")
+    message("   Imported targets detected: ${imported_targets_pp}")
 
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_packages_found "${package_name}" APPEND)
-    
-    set_property(GLOBAL PROPERTY _xxx_${package_name}_expected_targets "${arg_EXPECTED_TARGETS}")
+    set_property(GLOBAL PROPERTY _xxx_${package_name}_imported_targets "${imported_targets}")
     set_property(GLOBAL PROPERTY _xxx_${package_name}_find_package_args "${arg_UNPARSED_ARGUMENTS}")
     set_property(GLOBAL PROPERTY _xxx_${package_name}_module_path "${arg_MODULE_PATH}")
 
-    # Save the link between the expected targets and the original package name
-    foreach(target ${arg_EXPECTED_TARGETS})
+    # Save the reverse link between the imported targets and the original package name
+    foreach(target ${imported_targets})
         set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${target}_package_name "${package_name}")
     endforeach()
-endfunction()
+
+    unset(package_name)
+    unset(imported_targets_before)
+    unset(imported_targets_after)
+    unset(imported_targets_pp)
+    unset(imported_targets)
+endmacro()
 
 function(xxx_print_dependency_summary)
     include(CMakePrintHelpers)
@@ -346,20 +324,20 @@ function(xxx_print_dependency_summary)
     message(STATUS "Dependencies found via xxx_find_package:")
     foreach(package_name ${packages})
         # Try to find the _xxx_<package_name>_expected_targets property
-        get_property(expected_targets GLOBAL PROPERTY _xxx_${package_name}_expected_targets)
-        if(NOT expected_targets)
-            set(expected_targets "None")
+        get_property(imported_targets GLOBAL PROPERTY _xxx_${package_name}_imported_targets)
+        if(NOT imported_targets)
+            set(imported_targets "None")
         endif()
 
         # Replace ; by , for better readability
-        string(REPLACE ";" " " expected_targets_pp "${expected_targets}")
-        message(STATUS "    package [${package_name}] ==> targets [${expected_targets_pp}]")
+        string(REPLACE ";" " " imported_targets_pp "${imported_targets}")
+        message(STATUS "    package [${package_name}] ==> targets [${imported_targets_pp}]")
 
         # Print target properties
-        if(expected_targets STREQUAL "None")
+        if(imported_targets STREQUAL "None")
             continue()
         endif()
-        cmake_print_properties(TARGETS ${expected_targets} PROPERTIES 
+        cmake_print_properties(TARGETS ${imported_targets} PROPERTIES 
             LOCATION
             INCLUDE_DIRECTORIES
             COMPILE_DEFINITIONS
@@ -431,7 +409,7 @@ function(xxx_export_dependencies)
     set(modules "")
     set(fd "")
     foreach(package_name ${packages_to_export})
-        get_property(expected_targets GLOBAL PROPERTY _xxx_${package_name}_expected_targets)
+        get_property(expected_targets GLOBAL PROPERTY _xxx_${package_name}_imported_targets)
         get_property(find_package_args GLOBAL PROPERTY _xxx_${package_name}_find_package_args)
         get_property(module_path GLOBAL PROPERTY _xxx_${package_name}_module_path)
 

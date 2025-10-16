@@ -3,6 +3,17 @@
 #
 cmake_minimum_required(VERSION 3.22...4.1)
 
+# include(FetchContent)
+# set(CMAKE_UTILS_URL "https://github.com/ahoarau/cmake-utils/archive/refs/tags/v0.0.1.zip" CACHE STRING "The tarball URL of cmake-utils")
+# set(CMAKE_UTILS_SHA256 "16e2fd64c3cb15aeb4b1a72623cdb0fbb619f9ed8a5c5f9729325c5d30682af5" CACHE STRING "The SHA256 checksum of cmake-utils")
+# FetchContent_Declare(
+#   cmake-utils
+#   URL ${CMAKE_UTILS_URL}
+#   URL_HASH SHA256=${CMAKE_UTILS_SHA256}
+# )
+# FetchContent_MakeAvailable(cmake-utils)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake-helpers.cmake)
+
 project(
   proxsuite
   VERSION 0.7.2
@@ -11,13 +22,11 @@ project(
 )
 
 # Import CMake-provided helper functions
-set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
-include(CTest)
+xxx_include_ctest()
 include(CMakeDependentOption)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake-helpers.cmake)
-xxx_configure_default_build_type(RelWithDebInfo)
-xxx_configure_default_install_prefix("${CMAKE_BINARY_DIR}/install")
+xxx_configure_default_build_type(Release)
+xxx_configure_default_install_prefix(${CMAKE_CURRENT_BINARY_DIR}/tmp-install)
 xxx_configure_default_binary_dirs()
 xxx_configure_default_install_dirs()
 
@@ -80,69 +89,46 @@ xxx_option(
 ############################################################
 
 # Eigen3
-xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED EXPECTED_TARGETS Eigen3::Eigen)
+xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED)
 
 # Catch2
-if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
-    xxx_find_package(Catch2 CONFIG REQUIRED EXPECTED_TARGETS Catch2::Catch2 Catch2::Catch2WithMain)
+if(BUILD_TESTING)
+    xxx_find_package(Catch2 CONFIG REQUIRED)
     include(${Catch2_DIR}/Catch.cmake)
 endif()
 
 # cereal (Serialization)
 if(BUILD_WITH_SERIALIZATION)
-  xxx_find_package(cereal CONFIG REQUIRED EXPECTED_TARGETS cereal::cereal)
+  xxx_find_package(cereal CONFIG REQUIRED)
 endif()
 
 # nanobind (Python bindings)
 if(BUILD_PYTHON_INTERFACE)
-    xxx_find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module EXPECTED_TARGETS Python::Interpreter Python::Module)
-    get_target_property(Python_EXECUTABLE Python::Interpreter LOCATION)
-    # Python_SITELIB with sysconfig.get_path('purelib')
-    execute_process(
-      COMMAND ${Python_EXECUTABLE} -c "import sysconfig; print(sysconfig.get_path('purelib'))"
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      OUTPUT_VARIABLE Python_SITELIB
-    )
-    message(STATUS "[proxsuite] Python site-packages directory: ${Python_SITELIB}")
-    # Python_INCLUDE_DIRS with target include dirs
-    get_target_property(Python_INCLUDE_DIRS Python::Module INTERFACE_INCLUDE_DIRECTORIES)
-    message(STATUS "[proxsuite] Python include directories: ${Python_INCLUDE_DIRS}")
-    # Detect the installed nanobind package and import it into CMake
-    # ref: https://nanobind.readthedocs.io/en/latest/building.html#finding-nanobind
-    execute_process(
-      COMMAND ${Python_EXECUTABLE} -m nanobind --cmake_dir
-      OUTPUT_STRIP_TRAILING_WHITESPACE
-      OUTPUT_VARIABLE nanobind_ROOT
-    )
-    message(STATUS "[proxsuite] nanobind cmake directory: ${nanobind_ROOT}")
-    xxx_find_package(nanobind CONFIG REQUIRED)
+    xxx_find_nanobind()
 endif()
-
 
 # simde
 if(BUILD_WITH_VECTORIZATION_SUPPORT)
   xxx_find_package(simde REQUIRED
       MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/simde
-      EXPECTED_TARGETS simde::simde 
   )
 endif()
 
 # matio
-if(BUILD_MAROS_MESZAROS_TESTS AND BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
+if(BUILD_MAROS_MESZAROS_TESTS AND BUILD_TESTING)
   xxx_find_package(matio REQUIRED
     MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/matio
-    EXPECTED_TARGETS matio::matio
   )
 endif()
 
 # OpenMP
 if(BUILD_WITH_OPENMP_SUPPORT)
-  xxx_find_package(OpenMP REQUIRED EXPECTED_TARGETS OpenMP::OpenMP_CXX)
+  xxx_find_package(OpenMP REQUIRED)
 endif()
 
 # Doxygen + Graphviz (dot)
-if(BUILD_DOCUMENTATION AND PROJECT_IS_TOP_LEVEL)
-  xxx_find_package(Doxygen REQUIRED COMPONENTS dot EXPECTED_TARGETS Doxygen::Doxygen Doxygen::dot)
+if(BUILD_DOCUMENTATION)
+  xxx_find_package(Doxygen REQUIRED COMPONENTS dot)
 endif()
 
 ############################################################
@@ -202,22 +188,22 @@ if(BUILD_WITH_SERIALIZATION)
   target_link_libraries(proxsuite-serialization INTERFACE proxsuite cereal::cereal)
 endif()
 
-if(BUILD_TESTING AND PROJECT_IS_TOP_LEVEL)
+if(BUILD_TESTING)
   message(STATUS "[proxsuite] Building tests")
   add_subdirectory(test)
 endif()
 
-if(BUILD_EXAMPLES AND PROJECT_IS_TOP_LEVEL)
+if(BUILD_EXAMPLES)
   message(STATUS "[proxsuite] Building examples")
   add_subdirectory(examples)
 endif()
 
-if(BUILD_BENCHMARK AND PROJECT_IS_TOP_LEVEL)
+if(BUILD_BENCHMARK)
   message(STATUS "[proxsuite] Building benchmarks")
   add_subdirectory(benchmark)
 endif()
 
-if(BUILD_DOCUMENTATION AND PROJECT_IS_TOP_LEVEL)
+if(BUILD_DOCUMENTATION)
   message(STATUS "[proxsuite] Building documentation")
   add_subdirectory(doc)
 endif()
@@ -240,7 +226,6 @@ endif()
 #     PATTERN "*.hpp"
 #     PATTERN "serialization/*" EXCLUDE
 #   )
-
 #   # Install header per components.
 #   # proxsuite: everything except the vectorized headers and serialization
 #   if(BUILD_WITH_VECTORIZATION_SUPPORT)
@@ -251,8 +236,6 @@ endif()
 #       PATTERN "*.hpp"
 #     )
 #   endif()
-
-
 # endif()
 
 xxx_target_headers(proxsuite

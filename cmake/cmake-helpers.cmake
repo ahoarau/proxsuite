@@ -98,19 +98,19 @@ endfunction()
 function(xxx_target_set_default_compile_options target_name visibility)
     require_target(${target_name})
 
+    # In CMake >= 3.26, use CMAKE_CXX_COMPILER_FRONTEND_VARIANT¶
+    # ref: https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_FRONTEND_VARIANT.html
+    # ref: https://gitlab.kitware.com/cmake/cmake/-/issues/19724
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+        set(CMAKE_CXX_COMPILER_ID "MSVC")
+    endif()
+
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT visibility IN_LIST vs)
         message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
     endif()
 
-    # In CMake >= 3.26, use CMAKE_CXX_COMPILER_FRONTEND_VARIANT¶
-    # ref: https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_FRONTEND_VARIANT.html
-    # ref: https://gitlab.kitware.com/cmake/cmake/-/issues/19724
-    if(CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
-        set(CXX_COMPILER_ID "MSVC")
-    endif()
-
-    if(CXX_COMPILER_ID STREQUAL "MSVC")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_options(${target_name} ${visibility}
             /W4     # Enable most warnings
             /wd4250 # "Inherits via dominance" - happens with diamond inheritance, not really an issue
@@ -120,7 +120,7 @@ function(xxx_target_set_default_compile_options target_name visibility)
             /we4834 # discarding return value of function with 'nodiscard' attribute
             /we4062 # enumerator 'xyz' in switch of enum 'abc' is not handled
         )
-    elseif(CXX_COMPILER_ID STREQUAL "GNU" OR CXX_COMPILER_ID STREQUAL "Clang")
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${target_name} ${visibility}
             -Wall           # Enable most warnings
             -Wextra         # Enable extra warnings
@@ -128,7 +128,7 @@ function(xxx_target_set_default_compile_options target_name visibility)
             -Wpedantic      # Warn on non-standard C++ usage
         )
     else()
-        message(WARNING "Unknown compiler '${CXX_COMPILER_ID}'. No default compile options set.")
+        message(WARNING "Unknown compiler '${CMAKE_CXX_COMPILER_ID}'. No default compile options set.")
     endif()
 endfunction()
 
@@ -139,17 +139,17 @@ endfunction()
 # Example: xxx_target_enforce_msvc_conformance(my_target INTERFACE)
 function(xxx_target_enforce_msvc_conformance target_name visibility)
 
-    if(CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
-        set(CXX_COMPILER_ID "MSVC")
-    endif()
-
-    if(NOT CXX_COMPILER_ID STREQUAL "MSVC")
-        return()
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+        set(CMAKE_CXX_COMPILER_ID "MSVC")
     endif()
 
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT visibility IN_LIST vs)
         message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
+    endif()
+
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        return()
     endif()
 
     target_compile_options(${target_name} ${visibility}
@@ -169,8 +169,8 @@ endfunction()
 # NOTE: in CMake 3.24, we have the new CMAKE_COMPILE_WARNING_AS_ERROR option, but for the whole project and subprojects
 function(xxx_target_treat_all_warnings_as_errors target_name visibility)
 
-    if(CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
-        set(CXX_COMPILER_ID "MSVC")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+        set(CMAKE_CXX_COMPILER_ID "MSVC")
     endif()
 
     set(vs PRIVATE PUBLIC INTERFACE)
@@ -178,16 +178,16 @@ function(xxx_target_treat_all_warnings_as_errors target_name visibility)
         message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
     endif()
 
-    if(CXX_COMPILER_ID STREQUAL "MSVC")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_options(${target_name} ${visibility}
             /WX
         )
-    elseif(CXX_COMPILER_ID STREQUAL "GNU" OR CXX_COMPILER_ID STREQUAL "Clang")
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
         target_compile_options(${target_name} ${visibility}
             -Werror
         )
     else()
-        message(WARNING "Unknown compiler '${CXX_COMPILER_ID}'. No warning as error flag set.")
+        message(WARNING "Unknown compiler '${CMAKE_CXX_COMPILER_ID}'. No warning as error flag set.")
     endif()
 endfunction()
 

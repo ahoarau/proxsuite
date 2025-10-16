@@ -176,8 +176,8 @@ function(xxx_target_set_default_compile_options target_name visibility)
         set(CXX_COMPILER_ID "MSVC")
     endif()
 
-    target_compile_options(${target_name} ${visibility}
-        $<$<CXX_COMPILER_ID:MSVC>:
+    if(CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_options(${target_name} ${visibility}
             /W4     # Enable most warnings
             /wd4250 # "Inherits via dominance" - happens with diamond inheritance, not really an issue
             /wd4706 # assignment within conditional expression
@@ -185,14 +185,17 @@ function(xxx_target_set_default_compile_options target_name visibility)
             /wd4996 # function may be unsafe
             /we4834 # discarding return value of function with 'nodiscard' attribute
             /we4062 # enumerator 'xyz' in switch of enum 'abc' is not handled
-        >
-        $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:
+        )
+    elseif(CXX_COMPILER_ID STREQUAL "GNU" OR CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${target_name} ${visibility}
             -Wall           # Enable most warnings
             -Wextra         # Enable extra warnings
             -Wconversion    # Warn on type conversions that may lose information
             -Wpedantic      # Warn on non-standard C++ usage
-        >
-    )
+        )
+    else()
+        message(WARNING "Unknown compiler '${CXX_COMPILER_ID}'. No default compile options set.")
+    endif()
 endfunction()
 
 
@@ -202,18 +205,24 @@ endfunction()
 # Example: xxx_target_enforce_msvc_conformance(my_target INTERFACE)
 function(xxx_target_enforce_msvc_conformance target_name visibility)
 
+    if(CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+        set(CXX_COMPILER_ID "MSVC")
+    endif()
+
+    if(NOT CXX_COMPILER_ID STREQUAL "MSVC")
+        return()
+    endif()
+
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT visibility IN_LIST vs)
         message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
     endif()
 
     target_compile_options(${target_name} ${visibility}
-        $<$<CXX_COMPILER_ID:MSVC>:
         /permissive-    # Standards conformance
         /Zc:__cplusplus # Needed to have __cplusplus set correctly
         /EHsc           # Enable C++ exceptions standard conformance
         /bigobj         # To avoid "fatal error C1128: number of sections exceeded object file format limit"
-        >
     )
 endfunction()
 
@@ -226,15 +235,26 @@ endfunction()
 # NOTE: in CMake 3.24, we have the new CMAKE_COMPILE_WARNING_AS_ERROR option, but for the whole project and subprojects
 function(xxx_target_treat_all_warnings_as_errors target_name visibility)
 
+    if(CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
+        set(CXX_COMPILER_ID "MSVC")
+    endif()
+
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT visibility IN_LIST vs)
         message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
     endif()
 
-    target_compile_options(${target_name} ${visibility}
-        $<$<CXX_COMPILER_ID:MSVC>:/WX>
-        $<$<OR:$<CXX_COMPILER_ID:GNU>,$<CXX_COMPILER_ID:Clang>>:-Werror>
-    )
+    if(CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_options(${target_name} ${visibility}
+            /WX
+        )
+    elseif(CXX_COMPILER_ID STREQUAL "GNU" OR CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(${target_name} ${visibility}
+            -Werror
+        )
+    else()
+        message(WARNING "Unknown compiler '${CXX_COMPILER_ID}'. No warning as error flag set.")
+    endif()
 endfunction()
 
 # Usage: xxx_find_package(<package> [version] [REQUIRED] [COMPONENTS ...] MODULE_PATH <path_to_find_module>)

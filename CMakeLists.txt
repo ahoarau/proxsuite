@@ -4,12 +4,10 @@
 cmake_minimum_required(VERSION 3.22...4.1)
 
 # include(FetchContent)
-# set(CMAKE_UTILS_URL "https://github.com/ahoarau/cmake-utils/archive/refs/tags/v0.0.1.zip" CACHE STRING "The tarball URL of cmake-utils")
-# set(CMAKE_UTILS_SHA256 "16e2fd64c3cb15aeb4b1a72623cdb0fbb619f9ed8a5c5f9729325c5d30682af5" CACHE STRING "The SHA256 checksum of cmake-utils")
 # FetchContent_Declare(
 #   cmake-utils
-#   URL ${CMAKE_UTILS_URL}
-#   URL_HASH SHA256=${CMAKE_UTILS_SHA256}
+#   URL https://github.com/ahoarau/cmake-utils/archive/refs/tags/v0.0.1.zip
+#   URL_HASH SHA256=16e2fd64c3cb15aeb4b1a72623cdb0fbb619f9ed8a5c5f9729325c5d30682af5
 # )
 # FetchContent_MakeAvailable(cmake-utils)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake-helpers.cmake)

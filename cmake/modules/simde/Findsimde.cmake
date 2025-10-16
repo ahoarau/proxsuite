@@ -40,12 +40,11 @@ find_package_handle_standard_args(
 )
 
 if(NOT TARGET simde::simde)
-  add_library(simde INTERFACE IMPORTED)
+  add_library(simde::simde INTERFACE IMPORTED)
   set_target_properties(
-    simde
+    simde::simde
     PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES ${simde_INCLUDE_DIR}
       INTERFACE_VERSION ${simde_VERSION}
   )
-  add_library(simde::simde ALIAS simde)
 endif()

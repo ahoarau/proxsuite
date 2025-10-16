@@ -749,10 +749,10 @@ function(xxx_generate_package_module_files)
 
         # HACK: Copy the generated targets file to the generated cmake directory, so that we can install all cmake files in one go
         # ref: https://github.com/Kitware/CMake/blob/master/Source/cmInstallExportGenerator.cxx#L50-L58
-        string(MD5 destdir_hash ${DESTINATION})
-        set(generated_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${destdir_hash}/${PROJECT_NAME}-${component}-targets.cmake)
-        set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_generated_target_file ${generated_target_file} APPEND)
-        cmake_language(DEFER DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} CALL _xxx_copy_generated_target_files())
+        # string(MD5 destdir_hash ${DESTINATION})
+        # set(generated_target_file ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Export/${destdir_hash}/${PROJECT_NAME}-${component}-targets.cmake)
+        # set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_generated_target_file ${generated_target_file} APPEND)
+        # cmake_language(DEFER DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} CALL _xxx_copy_generated_target_files())
     endforeach()
 endfunction()
 

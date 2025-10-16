@@ -91,7 +91,7 @@ xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED)
 # Catch2
 if(BUILD_TESTING)
   xxx_find_package(Catch2 CONFIG REQUIRED)
-  include(${Catch2_DIR}/Catch.cmake)
+  include(Catch)
 endif()
 
 # cereal (Serialization)

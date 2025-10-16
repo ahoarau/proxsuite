@@ -10,7 +10,7 @@ message("   User is requesting components: ${@PROJECT_NAME@_FIND_COMPONENTS}")
 # iterate through components attempting to be found
 foreach(component ${@PROJECT_NAME@_FIND_COMPONENTS})
     message("       Checking component ${component}")
-    
+
     if(NOT ${component} IN_LIST @PROJECT_NAME@_supported_components)
         set(@PROJECT_NAME@_FOUND False)
         string(REPLACE ";" ", " @PROJECT_NAME@_components_pp "${@PROJECT_NAME@_supported_components}")
@@ -26,4 +26,3 @@ foreach(component ${@PROJECT_NAME@_FIND_COMPONENTS})
         set(@PROJECT_NAME@_${component}_FOUND True)
     endif()
 endforeach()
-  

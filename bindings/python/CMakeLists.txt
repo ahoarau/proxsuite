@@ -125,7 +125,10 @@ function(
     list_filter("${PYWRAP_HEADERS}" "expose-parallel" PYWRAP_HEADERS)
   endif()
 
-  target_link_libraries(${target_name} PRIVATE $<$<BOOL:${BUILD_WITH_SERIALIZATION}>:cereal::cereal>)
+  target_link_libraries(
+    ${target_name}
+    PRIVATE $<$<BOOL:${BUILD_WITH_SERIALIZATION}>:cereal::cereal>
+  )
 
   set_target_properties(
     ${target_name}

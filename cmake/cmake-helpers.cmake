@@ -144,7 +144,7 @@ function(xxx_target_generate_config_header target_name visibility)
     configure_file(${input_file} ${output_file} @ONLY)
 
     target_include_directories(${target_name} ${visibility} $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/generated/include>)
-    
+
     if(${arg_SKIP_INSTALL})
         return()
     endif()
@@ -168,7 +168,7 @@ function(xxx_target_set_default_compile_options target_name visibility)
     if(NOT visibility IN_LIST vs)
         message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
     endif()
-    
+
     # In CMake >= 3.26, use CMAKE_CXX_COMPILER_FRONTEND_VARIANT¶
     # ref: https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_FRONTEND_VARIANT.html
     # ref: https://gitlab.kitware.com/cmake/cmake/-/issues/19724
@@ -227,7 +227,7 @@ function(xxx_target_enforce_msvc_conformance target_name visibility)
 endfunction()
 
 # Description: Treat all warnings as errors for a targets (/WX for MSVC, -Werror for GCC/Clang)
-# Can be disabled by on the cmake cli with --compile-no-warning-as-error 
+# Can be disabled by on the cmake cli with --compile-no-warning-as-error
 # ref: https://cmake.org/cmake/help/latest/manual/cmake.1.html#cmdoption-cmake-compile-no-warning-as-error
 # Usage: xxx_target_treat_all_warnings_as_errors(<target_name> <visibility>)
 # visibility is either PRIVATE, PUBLIC or INTERFACE
@@ -261,7 +261,7 @@ endfunction()
 # ref: https://cmake.org/cmake/help/latest/command/find_package.html
 # This function allows to automatically retrieve the imported targets provided by the package
 # and store info in global properties for later use (e.g. when exporting dependencies)
-# Note: This function needs to be a macro and not a function, 
+# Note: This function needs to be a macro and not a function,
 # as some packages leak variables that need to be visible in the parent scope.
 macro(xxx_find_package)
     string(ASCII 27 Esc)
@@ -357,7 +357,7 @@ function(xxx_print_dependency_summary)
         if(imported_targets STREQUAL "None")
             continue()
         endif()
-        cmake_print_properties(TARGETS ${imported_targets} PROPERTIES 
+        cmake_print_properties(TARGETS ${imported_targets} PROPERTIES
             LOCATION
             INCLUDE_DIRECTORIES
             COMPILE_DEFINITIONS
@@ -378,7 +378,7 @@ function(xxx_export_dependencies)
     set(oneValueArgs EXPORT FILE DESTINATION)
     set(multiValueArgs TARGETS)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-    
+
     require_variable(arg_EXPORT)
     require_variable(arg_FILE)
     require_variable(arg_TARGETS)
@@ -393,7 +393,7 @@ function(xxx_export_dependencies)
 
         get_target_property(link_libraries ${target} LINK_LIBRARIES)
         list(APPEND ll ${link_libraries})
-        
+
         message("Linked libraries of target '${target}':
             LINK_LIBRARIES          : ${link_libraries}
             INTERFACE_LINK_LIBRARIES: ${interface_link_libraries}
@@ -468,9 +468,9 @@ function(xxx_export_dependencies)
 
     set(xxx_modules ${modules})
     set(xxx_find_dependencies ${fd})
-    
+
     configure_file(${CMAKE_CURRENT_FUNCTION_LIST_DIR}/dependencies.cmake.in ${arg_FILE} @ONLY)
-    
+
     install(
         FILES ${arg_FILE}
         DESTINATION ${arg_DESTINATION}
@@ -523,7 +523,7 @@ function(xxx_declare_component)
     if(${arg_COMPONENT} IN_LIST existing_components)
         message(FATAL_ERROR "Component '${arg_COMPONENT}' is already declared for project '${PROJECT_NAME}'.")
     endif()
-    
+
     # Check if target is already in a component
     foreach(component ${existing_components})
         get_property(component_targets GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${component}_targets)
@@ -533,7 +533,7 @@ function(xxx_declare_component)
             endif()
         endforeach()
     endforeach()
-    
+
     message("Declaring component '${arg_COMPONENT}' with targets: ${arg_TARGETS}")
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components ${arg_COMPONENT} APPEND)
     set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${arg_COMPONENT}_targets ${arg_TARGETS})
@@ -567,9 +567,9 @@ function(xxx_target_install_headers target)
     set(oneValueArgs DESTINATION)
     set(multiValueArgs)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-    
+
     require_target(${target})
-    
+
     if(NOT arg_DESTINATION)
         set(install_destination ${CMAKE_INSTALL_INCLUDEDIR})
     else()
@@ -579,7 +579,7 @@ function(xxx_target_install_headers target)
     # Retrieve headers and base directories from target properties
     get_property(headers TARGET ${target} PROPERTY _xxx_headers)
     get_property(base_dirs TARGET ${target} PROPERTY _xxx_header_base_dirs)
-    
+
     if(NOT headers)
         return()
     endif()
@@ -603,7 +603,7 @@ function(xxx_target_install_headers target)
                 break()
             endif()
         endforeach()
-        
+
         if(relative_path)
             cmake_path(GET relative_path PARENT_PATH header_dir)
             install(FILES ${header} DESTINATION ${install_destination}/${header_dir})
@@ -690,7 +690,7 @@ function(xxx_generate_package_module_files)
     set(NO_SET_AND_CHECK_MACRO "NO_SET_AND_CHECK_MACRO")
     set(NO_CHECK_REQUIRED_COMPONENTS_MACRO "NO_CHECK_REQUIRED_COMPONENTS_MACRO")
     set(NAMESPACE "${PROJECT_NAME}::")
-    
+
     string(REPLACE ";" " " xxx_project_components "${declared_components}")
 
     # <package>-config.cmake
@@ -720,7 +720,7 @@ function(xxx_generate_package_module_files)
 
     foreach(component ${declared_components})
         message("Generating cmake module files for component '${component}'")
-        
+
         get_property(targets GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${component}_targets)
 
         # <package>-<component>-dependencies.cmake
@@ -731,7 +731,7 @@ function(xxx_generate_package_module_files)
             DESTINATION ${DESTINATION}
         )
         # Create the export for the component targets
-        install(TARGETS ${targets} 
+        install(TARGETS ${targets}
             EXPORT ${PROJECT_NAME}-${component}
             ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -817,7 +817,7 @@ function(xxx_print_option_summary)
 
     message( "")
     message( "================= Configuration Summary ======================================")
-    message( "")    
+    message( "")
     pad_string("Option"      40 _menu_option)
     pad_string("Type"        5  _menu_type)
     pad_string("Value"       8  _menu_value)

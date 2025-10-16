@@ -93,8 +93,8 @@ xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED)
 
 # Catch2
 if(BUILD_TESTING)
-    xxx_find_package(Catch2 CONFIG REQUIRED)
-    include(${Catch2_DIR}/Catch.cmake)
+  xxx_find_package(Catch2 CONFIG REQUIRED)
+  include(${Catch2_DIR}/Catch.cmake)
 endif()
 
 # cereal (Serialization)
@@ -104,7 +104,7 @@ endif()
 
 # nanobind (Python bindings)
 if(BUILD_PYTHON_INTERFACE)
-    xxx_find_nanobind()
+  xxx_find_nanobind()
 endif()
 
 # simde
@@ -185,7 +185,10 @@ endif()
 if(BUILD_WITH_SERIALIZATION)
   add_library(proxsuite-serialization INTERFACE)
   add_library(proxsuite::proxsuite-serialization ALIAS proxsuite-serialization)
-  target_link_libraries(proxsuite-serialization INTERFACE proxsuite cereal::cereal)
+  target_link_libraries(
+    proxsuite-serialization
+    INTERFACE proxsuite cereal::cereal
+  )
 endif()
 
 if(BUILD_TESTING)
@@ -232,7 +235,7 @@ endif()
 #     install(
 #       DIRECTORY ${PROJECT_SOURCE_DIR}/include/serialization
 #       DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-#       FILES_MATCHING 
+#       FILES_MATCHING
 #       PATTERN "*.hpp"
 #     )
 #   endif()

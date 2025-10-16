@@ -52,31 +52,25 @@ function(xxx_configure_default_build_type default_build_type)
 endfunction()
 
 function(xxx_configure_default_binary_dirs)
-    # On windows, librairies (.dll, .lib) and executables (.exe) are in the same directory
-    # On unix, we separate them in bin/ and lib/
-    if(WIN32)
-        set(bin_dir ${CMAKE_BINARY_DIR})
-        set(lib_dir ${CMAKE_BINARY_DIR})
-    else()
-        set(bin_dir ${CMAKE_BINARY_DIR}/bin)
-        set(lib_dir ${CMAKE_BINARY_DIR}/lib)
-    endif()
+    # doc: https://cmake.org/cmake/help/v3.22/manual/cmake-buildsystem.7.html#id47
 
-    # doc: https://cmake.org/cmake/help/latest/variable/CMAKE_RUNTIME_OUTPUT_DIRECTORY.html
-    # Sets the default output directory for runtime (.exe, .dll) and archive (.lib, .a) targets.
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${bin_dir} CACHE PATH "" INTERNAL)
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${lib_dir} CACHE PATH "" INTERNAL)
+    if(WIN32)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin CACHE PATH "" INTERNAL) # For .exe and .dll add_library(SHARED ...) .dll
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin CACHE PATH "" INTERNAL) # for add_library(MODULE ...) .dll
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib CACHE PATH "" INTERNAL) # add_library(STATIC ...) .lib
+    else()
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin CACHE PATH "" INTERNAL) # For .exe and .dll
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib CACHE PATH "" INTERNAL) # for shared libraries .so/.dylib and add_library(MODULE ...) .so/.dylib
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib CACHE PATH "" INTERNAL) # add_library(STATIC ...) .a
+    endif()
 
     set(config Debug Release RelWithDebInfo MinSizeRel)
     foreach(conf ${config})
         string(TOUPPER ${conf} conf_upper)
-        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${conf_upper} ${bin_dir} CACHE PATH "Output directory for runtime targets in ${conf} configuration." INTERNAL)
-        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${conf_upper} ${lib_dir} CACHE PATH "Output directory for library targets in ${conf} configuration." INTERNAL)
-        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${conf_upper} ${lib_dir} CACHE PATH "Output directory for archive targets in ${conf} configuration." INTERNAL)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${conf_upper} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} CACHE PATH "" INTERNAL)
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${conf_upper} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} CACHE PATH "" INTERNAL)
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${conf_upper} ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY} CACHE PATH "" INTERNAL)
     endforeach()
-
-    set(CMAKE_BINARY_BINDIR ${bin_dir} CACHE PATH "Directory for building executables" INTERNAL)
-    set(CMAKE_BINARY_LIBDIR ${lib_dir} CACHE PATH "Directory for building libraries" INTERNAL)
 endfunction()
 
 function(xxx_configure_default_install_dirs)
@@ -89,10 +83,6 @@ endfunction()
 
 # If not provided by the user, set a default CMAKE_INSTALL_PREFIX. Useful for IDEs.
 function(xxx_configure_default_install_prefix default_install_prefix)
-    if(NOT default_install_prefix)
-        message(FATAL_ERROR "Use: xxx_configure_default_install_prefix(<default_install_prefix>)")
-    endif()
-
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
         message(STATUS "Setting default install prefix to '${default_install_prefix}'")
         set(CMAKE_INSTALL_PREFIX ${default_install_prefix} CACHE PATH "Install path prefix, prepended onto install directories." FORCE)
@@ -106,6 +96,7 @@ endfunction()
 # visibility is either PRIVATE, PUBLIC or INTERFACE
 # Example: xxx_target_set_default_compile_options(my_target INTERFACE)
 function(xxx_target_set_default_compile_options target_name visibility)
+    require_target(${target_name})
 
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT visibility IN_LIST vs)
@@ -224,14 +215,11 @@ function(xxx_target_generate_config_header target_name visibility)
     require_variable(PROJECT_VERSION_PATCH)
     require_variable(CMAKE_CURRENT_BINARY_DIR)
     require_variable(CMAKE_INSTALL_INCLUDEDIR)
+    require_target(${target_name})
 
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT visibility IN_LIST vs)
         message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
-    endif()
-
-    if(NOT TARGET ${target_name})
-        message(FATAL_ERROR "Target ${target_name} does not exist.")
     endif()
 
     set(default_output_file ${CMAKE_CURRENT_BINARY_DIR}/generated/include/${PROJECT_NAME}/config.hpp)
@@ -514,37 +502,6 @@ function(xxx_export_dependencies)
     )
 endfunction()
 
-# NOTE: Do we need this function to be standalone ?
-# function(xxx_cmake_module_version)
-#     set(options)
-#     set(oneValueArgs)
-#     set(multiValueArgs)
-#     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-
-#     include(CMakePackageConfigHelpers)
-#     require_variable(PROJECT_NAME)
-#     require_variable(PROJECT_VERSION)
-
-#     # NOTE: Expose as options if needed
-#     set(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/cmake/${PROJECT_NAME}/${PROJECT_NAME}-version.cmake)
-#     set(VERSION ${PROJECT_VERSION})     # <major.minor.patch>
-#     set(COMPATIBILITY AnyNewerVersion) # <AnyNewerVersion|SameMajorVersion|SameMinorVersion|ExactVersion>
-#     set(ARCH_INDEPENDENT "")
-#     set(DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME})
-
-#     write_basic_package_version_file(
-#       ${OUTPUT}
-#       VERSION ${VERSION}
-#       COMPATIBILITY ${COMPATIBILITY}
-#       ${ARCH_INDEPENDENT}
-#     )
-
-#     install(
-#         FILES ${OUTPUT}
-#         DESTINATION ${DESTINATION}
-#     )
-# endfunction()
-
 function(xxx_declare_component)
     set(options)
     set(oneValueArgs COMPONENT)
@@ -711,7 +668,9 @@ function(xxx_generate_package_module_files)
     include(CMakePackageConfigHelpers)
     require_variable(PROJECT_NAME)
     require_variable(PROJECT_VERSION)
+    require_variable(CMAKE_INSTALL_BINDIR)
     require_variable(CMAKE_INSTALL_LIBDIR)
+    require_variable(CMAKE_INSTALL_INCLUDEDIR)
 
     get_property(declared_components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
     if(NOT declared_components)
@@ -772,9 +731,9 @@ function(xxx_generate_package_module_files)
         # Create the export for the component targets
         install(TARGETS ${targets}
             EXPORT ${PROJECT_NAME}-${component}
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
             INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         )
         # <package>-<component>-targets.cmake

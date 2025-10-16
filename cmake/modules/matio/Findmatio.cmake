@@ -41,13 +41,12 @@ find_package_handle_standard_args(
 )
 
 if(NOT TARGET matio::matio)
-  add_library(matio UNKNOWN IMPORTED)
+  add_library(matio::matio UNKNOWN IMPORTED)
   set_target_properties(
-    matio
+    matio::matio
     PROPERTIES
       IMPORTED_LOCATION ${matio_LIBRARY}
       VERSION ${matio_VERSION}
       INCLUDE_DIRECTORIES ${matio_INCLUDE_DIR}
   )
-  add_library(matio::matio ALIAS matio)
 endif()

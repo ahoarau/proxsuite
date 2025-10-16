@@ -22,6 +22,13 @@ function(require_target target_name)
     endif()
 endfunction()
 
+function(xxx_include_ctest)
+    # prevent CTest from adding a lot of useless targets. Usefull for IDEs.
+    set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
+    include(CTest)
+endfunction()
+
+
 # Usage: xxx_configure_default_build_type(<default_build_type>)
 # Valid values for <default_build_type> are: Debug, Release, MinSizeRel, RelWithDebInfo
 # Example: xxx_configure_default_build_type(RelWithDebInfo)

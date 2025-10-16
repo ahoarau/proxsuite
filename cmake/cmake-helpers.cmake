@@ -825,4 +825,27 @@ function(xxx_print_option_summary)
     message( "")
 endfunction()
 
+macro(xxx_find_nanobind)
+    xxx_find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
+    require_variable(Python_EXECUTABLE)
+    require_variable(Python_SITELIB)
+    require_variable(Python_INCLUDE_DIRS)
+
+    message(DEBUG "[${PROJECT_NAME}]
+        Python executable: ${Python_EXECUTABLE}
+        Python include directories: ${Python_INCLUDE_DIRS}
+        Python site-packages directory: ${Python_SITELIB}
+    ")
+
+    # Detect the installed nanobind package and import it into CMake
+    # ref: https://nanobind.readthedocs.io/en/latest/building.html#finding-nanobind
+    execute_process(
+      COMMAND ${Python_EXECUTABLE} -m nanobind --cmake_dir
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      OUTPUT_VARIABLE nanobind_ROOT
+    )
+    message(DEBUG "[${PROJECT_NAME}] nanobind cmake directory: ${nanobind_ROOT}")
+    xxx_find_package(nanobind CONFIG REQUIRED)
+endmacro()
+
 # gersemi: on

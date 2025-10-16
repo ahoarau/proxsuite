@@ -825,17 +825,21 @@ function(xxx_print_option_summary)
     message( "")
 endfunction()
 
-macro(xxx_find_nanobind)
-    xxx_find_package(Python 3.8 REQUIRED COMPONENTS Interpreter Development.Module)
+macro(xxx_find_python)
+    xxx_find_package(Python ${ARGN})
     require_variable(Python_EXECUTABLE)
-    require_variable(Python_SITELIB)
     require_variable(Python_INCLUDE_DIRS)
+    require_variable(Python_LIBRARIES)
 
     message(DEBUG "[${PROJECT_NAME}]
         Python executable: ${Python_EXECUTABLE}
         Python include directories: ${Python_INCLUDE_DIRS}
-        Python site-packages directory: ${Python_SITELIB}
+        Python libraries: ${Python_LIBRARIES}
     ")
+endmacro()
+
+macro(xxx_find_nanobind)
+    xxx_find_python(3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 
     # Detect the installed nanobind package and import it into CMake
     # ref: https://nanobind.readthedocs.io/en/latest/building.html#finding-nanobind

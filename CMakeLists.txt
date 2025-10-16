@@ -86,7 +86,6 @@ xxx_option(
 )
 
 ############################################################
-############################################################
 
 # Eigen3
 xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED)
@@ -131,7 +130,6 @@ if(BUILD_DOCUMENTATION)
   xxx_find_package(Doxygen REQUIRED COMPONENTS dot)
 endif()
 
-############################################################
 ############################################################
 
 add_library(proxsuite INTERFACE)
@@ -220,26 +218,6 @@ endif()
 if(BUILD_WITH_SERIALIZATION)
   xxx_declare_component(TARGETS proxsuite-serialization COMPONENT serialization)
 endif()
-
-# if(INSTALL_HEADERS)
-#   install(
-#     DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-#     FILES_MATCHING
-#     PATTERN "*.hpp"
-#     PATTERN "serialization/*" EXCLUDE
-#   )
-#   # Install header per components.
-#   # proxsuite: everything except the vectorized headers and serialization
-#   if(BUILD_WITH_VECTORIZATION_SUPPORT)
-#     install(
-#       DIRECTORY ${PROJECT_SOURCE_DIR}/include/serialization
-#       DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-#       FILES_MATCHING
-#       PATTERN "*.hpp"
-#     )
-#   endif()
-# endif()
 
 xxx_target_headers(proxsuite
   HEADERS

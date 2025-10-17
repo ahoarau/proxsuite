@@ -22,6 +22,13 @@ function(require_target target_name)
     endif()
 endfunction()
 
+function(xxx_require_visibility visibility)
+    set(vs PRIVATE PUBLIC INTERFACE)
+    if(NOT ${visibility} IN_LIST vs)
+        message(FATAL_ERROR "visibility (${visibility}) must be one of PRIVATE, PUBLIC or INTERFACE")
+    endif()
+endfunction()
+
 # Include CTest but simply prevent adding a lot of useless targets. Useful for IDEs.
 function(xxx_include_ctest)
     set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -106,10 +113,7 @@ function(xxx_target_set_default_compile_options target_name visibility)
         set(CMAKE_CXX_COMPILER_ID "MSVC")
     endif()
 
-    set(vs PRIVATE PUBLIC INTERFACE)
-    if(NOT visibility IN_LIST vs)
-        message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
-    endif()
+    xxx_require_visibility(visibility)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_options(${target_name} ${visibility}
@@ -144,10 +148,7 @@ function(xxx_target_enforce_msvc_conformance target_name visibility)
         set(CMAKE_CXX_COMPILER_ID "MSVC")
     endif()
 
-    set(vs PRIVATE PUBLIC INTERFACE)
-    if(NOT visibility IN_LIST vs)
-        message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
-    endif()
+    xxx_require_visibility(${visibility})
 
     if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         return()
@@ -174,10 +175,7 @@ function(xxx_target_treat_all_warnings_as_errors target_name visibility)
         set(CMAKE_CXX_COMPILER_ID "MSVC")
     endif()
 
-    set(vs PRIVATE PUBLIC INTERFACE)
-    if(NOT visibility IN_LIST vs)
-        message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
-    endif()
+    xxx_require_visibility(${visibility})
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_options(${target_name} ${visibility}
@@ -218,10 +216,7 @@ function(xxx_target_generate_config_header target_name visibility)
     require_variable(CMAKE_INSTALL_INCLUDEDIR)
     require_target(${target_name})
 
-    set(vs PRIVATE PUBLIC INTERFACE)
-    if(NOT visibility IN_LIST vs)
-        message(FATAL_ERROR "visibility must be one of PRIVATE, PUBLIC or INTERFACE")
-    endif()
+    xxx_require_visibility(${visibility})
 
     set(default_output_file ${CMAKE_CURRENT_BINARY_DIR}/generated/include/${PROJECT_NAME}/config.hpp)
     set(default_install_destination ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
@@ -539,7 +534,7 @@ endfunction()
 #   HEADERS <list_of_headers>
 #   BASE_DIRS <list_of_base_dirs> # Optional, default is empty
 # )
-function(xxx_target_headers target)
+function(xxx_target_headers target visibility)
     set(options)
     set(oneValueArgs)
     set(multiValueArgs HEADERS BASE_DIRS)
@@ -547,16 +542,28 @@ function(xxx_target_headers target)
 
     require_variable(arg_HEADERS)
     require_target(${target})
+    xxx_require_visibility(${visibility})
 
     if(NOT arg_BASE_DIRS)
         set(arg_BASE_DIRS "")
     endif()
 
+    # Add the header to the target sources (for IDEs)
+    foreach(header ${arg_HEADERS})
+        cmake_path(IS_ABSOLUTE header is_abs)
+        if(is_abs)
+            message(FATAL_ERROR "Header '${header}' is an absolute path. It should be a relative path to the current source directory.")
+        endif()
+        target_sources(${target} ${visibility}
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${header}>
+            $<INSTALL_INTERFACE:${header}>)
+    endforeach()
+
     # Save the headers in a property of the target
     # NOTE: The PUBLIC_HEADER technically works, but does not support base_dirs
     # cf: https://cmake.org/cmake/help/latest/command/install.html#install
-    set_target_properties(${target} PROPERTIES _xxx_headers "${arg_HEADERS}")
-    set_target_properties(${target} PROPERTIES _xxx_header_base_dirs "${arg_BASE_DIRS}")
+    set_target_properties(${target} PROPERTIES _xxx_${visibility}_headers "${arg_HEADERS}")
+    set_target_properties(${target} PROPERTIES _xxx_${visibility}_header_base_dirs "${arg_BASE_DIRS}")
 endfunction()
 
 function(xxx_target_install_headers target)
@@ -573,9 +580,21 @@ function(xxx_target_install_headers target)
         set(install_destination ${arg_DESTINATION})
     endif()
 
-    # Retrieve headers and base directories from target properties
-    get_property(headers TARGET ${target} PROPERTY _xxx_headers)
-    get_property(base_dirs TARGET ${target} PROPERTY _xxx_header_base_dirs)
+    # Retrieve PUBLIC and INTERFACE headers and base directories from target properties
+    set(vs PUBLIC INTERFACE)
+    set(headers "")
+    set(base_dirs "")
+    foreach(visibility ${vs})
+        get_property(h TARGET ${target} PROPERTY _xxx_${visibility}_headers)
+        get_property(bd TARGET ${target} PROPERTY _xxx_${visibility}_header_base_dirs)
+
+        if(h)
+            list(APPEND headers ${h})
+        endif()
+        if(bd)
+            list(APPEND base_dirs ${bd})
+        endif()
+    endforeach()
 
     if(NOT headers)
         return()

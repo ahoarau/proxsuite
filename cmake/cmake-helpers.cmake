@@ -55,13 +55,13 @@ function(xxx_configure_default_binary_dirs)
     # doc: https://cmake.org/cmake/help/v3.22/manual/cmake-buildsystem.7.html#id47
 
     if(WIN32)
-        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin CACHE PATH "" INTERNAL) # For .exe and .dll add_library(SHARED ...) .dll
-        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin CACHE PATH "" INTERNAL) # for add_library(MODULE ...) .dll
-        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib CACHE PATH "" INTERNAL) # add_library(STATIC ...) .lib
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin CACHE PATH "" INTERNAL) # For .exe and .dll add_library(SHARED ...) .dll
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin CACHE PATH "" INTERNAL) # for add_library(MODULE ...) .dll
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib CACHE PATH "" INTERNAL) # add_library(STATIC ...) .lib
     else()
-        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin CACHE PATH "" INTERNAL) # For .exe and .dll
-        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib CACHE PATH "" INTERNAL) # for shared libraries .so/.dylib and add_library(MODULE ...) .so/.dylib
-        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib CACHE PATH "" INTERNAL) # add_library(STATIC ...) .a
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin CACHE PATH "" INTERNAL) # For .exe and .dll
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib CACHE PATH "" INTERNAL) # for shared libraries .so/.dylib and add_library(MODULE ...) .so/.dylib
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib CACHE PATH "" INTERNAL) # add_library(STATIC ...) .a
     endif()
 
     set(config Debug Release RelWithDebInfo MinSizeRel)
@@ -75,7 +75,8 @@ endfunction()
 
 function(xxx_configure_default_install_dirs)
     include(GNUInstallDirs)
-    # # On Windows, libraries are installed in the same directory as executables
+    # # On Windows, in order to avoid touching the env vars, the dll needs to be installed in the same directory as executables
+    # # TODO: Find out if this is still needed on Windows. 
     # if(WIN32)
     #     set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_BINDIR} CACHE PATH "Installation directory for dlls" FORCE)
     # endif()

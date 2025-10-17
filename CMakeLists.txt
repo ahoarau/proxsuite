@@ -217,7 +217,7 @@ if(BUILD_WITH_SERIALIZATION)
   xxx_declare_component(TARGETS proxsuite-serialization COMPONENT serialization)
 endif()
 
-xxx_target_headers(proxsuite
+xxx_target_headers(proxsuite INTERFACE
   HEADERS
     include/proxsuite/helpers/common.hpp
     include/proxsuite/helpers/instruction-set.hpp
@@ -309,7 +309,7 @@ xxx_target_headers(proxsuite
   BASE_DIRS include
 )
 
-xxx_target_headers(proxsuite-serialization
+xxx_target_headers(proxsuite-serialization INTERFACE
   HEADERS
     include/proxsuite/serialization/archive.hpp
     include/proxsuite/serialization/eigen.hpp

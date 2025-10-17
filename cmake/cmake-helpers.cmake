@@ -371,9 +371,12 @@ function(xxx_print_dependency_summary)
     endforeach()
 endfunction()
 
+# Usage: xxx_export_dependencies(EXPORT <export_name> FILE <output_file> DESTINATION <install_destination> TARGETS <target1> <target2> ...)
+# This function analyzes the link libraries of the provided targets,
+# determines which packages are needed and generates a <export_name>-dependencies.cmake file
 function(xxx_export_dependencies)
     set(options)
-    set(oneValueArgs EXPORT FILE DESTINATION)
+    set(oneValueArgs EXPORT FILE DESTINATION MATO)
     set(multiValueArgs TARGETS)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
@@ -382,7 +385,8 @@ function(xxx_export_dependencies)
     require_variable(arg_TARGETS)
     require_variable(arg_DESTINATION)
 
-    # Get all BUILDSYSTEM_TARGETS of the current project
+    # Get all BUILDSYSTEM_TARGETS of the current project (i.e. added via add_library/add_executable)
+    # We need this to filter out internal targets when analyzing link libraries
     get_property(buildsystem_targets DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY BUILDSYSTEM_TARGETS)
 
     set(all_link_libraries_only_targets "")
@@ -432,6 +436,8 @@ function(xxx_export_dependencies)
         BuildSystem(Internal) Libraries : ${link_buildsystem_libraries}
     ")
 
+    # At this point, we have the list of imported libraries
+    # We now retrieve the original package name for each imported library
     set(packages_to_export "")
     foreach(target ${link_imported_libraries})
         get_property(package_name GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${target}_package_name)
@@ -447,6 +453,7 @@ function(xxx_export_dependencies)
 
     message("Packages to export for EXPORT ${arg_EXPORT}: ${packages_to_export}")
 
+    # Now we generate the <target>-dependencies.cmake file with the list of packages, imported targets and custom modules
     set(modules "")
     set(fd "")
     foreach(package_name ${packages_to_export})
@@ -498,6 +505,10 @@ function(xxx_export_dependencies)
     )
 endfunction()
 
+# Declare a component for the current project.
+# Each component declared and associated to a set of targets will have its own <package>-<component>-targets.cmake 
+# and  <target>-<component>-dependencies.cmake generated.
+# Components are used as follow: find_package(<package> CONFIG REQUIRED COMPONENTS <component1> <component2> ...)
 function(xxx_declare_component)
     set(options)
     set(oneValueArgs COMPONENT)
@@ -566,6 +577,8 @@ function(xxx_target_headers target visibility)
     set_target_properties(${target} PROPERTIES _xxx_${visibility}_header_base_dirs "${arg_BASE_DIRS}")
 endfunction()
 
+# Install declared header for a given target
+# For a whole project, use xxx_install_headers() instead
 function(xxx_target_install_headers target)
     set(options)
     set(oneValueArgs DESTINATION)
@@ -630,6 +643,8 @@ function(xxx_target_install_headers target)
     endforeach()
 endfunction()
 
+# For each component, install declared headers for all targets.
+# See xxx_target_headers() to declare headers for a target.
 function(xxx_install_headers)
     set(options)
     set(oneValueArgs DESTINATION)
@@ -679,6 +694,13 @@ function(xxx_install_headers)
     endforeach()
 endfunction()
 
+# Generate the package modules files:
+#  - <package>-config.cmake
+#  - <package>-version.cmake
+#  - <package>-<componentA>-targets.cmake
+#  - <package>-<componentA>-dependencies.cmake
+#  - <package>-<componentB>-targets.cmake
+#  - <package>-<componentB>-dependencies.cmake
 function(xxx_generate_package_module_files)
     set(options)
     set(oneValueArgs)
@@ -863,6 +885,9 @@ function(xxx_print_option_summary)
     message( "")
 endfunction()
 
+# Shortcut to find Python package and check main variables
+# Usage: xxx_find_python([version] [REQUIRED] [COMPONENTS ...])
+# Example: xxx_find_python(3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 macro(xxx_find_python)
     xxx_find_package(Python ${ARGN})
     require_variable(Python_EXECUTABLE)
@@ -876,6 +901,8 @@ macro(xxx_find_python)
     ")
 endmacro()
 
+# Shortcut to find the nanobind package
+# Usage: xxx_find_nanobind()
 macro(xxx_find_nanobind)
     xxx_find_python(3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 

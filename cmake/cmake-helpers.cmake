@@ -204,7 +204,7 @@ function(xxx_target_generate_config_header target_name visibility)
     set(oneValueArgs OUTPUT INSTALL_DESTINATION)
     set(multiValueArgs)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
-    
+
     require_variable(PROJECT_NAME)
     require_variable(PROJECT_VERSION)
     require_variable(PROJECT_VERSION_MAJOR)
@@ -256,9 +256,8 @@ endfunction()
 # ref: https://cmake.org/cmake/help/latest/command/find_package.html
 # This function allows to automatically retrieve the imported targets provided by the package
 # and store info in global properties for later use (e.g. when exporting dependencies)
-# Note: This function needs to be a macro and not a function,
-# as some packages leak variables that need to be visible in the parent scope.
-macro(xxx_find_package)
+# Note: variables imported by the original find_package are propagated to parent scope
+function(xxx_find_package)
     string(ASCII 27 Esc)
     message("${Esc}[1;34m" "[${ARGV0}]" "${Esc}[m")
     message(DEBUG "Executing xxx_find_package with args ${ARGV}")
@@ -291,22 +290,39 @@ macro(xxx_find_package)
     string(REPLACE ";" " " fp_pp "${arg_UNPARSED_ARGUMENTS}")
     message("   Executing find_package(${fp_pp})")
 
-    # Saving the list of imported targets before the call to find_package
+    # Saving the list of imported targets and variables BEFORE the call to find_package
     get_property(imported_targets_before DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
+    get_property(variables_before DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VARIABLES)
 
-    # The actual call to find_package
     find_package(${arg_UNPARSED_ARGUMENTS})
 
-    # TODO: handle QUIET
+    # TODO: handle QUIET properly
 
-    # Saving the list of imported targets after the call to find_package
+    # Getting the list of imported targets and variables AFTER the call to find_package
     get_property(imported_targets_after DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
-    set(imported_targets "")
-    foreach(it IN LISTS imported_targets_after)
-        if(NOT it IN_LIST imported_targets_before)
-            list(APPEND imported_targets ${it})
+    get_property(variables_after DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VARIABLES)
+
+    # xxx_list_diff(variables_before variables_after new_variables)
+    set(new_variables "")
+    foreach(var ${variables_after})
+        if(NOT var IN_LIST variables_before)
+            list(APPEND new_variables ${var})
         endif()
     endforeach()
+    set(imported_targets "")
+    foreach(target ${imported_targets_after})
+        if(NOT target IN_LIST imported_targets_before)
+            list(APPEND imported_targets ${target})
+        endif()
+    endforeach()
+
+    # Tagging new variables for parent scope
+    foreach(var IN LISTS new_variables)
+        set(${var} "${${var}}" PARENT_SCOPE)
+    endforeach()
+    string(REPLACE ";" ", " new_variables_pp "${new_variables}")
+    message(DEBUG "   New variables detected: ${new_variables_pp}")
+    
     string(REPLACE ";" ", " imported_targets_pp "${imported_targets}")
     message("   Imported targets detected: ${imported_targets_pp}")
 
@@ -319,13 +335,7 @@ macro(xxx_find_package)
     foreach(target ${imported_targets})
         set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${target}_package_name "${package_name}")
     endforeach()
-
-    unset(package_name)
-    unset(imported_targets_before)
-    unset(imported_targets_after)
-    unset(imported_targets_pp)
-    unset(imported_targets)
-endmacro()
+endfunction()
 
 function(xxx_print_dependency_summary)
     include(CMakePrintHelpers)

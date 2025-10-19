@@ -22,7 +22,7 @@ function(require_target target_name)
     endif()
 endfunction()
 
-function(xxx_require_visibility visibility)
+function(require_visibility visibility)
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT ${visibility} IN_LIST vs)
         message(FATAL_ERROR "visibility (${visibility}) must be one of PRIVATE, PUBLIC or INTERFACE")
@@ -105,6 +105,7 @@ endfunction()
 # Example: xxx_target_set_default_compile_options(my_target INTERFACE)
 function(xxx_target_set_default_compile_options target_name visibility)
     require_target(${target_name})
+    require_visibility(${visibility})
 
     # In CMake >= 3.26, use CMAKE_CXX_COMPILER_FRONTEND_VARIANT¶
     # ref: https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_FRONTEND_VARIANT.html
@@ -112,8 +113,6 @@ function(xxx_target_set_default_compile_options target_name visibility)
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
         set(CMAKE_CXX_COMPILER_ID "MSVC")
     endif()
-
-    xxx_require_visibility(visibility)
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_options(${target_name} ${visibility}
@@ -143,12 +142,11 @@ endfunction()
 # visibility is either PRIVATE, PUBLIC or INTERFACE
 # Example: xxx_target_enforce_msvc_conformance(my_target INTERFACE)
 function(xxx_target_enforce_msvc_conformance target_name visibility)
+    require_visibility(${visibility})
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
         set(CMAKE_CXX_COMPILER_ID "MSVC")
     endif()
-
-    xxx_require_visibility(${visibility})
 
     if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         return()
@@ -170,12 +168,11 @@ endfunction()
 # Example: xxx_target_treat_all_warnings_as_errors(my_target PRIVATE)
 # NOTE: in CMake 3.24, we have the new CMAKE_COMPILE_WARNING_AS_ERROR option, but for the whole project and subprojects
 function(xxx_target_treat_all_warnings_as_errors target_name visibility)
+    require_visibility(${visibility})
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
         set(CMAKE_CXX_COMPILER_ID "MSVC")
     endif()
-
-    xxx_require_visibility(${visibility})
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         target_compile_options(${target_name} ${visibility}
@@ -207,6 +204,7 @@ function(xxx_target_generate_config_header target_name visibility)
     set(oneValueArgs OUTPUT INSTALL_DESTINATION)
     set(multiValueArgs)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+    
     require_variable(PROJECT_NAME)
     require_variable(PROJECT_VERSION)
     require_variable(PROJECT_VERSION_MAJOR)
@@ -215,8 +213,7 @@ function(xxx_target_generate_config_header target_name visibility)
     require_variable(CMAKE_CURRENT_BINARY_DIR)
     require_variable(CMAKE_INSTALL_INCLUDEDIR)
     require_target(${target_name})
-
-    xxx_require_visibility(${visibility})
+    require_visibility(${visibility})
 
     set(default_output_file ${CMAKE_CURRENT_BINARY_DIR}/generated/include/${PROJECT_NAME}/config.hpp)
     set(default_install_destination ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
@@ -553,7 +550,7 @@ function(xxx_target_headers target visibility)
 
     require_variable(arg_HEADERS)
     require_target(${target})
-    xxx_require_visibility(${visibility})
+    require_visibility(${visibility})
 
     if(NOT arg_BASE_DIRS)
         set(arg_BASE_DIRS "")

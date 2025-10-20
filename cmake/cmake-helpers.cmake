@@ -367,6 +367,9 @@ function(xxx_print_dependency_summary)
             INCLUDE_DIRECTORIES
             COMPILE_DEFINITIONS
             COMPILE_OPTIONS
+            COMPILE_FEATURES
+            COMPILE_FLAGS
+            COMPILE_OPTIONS
             LINK_LIBRARIES
             LINK_OPTIONS
             INTERFACE_INCLUDE_DIRECTORIES

@@ -256,8 +256,8 @@ endfunction()
 # ref: https://cmake.org/cmake/help/latest/command/find_package.html
 # This function allows to automatically retrieve the imported targets provided by the package
 # and store info in global properties for later use (e.g. when exporting dependencies)
-# Note: variables imported by the original find_package are propagated to parent scope
-function(xxx_find_package)
+# Note: this needs to be a macro so find_package can leak variables (like Python_SITELIB)
+macro(xxx_find_package)
     string(ASCII 27 Esc)
     message("${Esc}[1;34m" "[${ARGV0}]" "${Esc}[m")
     message(DEBUG "Executing xxx_find_package with args ${ARGV}")
@@ -290,25 +290,15 @@ function(xxx_find_package)
     string(REPLACE ";" " " fp_pp "${arg_UNPARSED_ARGUMENTS}")
     message("   Executing find_package(${fp_pp})")
 
-    # Saving the list of imported targets and variables BEFORE the call to find_package
+    # Saving the list of imported targets BEFORE the call to find_package
     get_property(imported_targets_before DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
-    get_property(variables_before DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VARIABLES)
 
     find_package(${arg_UNPARSED_ARGUMENTS})
 
     # TODO: handle QUIET properly
 
-    # Getting the list of imported targets and variables AFTER the call to find_package
+    # Getting the list of imported targets AFTER the call to find_package
     get_property(imported_targets_after DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY IMPORTED_TARGETS)
-    get_property(variables_after DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VARIABLES)
-
-    # xxx_list_diff(variables_before variables_after new_variables)
-    set(new_variables "")
-    foreach(var ${variables_after})
-        if(NOT var IN_LIST variables_before)
-            list(APPEND new_variables ${var})
-        endif()
-    endforeach()
     set(imported_targets "")
     foreach(target ${imported_targets_after})
         if(NOT target IN_LIST imported_targets_before)
@@ -316,13 +306,6 @@ function(xxx_find_package)
         endif()
     endforeach()
 
-    # Tagging new variables for parent scope
-    foreach(var IN LISTS new_variables)
-        set(${var} "${${var}}" PARENT_SCOPE)
-    endforeach()
-    string(REPLACE ";" ", " new_variables_pp "${new_variables}")
-    message(DEBUG "   New variables detected: ${new_variables_pp}")
-    
     string(REPLACE ";" ", " imported_targets_pp "${imported_targets}")
     message("   Imported targets detected: ${imported_targets_pp}")
 
@@ -335,7 +318,14 @@ function(xxx_find_package)
     foreach(target ${imported_targets})
         set_property(GLOBAL PROPERTY _xxx_${PROJECT_NAME}_${target}_package_name "${package_name}")
     endforeach()
-endfunction()
+
+    unset(package_name)
+    unset(module_file)
+    unset(imported_targets)
+    unset(imported_targets_before)
+    unset(imported_targets_after)
+    unset(imported_targets_pp)
+endmacro()
 
 function(xxx_print_dependency_summary)
     include(CMakePrintHelpers)

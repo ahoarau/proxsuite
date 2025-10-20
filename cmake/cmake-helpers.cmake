@@ -893,11 +893,13 @@ macro(xxx_find_python)
     require_variable(Python_EXECUTABLE)
     require_variable(Python_INCLUDE_DIRS)
     require_variable(Python_LIBRARIES)
+    require_variable(Python_SITELIB)
 
     message(DEBUG "[${PROJECT_NAME}]
-        Python executable: ${Python_EXECUTABLE}
-        Python include directories: ${Python_INCLUDE_DIRS}
-        Python libraries: ${Python_LIBRARIES}
+        Python executable           : ${Python_EXECUTABLE}
+        Python include directories  : ${Python_INCLUDE_DIRS}
+        Python libraries            : ${Python_LIBRARIES}
+        Python sitelib              : ${Python_SITELIB}
     ")
 endmacro()
 

@@ -3,14 +3,13 @@
 #
 cmake_minimum_required(VERSION 3.22...4.1)
 
-# include(FetchContent)
-# FetchContent_Declare(
-#   cmake-utils
-#   URL https://github.com/ahoarau/cmake-utils/archive/refs/tags/v0.0.1.zip
-#   URL_HASH SHA256=16e2fd64c3cb15aeb4b1a72623cdb0fbb619f9ed8a5c5f9729325c5d30682af5
-# )
-# FetchContent_MakeAvailable(cmake-utils)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake-helpers.cmake)
+include(FetchContent)
+FetchContent_Declare(
+  cmake-utils
+  GIT_REPOSITORY https://github.com/ahoarau/cmake-utils.git
+  GIT_TAG main
+)
+FetchContent_MakeAvailable(cmake-utils)
 
 project(
   proxsuite
@@ -107,14 +106,14 @@ endif()
 # simde
 if(BUILD_WITH_VECTORIZATION_SUPPORT)
   xxx_find_package(simde REQUIRED
-      MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/simde
+      MODULE_PATH ${cmake-utils_SOURCE_DIR}/modules/simde
   )
 endif()
 
 # matio
 if(BUILD_MAROS_MESZAROS_TESTS AND BUILD_TESTING)
   xxx_find_package(matio REQUIRED
-    MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/matio
+    MODULE_PATH ${cmake-utils_SOURCE_DIR}/modules/matio
   )
 endif()
 

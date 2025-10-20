@@ -1,10 +1,10 @@
 # gersemi: off
 cmake_minimum_required(VERSION 3.22..4.1)
 
-# Usage: require_variable(<var> [<message>])
-# Example: require_variable(MY_VAR "MY_VAR must be set to build this project")
-# Example: require_variable(MY_VAR) # Will print "MY_VAR is not defined."
-function(require_variable var)
+# Usage: xxx_require_variable(<var> [<message>])
+# Example: xxx_require_variable(MY_VAR "MY_VAR must be set to build this project")
+# Example: xxx_require_variable(MY_VAR) # Will print "MY_VAR is not defined."
+function(xxx_require_variable var)
     if(NOT DEFINED ${var})
         if(ARGC EQUAL 1)
             set(msg "Required variable '${ARGV0}' is not defined.")
@@ -16,13 +16,13 @@ function(require_variable var)
 endfunction()
 
 # Check if a target exists, otherwise raise a fatal error
-function(require_target target_name)
+function(xxx_require_target target_name)
     if(NOT TARGET ${target_name})
         message(FATAL_ERROR "Target '${target_name}' does not exist.")
     endif()
 endfunction()
 
-function(require_visibility visibility)
+function(xxx_require_visibility visibility)
     set(vs PRIVATE PUBLIC INTERFACE)
     if(NOT ${visibility} IN_LIST vs)
         message(FATAL_ERROR "visibility (${visibility}) must be one of PRIVATE, PUBLIC or INTERFACE")
@@ -104,8 +104,8 @@ endfunction()
 # visibility is either PRIVATE, PUBLIC or INTERFACE
 # Example: xxx_target_set_default_compile_options(my_target INTERFACE)
 function(xxx_target_set_default_compile_options target_name visibility)
-    require_target(${target_name})
-    require_visibility(${visibility})
+    xxx_require_target(${target_name})
+    xxx_require_visibility(${visibility})
 
     # In CMake >= 3.26, use CMAKE_CXX_COMPILER_FRONTEND_VARIANT¶
     # ref: https://cmake.org/cmake/help/latest/variable/CMAKE_LANG_COMPILER_FRONTEND_VARIANT.html
@@ -142,7 +142,7 @@ endfunction()
 # visibility is either PRIVATE, PUBLIC or INTERFACE
 # Example: xxx_target_enforce_msvc_conformance(my_target INTERFACE)
 function(xxx_target_enforce_msvc_conformance target_name visibility)
-    require_visibility(${visibility})
+    xxx_require_visibility(${visibility})
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
         set(CMAKE_CXX_COMPILER_ID "MSVC")
@@ -168,7 +168,7 @@ endfunction()
 # Example: xxx_target_treat_all_warnings_as_errors(my_target PRIVATE)
 # NOTE: in CMake 3.24, we have the new CMAKE_COMPILE_WARNING_AS_ERROR option, but for the whole project and subprojects
 function(xxx_target_treat_all_warnings_as_errors target_name visibility)
-    require_visibility(${visibility})
+    xxx_require_visibility(${visibility})
 
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_SIMULATE_ID STREQUAL "MSVC")
         set(CMAKE_CXX_COMPILER_ID "MSVC")
@@ -205,15 +205,15 @@ function(xxx_target_generate_config_header target_name visibility)
     set(multiValueArgs)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-    require_variable(PROJECT_NAME)
-    require_variable(PROJECT_VERSION)
-    require_variable(PROJECT_VERSION_MAJOR)
-    require_variable(PROJECT_VERSION_MINOR)
-    require_variable(PROJECT_VERSION_PATCH)
-    require_variable(CMAKE_CURRENT_BINARY_DIR)
-    require_variable(CMAKE_INSTALL_INCLUDEDIR)
-    require_target(${target_name})
-    require_visibility(${visibility})
+    xxx_require_variable(PROJECT_NAME)
+    xxx_require_variable(PROJECT_VERSION)
+    xxx_require_variable(PROJECT_VERSION_MAJOR)
+    xxx_require_variable(PROJECT_VERSION_MINOR)
+    xxx_require_variable(PROJECT_VERSION_PATCH)
+    xxx_require_variable(CMAKE_CURRENT_BINARY_DIR)
+    xxx_require_variable(CMAKE_INSTALL_INCLUDEDIR)
+    xxx_require_target(${target_name})
+    xxx_require_visibility(${visibility})
 
     set(default_output_file ${CMAKE_CURRENT_BINARY_DIR}/generated/include/${PROJECT_NAME}/config.hpp)
     set(default_install_destination ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
@@ -380,10 +380,10 @@ function(xxx_export_dependencies)
     set(multiValueArgs TARGETS)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-    require_variable(arg_EXPORT)
-    require_variable(arg_FILE)
-    require_variable(arg_TARGETS)
-    require_variable(arg_DESTINATION)
+    xxx_require_variable(arg_EXPORT)
+    xxx_require_variable(arg_FILE)
+    xxx_require_variable(arg_TARGETS)
+    xxx_require_variable(arg_DESTINATION)
 
     # Get all BUILDSYSTEM_TARGETS of the current project (i.e. added via add_library/add_executable)
     # We need this to filter out internal targets when analyzing link libraries
@@ -461,8 +461,8 @@ function(xxx_export_dependencies)
         get_property(find_package_args GLOBAL PROPERTY _xxx_${package_name}_find_package_args)
         get_property(module_path GLOBAL PROPERTY _xxx_${package_name}_module_path)
 
-        require_variable(find_package_args "find_package_args must be defined for package ${package_name}")
-        require_variable(expected_targets "expected_targets must be defined for package ${package_name}")
+        xxx_require_variable(find_package_args "find_package_args must be defined for package ${package_name}")
+        xxx_require_variable(expected_targets "expected_targets must be defined for package ${package_name}")
 
         string(REPLACE ";" " " find_package_args "${find_package_args}")
 
@@ -515,9 +515,9 @@ function(xxx_declare_component)
     set(multiValueArgs TARGETS)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-    require_variable(PROJECT_NAME)
-    require_variable(arg_TARGETS)
-    require_variable(arg_COMPONENT)
+    xxx_require_variable(PROJECT_NAME)
+    xxx_require_variable(arg_TARGETS)
+    xxx_require_variable(arg_COMPONENT)
 
     # Check component is not already declared
     get_property(existing_components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
@@ -551,9 +551,9 @@ function(xxx_target_headers target visibility)
     set(multiValueArgs HEADERS BASE_DIRS)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-    require_variable(arg_HEADERS)
-    require_target(${target})
-    require_visibility(${visibility})
+    xxx_require_variable(arg_HEADERS)
+    xxx_require_target(${target})
+    xxx_require_visibility(${visibility})
 
     if(NOT arg_BASE_DIRS)
         set(arg_BASE_DIRS "")
@@ -585,7 +585,7 @@ function(xxx_target_install_headers target)
     set(multiValueArgs)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-    require_target(${target})
+    xxx_require_target(${target})
 
     if(NOT arg_DESTINATION)
         set(install_destination ${CMAKE_INSTALL_INCLUDEDIR})
@@ -651,7 +651,7 @@ function(xxx_install_headers)
     set(multiValueArgs COMPONENTS)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
-    require_variable(PROJECT_NAME)
+    xxx_require_variable(PROJECT_NAME)
 
     if(arg_UNPARSED_ARGUMENTS)
         message(FATAL_ERROR "Unrecognized arguments: ${arg_UNPARSED_ARGUMENTS}")
@@ -708,11 +708,11 @@ function(xxx_generate_package_module_files)
     cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
 
     include(CMakePackageConfigHelpers)
-    require_variable(PROJECT_NAME)
-    require_variable(PROJECT_VERSION)
-    require_variable(CMAKE_INSTALL_BINDIR)
-    require_variable(CMAKE_INSTALL_LIBDIR)
-    require_variable(CMAKE_INSTALL_INCLUDEDIR)
+    xxx_require_variable(PROJECT_NAME)
+    xxx_require_variable(PROJECT_VERSION)
+    xxx_require_variable(CMAKE_INSTALL_BINDIR)
+    xxx_require_variable(CMAKE_INSTALL_LIBDIR)
+    xxx_require_variable(CMAKE_INSTALL_INCLUDEDIR)
 
     get_property(declared_components GLOBAL PROPERTY _xxx_${PROJECT_NAME}_components)
     if(NOT declared_components)
@@ -812,9 +812,9 @@ endfunction()
 # Example: xxx_option(BUILD_TESTING "Build the tests" ON)
 # Override cmake option() to get a nice summary at the end of the configuration step
 function(xxx_option option_name description default_value)
-    require_variable(option_name)
-    require_variable(description)
-    require_variable(default_value)
+    xxx_require_variable(option_name)
+    xxx_require_variable(description)
+    xxx_require_variable(default_value)
 
     # The call to the original option()
     option(${ARGV})
@@ -890,10 +890,10 @@ endfunction()
 # Example: xxx_find_python(3.8 REQUIRED COMPONENTS Interpreter Development.Module)
 macro(xxx_find_python)
     xxx_find_package(Python ${ARGN})
-    require_variable(Python_EXECUTABLE)
-    require_variable(Python_INCLUDE_DIRS)
-    require_variable(Python_LIBRARIES)
-    require_variable(Python_SITELIB)
+    xxx_require_variable(Python_EXECUTABLE)
+    xxx_require_variable(Python_INCLUDE_DIRS)
+    xxx_require_variable(Python_LIBRARIES)
+    xxx_require_variable(Python_SITELIB)
 
     message(DEBUG "[${PROJECT_NAME}]
         Python executable           : ${Python_EXECUTABLE}

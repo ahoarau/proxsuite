@@ -130,6 +130,7 @@ endif()
 ############################################################
 
 add_library(proxsuite INTERFACE)
+set_target_properties(proxsuite PROPERTIES VERSION ${PROJECT_VERSION})
 target_compile_features(proxsuite INTERFACE cxx_std_17)
 xxx_target_enforce_msvc_conformance(proxsuite INTERFACE)
 

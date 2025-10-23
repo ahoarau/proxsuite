@@ -5,16 +5,13 @@ description = "The Advanced Proximal Optimization Toolbox"
 channels = ["conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 
-[build-dependencies]
+[dependencies]
 ccache = ">=4.9.1"
 cmake = ">=3.22"
 cxx-compiler = ">=1.7.0"
 ninja = ">=1.11"
-nanobind = "*"
 pip = "*"
 scikit-build-core = "*"
-
-[dependencies]
 eigen = ">=3.4.0,<4"
 simde = ">=0.8.2,<0.9"
 catch2 = ">=3.8.0,<4" # Only for test

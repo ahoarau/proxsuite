@@ -290,6 +290,8 @@ xxx_target_headers(proxsuite INTERFACE
     include/proxsuite/proxqp/dense/wrapper.hpp
     include/proxsuite/proxqp/parallel/omp.hpp
     include/proxsuite/proxqp/parallel/qp_solve.hpp
+    include/proxsuite/proxqp/sparse/preconditioner/identity.hpp
+    include/proxsuite/proxqp/sparse/preconditioner/ruiz.hpp
     include/proxsuite/proxqp/sparse/fwd.hpp
     include/proxsuite/proxqp/sparse/helpers.hpp
     include/proxsuite/proxqp/sparse/model.hpp

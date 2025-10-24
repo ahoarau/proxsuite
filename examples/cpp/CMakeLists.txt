@@ -137,21 +137,26 @@ if(RUST_INTEGRATION_EXAMPLE)
       URL https://github.com/corrosion-rs/corrosion/archive/refs/tags/v0.5.2.zip
       URL_HASH MD5=d66ba69824047c1faab49a78be02bae3
   )
+  set (Rust_TOOLCHAIN nightly)
   FetchContent_MakeAvailable(corrosion)
 
   FetchContent_Declare(
-    is_even
-    GIT_REPOSITORY https://codeberg.org/sarah-quinones/is_even_test_project.git
-    GIT_TAG main
+    faer
+    GIT_REPOSITORY https://codeberg.org/sarah-quinones/faer.git
+    GIT_TAG 30a31e007c5eb988d5d587f0d299da082a21819d
   )
-  FetchContent_MakeAvailable(is_even)
+  FetchContent_MakeAvailable(faer)
   
-  corrosion_import_crate(MANIFEST_PATH ${is_even_SOURCE_DIR}/Cargo.toml)
+  corrosion_import_crate(MANIFEST_PATH ${faer_SOURCE_DIR}/Cargo.toml IMPORTED_CRATES imported_crates)
+  message(STATUS "Faer imported crates: ${imported_crates}")
+
   corrosion_experimental_cbindgen(
-        TARGET iseven
-        HEADER_NAME generated_is_even.h
+        TARGET faer_ffi
+        HEADER_NAME faer.h
   )
 
   add_executable(proxsuite-rust-integration-example rust_integration_example.cpp)
-  target_link_libraries(proxsuite-rust-integration-example PRIVATE iseven)
+  target_include_directories(proxsuite-rust-integration-example PRIVATE ${faer_SOURCE_DIR}/faer-ffi)
+  target_compile_features(proxsuite-rust-integration-example PRIVATE cxx_std_20)
+  target_link_libraries(proxsuite-rust-integration-example PRIVATE faer_ffi Eigen3::Eigen)
 endif()

@@ -20,8 +20,6 @@ project(
 
 # Import CMake-provided helper functions
 xxx_include_ctest()
-include(CMakeDependentOption)
-
 xxx_configure_default_build_type(Release)
 xxx_configure_default_install_prefix(${CMAKE_CURRENT_BINARY_DIR}/tmp-install)
 xxx_configure_default_binary_dirs()
@@ -61,14 +59,14 @@ xxx_option(
 )
 xxx_option(TEST_JULIA_INTERFACE "Run the julia examples as unittest" OFF)
 xxx_option(BUILD_WITH_OPENMP_SUPPORT "Build the library with the OpenMP support" ON)
-cmake_dependent_option(
+xxx_cmake_dependent_option(
   LINK_PYTHON_INTERFACE_TO_OPENMP
   "Link OpenMP to the Python interface"
   ON
   BUILD_WITH_OPENMP_SUPPORT
   OFF
 )
-cmake_dependent_option(
+xxx_cmake_dependent_option(
   BUILD_WITH_SERIALIZATION
   "Build with serialization support"
   ON
@@ -130,6 +128,7 @@ endif()
 ############################################################
 
 add_library(proxsuite INTERFACE)
+add_library(proxsuite::proxsuite ALIAS proxsuite)
 set_target_properties(proxsuite PROPERTIES VERSION ${PROJECT_VERSION})
 target_compile_features(proxsuite INTERFACE cxx_std_17)
 xxx_target_enforce_msvc_conformance(proxsuite INTERFACE)
@@ -151,21 +150,18 @@ if(ENABLE_WARNINGS_AS_ERRORS)
   xxx_target_treat_all_warnings_as_errors(proxsuite INTERFACE)
 endif()
 
-target_compile_definitions(
-  proxsuite
-  INTERFACE
+target_compile_definitions(proxsuite INTERFACE
     $<$<BOOL:${INITIALIZE_EIGEN_WITH_NAN}>:EIGEN_INITIALIZE_MATRICES_BY_NAN>
     $<$<BOOL:${CHECK_RUNTIME_MALLOC}>:EIGEN_RUNTIME_NO_MALLOC>
     $<$<BOOL:${CHECK_RUNTIME_MALLOC}>:PROXSUITE_EIGEN_CHECK_MALLOC>
     $<$<BOOL:${BUILD_WITH_OPENMP_SUPPORT}>:PROXSUITE_PYTHON_INTERFACE_WITH_OPENMP>
 )
 
-target_link_libraries(proxsuite INTERFACE Eigen3::Eigen)
-add_library(proxsuite::proxsuite ALIAS proxsuite)
+target_link_libraries(proxsuite INTERFACE 
+  Eigen3::Eigen
+  $<$<BOOL:${BUILD_WITH_OPENMP_SUPPORT}>:OpenMP::OpenMP_CXX>
+)
 
-if(BUILD_WITH_OPENMP_SUPPORT)
-  target_link_libraries(proxsuite INTERFACE OpenMP::OpenMP_CXX)
-endif()
 
 if(BUILD_PYTHON_INTERFACE)
   add_subdirectory(bindings/python)
@@ -330,5 +326,5 @@ endif()
 
 xxx_generate_package_module_files()
 
-# xxx_print_dependency_summary()
-# xxx_print_option_summary()
+xxx_print_dependency_summary()
+xxx_print_option_summary()

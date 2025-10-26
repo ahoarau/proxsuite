@@ -27,12 +27,12 @@ cmd = [
   "cmake",
   # "--debug-find",
   "-S", ".",
-  "-B", "build/RelWithDebInfo",
+  "-B", "build/Release",
   "-G", "Ninja",
   "--profiling-output=cmake-profiling.json",
   "--profiling-format=google-trace",
   "-DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX",
-  "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+  "-DCMAKE_BUILD_TYPE=Release",
   "-DBUILD_WITH_VECTORIZATION_SUPPORT=ON",
   "-DBUILD_WITH_SERIALIZATION=ON",
   "-DBUILD_MAROS_MESZAROS_TESTS=OFF",
@@ -51,27 +51,27 @@ depends-on = ["clear", "configure"]
 
 [tasks.build]
 depends-on = ["configure"]
-cmd = ["cmake", "--build", "build/RelWithDebInfo"]
+cmd = ["cmake", "--build", "build/Release"]
 
 [tasks.test]
 depends-on = ["build"]
-cmd = ["ctest", "--test-dir", "build/RelWithDebInfo", "--output-on-failure"]
+cmd = ["ctest", "--test-dir", "build/Release", "--output-on-failure"]
 
 [tasks.install]
 depends-on = ["build"]
-cmd = ["cmake", "--install", "build/RelWithDebInfo"]
+cmd = ["cmake", "--install", "build/Release"]
 
 [tasks.test-packaging]
 depends-on = ["install"]
-cmd = "cmake -G Ninja -S test/packaging/cmake -B build/RelWithDebInfo/test-packaging -DCMAKE_VERBOSE_MAKEFILE=1 &&  cmake --build build/RelWithDebInfo/test-packaging"
+cmd = "cmake -G Ninja -S test/packaging/cmake -B build/Release/test-packaging -DCMAKE_VERBOSE_MAKEFILE=1 &&  cmake --build build/Release/test-packaging"
 
 [tasks.doc]
 depends-on = ["configure"]
-cmd = ["cmake", "--build", "build/RelWithDebInfo", "--target", "doc"]
+cmd = ["cmake", "--build", "build/Release", "--target", "doc"]
 
 [tasks.clear]
-cmd = ["cmake", "-E", "remove_directory", "build/RelWithDebInfo"]
+cmd = ["cmake", "-E", "remove_directory", "build/Release"]
 
 [tasks.clean]
 depends-on = ["configure"]
-cmd = ["cmake", "--build", "build/RelWithDebInfo", "--target", "clean"]
+cmd = ["cmake", "--build", "build/Release", "--target", "clean"]

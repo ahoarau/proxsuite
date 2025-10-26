@@ -68,7 +68,7 @@ if(BUILD_WITH_OPENMP_SUPPORT)
 endif()
 
 if(BUILD_WITH_SERIALIZATION)
-  proxsuite_add_test(NAME proxsuite-test-cpp-serialization SOURCES src/serialization.cpp INCLUDE_DIRECTORIES include LINK_LIBRARIES proxsuite)
+  proxsuite_add_test(NAME proxsuite-test-cpp-serialization SOURCES src/serialization.cpp INCLUDE_DIRECTORIES include LINK_LIBRARIES proxsuite-serialization)
   make_directory(${CMAKE_BINARY_DIR}/serialization-data) # We have to create the folder for the output data, tests don't do that.
   target_compile_definitions(
     proxsuite-test-cpp-serialization

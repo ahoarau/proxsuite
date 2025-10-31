@@ -22,6 +22,7 @@ doxygen = ">=1.13.2,<2"     # Only for doc
 graphviz = ">=13.1.2,<14"   # Only for doc
 pytest = ">=8.4.2,<9"
 numpy = ">=1.24.0,<2"
+pre-commit = ">=4.3.0,<5"
 
 [tasks.configure]
 cmd = [
@@ -43,10 +44,10 @@ cmd = [
   "-DBUILD_MAROS_MESZAROS_TESTS=OFF",
   "-DENABLE_WARNINGS=OFF",
   "-DENABLE_WARNINGS_AS_ERRORS=OFF",
-  "-DBUILD_TESTING=OFF",
-  "-DBUILD_DOCUMENTATION=OFF",
-  "-DBUILD_EXAMPLES=OFF",
-  "-DBUILD_BENCHMARK=OFF",
+  "-DBUILD_TESTING=ON",
+  "-DBUILD_DOCUMENTATION=ON",
+  "-DBUILD_EXAMPLES=ON",
+  "-DBUILD_BENCHMARK=ON",
   "-DBUILD_PYTHON_INTERFACE=ON",
   "-DGENERATE_PYTHON_STUBS=ON",
   "-DBUILD_WITH_OPENMP_SUPPORT=ON",
@@ -77,9 +78,20 @@ cmd = [
 depends-on = ["build"]
 cmd = ["cmake", "--install", "build/Release"]
 
-[tasks.test-packaging]
+
+[tasks._test-packaging-configure]
 depends-on = ["install"]
-cmd = "cmake -G Ninja -S test/packaging/cmake -B build/Release/test-packaging -DCMAKE_VERBOSE_MAKEFILE=1 && cmake --build build/Release/test-packaging"
+cmd = [
+  "cmake",
+  "-G", "Ninja",
+  "-S", "test/packaging/cmake",
+  "-B", "build/Release/test-packaging",
+  "-DCMAKE_VERBOSE_MAKEFILE=1",
+]
+
+[tasks.test-packaging]
+depends-on = ["_test-packaging-configure"]
+cmd = ["cmake", "--build", "build/Release/test-packaging"]
 
 [tasks.doc]
 depends-on = ["configure"]
@@ -91,3 +103,6 @@ cmd = ["cmake", "-E", "remove_directory", "build/Release"]
 [tasks.clean]
 depends-on = ["configure"]
 cmd = ["cmake", "--build", "build/Release", "--target", "clean"]
+
+[tasks.lint]
+cmd = ["pre-commit", "run", "--all"]

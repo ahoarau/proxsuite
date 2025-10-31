@@ -10,25 +10,30 @@ ccache = ">=4.9.1"
 cmake = ">=3.22"
 cxx-compiler = ">=1.7.0"
 ninja = ">=1.11"
-pip = "*"
-scikit-build-core = "*"
 eigen = ">=3.4.0,<4"
 simde = ">=0.8.2,<0.9"
-catch2 = ">=3.8.0,<4" # Only for test
-cereal = ">=1.3.2,<2" # only for test
-python = ">=3.9" # Only for python bindings
-nanobind = ">=2.9.2,<3" # Only for python bindings
-libmatio = ">=1.5.28,<2" # Only for maros meszaros tests
-doxygen = ">=1.13.2,<2" # Only for doc
-graphviz = ">=13.1.2,<14" # Only for doc
+catch2 = ">=3.8.0,<4"       # Only for test
+cereal = ">=1.3.2,<2"       # only for test
+python = ">=3.8, <3.13"     # Only for python bindings
+python_abi = ">=3.8, <3.13"
+nanobind = ">=2.9.2,<3"     # Only for python bindings
+libmatio = ">=1.5.28,<2"    # Only for maros meszaros tests
+doxygen = ">=1.13.2,<2"     # Only for doc
+graphviz = ">=13.1.2,<14"   # Only for doc
+pytest = ">=8.4.2,<9"
+numpy = ">=1.24.0,<2"
 
 [tasks.configure]
 cmd = [
   "cmake",
   # "--debug-find",
-  "-S", ".",
-  "-B", "build/Release",
-  "-G", "Ninja",
+  "-S",
+  ".",
+  "-B",
+  "build/Release",
+  "-G",
+  "Ninja",
+  "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
   "--profiling-output=cmake-profiling.json",
   "--profiling-format=google-trace",
   "-DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX",
@@ -42,8 +47,11 @@ cmd = [
   "-DBUILD_DOCUMENTATION=OFF",
   "-DBUILD_EXAMPLES=OFF",
   "-DBUILD_BENCHMARK=OFF",
-  "-DBUILD_PYTHON_INTERFACE=OFF",
-  "-DBUILD_WITH_OPENMP_SUPPORT=ON"
+  "-DBUILD_PYTHON_INTERFACE=ON",
+  "-DGENERATE_PYTHON_STUBS=ON",
+  "-DBUILD_WITH_OPENMP_SUPPORT=ON",
+  "-DBUILD_BINDINGS_WITH_AVX2_SUPPORT=ON",
+  "-DBUILD_BINDINGS_WITH_AVX512_SUPPORT=ON",
 ]
 
 [tasks.reconfigure]
@@ -57,13 +65,21 @@ cmd = ["cmake", "--build", "build/Release"]
 depends-on = ["build"]
 cmd = ["ctest", "--test-dir", "build/Release", "--output-on-failure"]
 
+[tasks.test-import-python]
+depends-on = ["install"]
+cmd = [
+  "python",
+  "-c",
+  "import proxsuite; print(proxsuite.helpers.printVersion())",
+]
+
 [tasks.install]
 depends-on = ["build"]
 cmd = ["cmake", "--install", "build/Release"]
 
 [tasks.test-packaging]
 depends-on = ["install"]
-cmd = "cmake -G Ninja -S test/packaging/cmake -B build/Release/test-packaging -DCMAKE_VERBOSE_MAKEFILE=1 &&  cmake --build build/Release/test-packaging"
+cmd = "cmake -G Ninja -S test/packaging/cmake -B build/Release/test-packaging -DCMAKE_VERBOSE_MAKEFILE=1 && cmake --build build/Release/test-packaging"
 
 [tasks.doc]
 depends-on = ["configure"]

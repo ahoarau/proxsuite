@@ -59,9 +59,15 @@ set(DOXYGEN_DOT_TRANSPARENT YES)
 # Configure Doxygen
 doxygen_add_docs(
   doc
-  ALL
   ${PROJECT_SOURCE_DIR}/doc
   ${PROJECT_SOURCE_DIR}/include
   ${PROJECT_SOURCE_DIR}/bindings/python/proxsuite
   COMMENT "Generating API documentation with Doxygen"
 )
+
+if(INSTALL_DOCUMENTATION)
+  install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/proxsuite
+  )
+endif()

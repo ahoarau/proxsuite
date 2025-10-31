@@ -85,9 +85,74 @@ if(BUILD_MAROS_MESZAROS_TESTS)
   )
 endif()
 
+# if(BUILD_PYTHON_INTERFACE)
+#   add_test(NAME proxsuite-python-tests
+#     COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/lib/site-packages pytest ${CMAKE_CURRENT_SOURCE_DIR}
+#     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+#   )
+# endif()
+
+
+# if(BUILD_PYTHON_INTERFACE)
+# include(FetchContent)
+#   FetchContent_Declare(
+#     pytest-cmake
+#     URL https://github.com/python-cmake/pytest-cmake/archive/refs/tags/1.1.0.zip
+#     URL_HASH MD5=d3332d7fe077402a83f10d3ab8beaada
+#   )
+#   FetchContent_MakeAvailable(pytest-cmake)
+#   list(APPEND CMAKE_MODULE_PATH ${pytest-cmake_SOURCE_DIR}/cmake)
+
+#   xxx_find_package(Pytest REQUIRED)
+# endif()
+
+# if(BUILD_PYTHON_INTERFACE)
+#   pytest_discover_tests(
+#       proxsuite-python-tests
+#       PYTHON_PATH_PREPEND
+#           $<TARGET_FILE_DIR:proxsuite_pywrap>/../
+#       TRIM_FROM_NAME "^(Test|test_)" 
+#       DEPENDS proxsuite_pywrap
+#       INCLUDE_FILE_PATH
+#       TEST_PATHS
+#           ${CMAKE_CURRENT_SOURCE_DIR}/src/test_cvxpy.py
+#           ${CMAKE_CURRENT_SOURCE_DIR}/src/test_dense_qp_solve.py
+#           ${CMAKE_CURRENT_SOURCE_DIR}/src/test_dense_qp_wrapper.py
+#           ${CMAKE_CURRENT_SOURCE_DIR}/src/test_parallel_qp_solve.py
+#           ${CMAKE_CURRENT_SOURCE_DIR}/src/test_serialization.py
+#           ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sparse_qp_solve.py
+#           ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sparse_qp_wrapper.py
+#   )
+# endif()
 if(BUILD_PYTHON_INTERFACE)
-  add_test(NAME proxsuite-python-tests
-    COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/lib/site-packages pytest ${CMAKE_CURRENT_SOURCE_DIR}
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+
+  find_program(pytest pytest REQUIRED)
+  execute_process(
+    COMMAND ${pytest} --version
+    OUTPUT_VARIABLE pytest_version
+    OUTPUT_STRIP_TRAILING_WHITESPACE
   )
+  message(STATUS "Found pytest: ${pytest} (${pytest_version})")
+
+  function(python_add_test test_name)
+    add_test(NAME proxsuite-python.${test_name}
+      COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/lib/site-packages pytest ${CMAKE_CURRENT_SOURCE_DIR}/src/${test_name}.py
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+  endfunction()
+
+  python_add_test(test_cvxpy)
+  python_add_test(test_dense_qp_solve)
+  python_add_test(test_dense_qp_wrapper)
+
+  if(BUILD_WITH_OPENMP_SUPPORT)
+    python_add_test(test_parallel_qp_solve)
+  endif()
+
+  if(BUILD_WITH_SERIALIZATION)
+    python_add_test(test_serialization)
+  endif()
+
+  python_add_test(test_sparse_qp_solve)
+  python_add_test(test_sparse_qp_wrapper)
 endif()

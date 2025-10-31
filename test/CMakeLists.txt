@@ -84,3 +84,10 @@ if(BUILD_MAROS_MESZAROS_TESTS)
       MAROS_MESZAROS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data/maros_meszaros_data/"
   )
 endif()
+
+if(BUILD_PYTHON_INTERFACE)
+  add_test(NAME proxsuite-python-tests
+    COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/lib/site-packages pytest ${CMAKE_CURRENT_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
+endif()

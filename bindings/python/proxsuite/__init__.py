@@ -9,7 +9,11 @@ if TYPE_CHECKING:
     from .proxsuite_pywrap import *  # noqa F403
 
 import os
-os.environ["KMP_DUPLICATE_LIB_OK"] = "True" # to avoid issues with OpenMP in some environments
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = (
+    "True"  # to avoid issues with OpenMP in some environments
+)
+
 
 def _load_main_module():
     import platform

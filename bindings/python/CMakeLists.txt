@@ -64,7 +64,7 @@ endif()
 
 create_python_target(proxsuite_pywrap LINK_LIBRARIES proxsuite)
 if(BUILD_WITH_VECTORIZATION_SUPPORT AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
-  
+
   if(BUILD_BINDINGS_WITH_AVX2_SUPPORT)
       message(STATUS "[proxsuite] Building python bindings with AVX2 support")
       create_python_target(
@@ -119,7 +119,7 @@ if(GENERATE_PYTHON_STUBS)
     MODULE proxsuite
     VERBOSE
     OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib/site-package/${PROJECT_NAME}
-    OUTPUT 
+    OUTPUT
       __init__.pyi
       helpers.pyi
       proxqp/__init__.pyi
@@ -133,10 +133,10 @@ if(GENERATE_PYTHON_STUBS)
 endif()
 
 xxx_python_compile_files(
-  FILES 
-    proxsuite/__init__.py 
-    proxsuite/torch/__init__.py 
-    proxsuite/torch/qplayer.py 
+  FILES
+    proxsuite/__init__.py
+    proxsuite/torch/__init__.py
+    proxsuite/torch/qplayer.py
     proxsuite/torch/utils.py
   GEN_DIR ${CMAKE_BINARY_DIR}/lib/site-package
 )

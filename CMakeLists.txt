@@ -157,7 +157,7 @@ target_compile_definitions(proxsuite INTERFACE
     $<$<BOOL:${BUILD_WITH_OPENMP_SUPPORT}>:PROXSUITE_PYTHON_INTERFACE_WITH_OPENMP>
 )
 
-target_link_libraries(proxsuite INTERFACE 
+target_link_libraries(proxsuite INTERFACE
   Eigen3::Eigen
   $<$<BOOL:${BUILD_WITH_OPENMP_SUPPORT}>:OpenMP::OpenMP_CXX>
 )

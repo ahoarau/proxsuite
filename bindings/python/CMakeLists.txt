@@ -40,7 +40,7 @@ function(create_python_target target_name)
   target_link_libraries(${target_name} PRIVATE ${arg_LINK_LIBRARIES})
   target_compile_options(${target_name} PRIVATE ${arg_COMPILE_OPTIONS})
   target_compile_definitions(${target_name} PRIVATE PYTHON_MODULE_NAME=${target_name})
-  set_target_properties(${target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/site-package/${PROJECT_NAME})
+  set_target_properties(${target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/site-packages/${PROJECT_NAME})
 
   if(UNIX AND NOT APPLE)
     set_target_properties(
@@ -89,7 +89,7 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
   nanobind_add_module(instructionset NB_STATIC LTO helpers/instruction-set.cpp)
   add_dependencies(proxsuite-python instructionset)
   target_link_libraries(instructionset PRIVATE proxsuite)
-  set_target_properties(instructionset PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/site-package/${PROJECT_NAME})
+  set_target_properties(instructionset PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/site-packages/${PROJECT_NAME})
 
   if(UNIX AND NOT APPLE)
     set_target_properties(
@@ -102,7 +102,7 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
     nanobind_add_stub(
       instructionset_stub
       MODULE instructionset
-      OUTPUT ${CMAKE_BINARY_DIR}/lib/site-package/${PROJECT_NAME}/instructionset.pyi
+      OUTPUT ${CMAKE_BINARY_DIR}/lib/site-packages/${PROJECT_NAME}/instructionset.pyi
       PYTHON_PATH $<TARGET_FILE_DIR:instructionset>
       DEPENDS instructionset
     )
@@ -118,7 +118,7 @@ if(GENERATE_PYTHON_STUBS)
     proxsuite_pywrap_stub
     MODULE proxsuite
     VERBOSE
-    OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib/site-package/${PROJECT_NAME}
+    OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib/site-packages/${PROJECT_NAME}
     OUTPUT
       __init__.pyi
       helpers.pyi
@@ -126,7 +126,7 @@ if(GENERATE_PYTHON_STUBS)
       proxqp/dense.pyi
       proxqp/sparse.pyi
     RECURSIVE
-    PYTHON_PATH ${CMAKE_BINARY_DIR}/lib/site-package
+    PYTHON_PATH ${CMAKE_BINARY_DIR}/lib/site-packages
     DEPENDS proxsuite_pywrap
   )
   add_dependencies(proxsuite-python proxsuite_pywrap_stub)
@@ -138,11 +138,11 @@ xxx_python_compile_files(
     proxsuite/torch/__init__.py
     proxsuite/torch/qplayer.py
     proxsuite/torch/utils.py
-  GEN_DIR ${CMAKE_BINARY_DIR}/lib/site-package
+  GEN_DIR ${CMAKE_BINARY_DIR}/lib/site-packages
 )
 
 # Install the whole python package directory
 install(
-  DIRECTORY ${CMAKE_BINARY_DIR}/lib/site-package/${PROJECT_NAME}
+  DIRECTORY ${CMAKE_BINARY_DIR}/lib/site-packages/${PROJECT_NAME}
   DESTINATION ${PYTHON_BINDING_INSTALL_DIR}
 )

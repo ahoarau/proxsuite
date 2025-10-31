@@ -22,7 +22,7 @@ git clone https://github.com/Simple-Robotics/proxsuite.git --recursive
 
 ```bash
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
 make
 make install
 ```
@@ -35,7 +35,7 @@ You just need to ensure that Python3 is indeed present on your system and activa
 
 ```bash
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBUILD_PYTHON_INTERFACE=ON
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -DBUILD_PYTHON_INTERFACE=ON
 make
 make install
 ```
@@ -58,11 +58,11 @@ You just need to deactivate the cmake option `BUILD_WITH_VECTORIZATION_SUPPORT=O
 
 ```bash
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF -DBUILD_WITH_VECTORIZATION_SUPPORT=OFF
+cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF -DBUILD_WITH_VECTORIZATION_SUPPORT=OFF
 make
 make install
 ```
 
 #### Testing
 
-To test the whole framework, you need installing first [Matio](https://github.com/tbeu/matio) (for reading .mat files in C++). You can then activate the build of the unit tests by activating the cmake option `BUILD_TESTING=ON`.
+To test the whole framework, you need installing first [Matio](https://github.com/tbeu/matio) (for reading .mat files in C++). You can then activate the build of the unit tests by activating the cmake option `BUILD_TESTS=ON`.

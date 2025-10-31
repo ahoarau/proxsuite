@@ -25,7 +25,7 @@ xxx_configure_default_install_prefix(${CMAKE_CURRENT_BINARY_DIR}/tmp-install)
 xxx_configure_default_binary_dirs()
 xxx_configure_default_install_dirs()
 
-xxx_option(BUILD_TESTING "Build the tests" ON)
+xxx_option(BUILD_TESTS "Build the tests" ON)
 xxx_option(BUILD_EXAMPLES "Build the examples" ON)
 xxx_option(BUILD_BENCHMARK "Build the benchmarks" ON)
 xxx_option(BUILD_DOCUMENTATION "Build the documentation." OFF)
@@ -86,7 +86,7 @@ xxx_option(
 xxx_find_package(Eigen3 3.4.0 CONFIG REQUIRED)
 
 # Catch2
-if(BUILD_TESTING)
+if(BUILD_TESTS)
   xxx_find_package(Catch2 CONFIG REQUIRED)
   include(Catch)
 endif()
@@ -109,7 +109,7 @@ if(BUILD_WITH_VECTORIZATION_SUPPORT)
 endif()
 
 # matio
-if(BUILD_MAROS_MESZAROS_TESTS AND BUILD_TESTING)
+if(BUILD_MAROS_MESZAROS_TESTS AND BUILD_TESTS)
   xxx_find_package(matio REQUIRED
     MODULE_PATH ${cmake-utils_SOURCE_DIR}/modules/matio
   )
@@ -183,8 +183,9 @@ if(BUILD_WITH_SERIALIZATION)
   )
 endif()
 
-if(BUILD_TESTING)
+if(BUILD_TESTS)
   message(STATUS "[proxsuite] Building tests")
+  enable_testing()
   add_subdirectory(test)
 endif()
 

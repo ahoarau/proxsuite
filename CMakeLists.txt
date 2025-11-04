@@ -3,13 +3,18 @@
 #
 cmake_minimum_required(VERSION 3.22...4.1)
 
-include(FetchContent)
-FetchContent_Declare(
-  cmake-utils
-  GIT_REPOSITORY https://github.com/ahoarau/cmake-utils.git
-  GIT_TAG main
-)
-FetchContent_MakeAvailable(cmake-utils)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../cmake-utils)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cmake-utils cmake-utils)
+else()
+  message(STATUS "[proxsuite] Fetching cmake-utils...")
+  include(FetchContent)
+  FetchContent_Declare(
+    cmake-utils
+    GIT_REPOSITORY https://github.com/ahoarau/cmake-utils.git
+    GIT_TAG main
+  )
+  FetchContent_MakeAvailable(cmake-utils)
+endif()
 
 project(
   proxsuite

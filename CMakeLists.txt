@@ -108,16 +108,12 @@ endif()
 
 # simde
 if(BUILD_WITH_VECTORIZATION_SUPPORT)
-  xxx_find_package(simde REQUIRED
-      MODULE_PATH ${cmake-utils_SOURCE_DIR}/modules/simde
-  )
+  xxx_find_package(simde REQUIRED)
 endif()
 
 # matio
 if(BUILD_MAROS_MESZAROS_TESTS AND BUILD_TESTS)
-  xxx_find_package(matio REQUIRED
-    MODULE_PATH ${cmake-utils_SOURCE_DIR}/modules/matio
-  )
+  xxx_find_package(matio REQUIRED)
 endif()
 
 # OpenMP

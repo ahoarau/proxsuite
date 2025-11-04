@@ -92,7 +92,6 @@ endif()
 #   )
 # endif()
 
-
 # if(BUILD_PYTHON_INTERFACE)
 # include(FetchContent)
 #   FetchContent_Declare(
@@ -111,7 +110,7 @@ endif()
 #       proxsuite-python-tests
 #       PYTHON_PATH_PREPEND
 #           $<TARGET_FILE_DIR:proxsuite_pywrap>/../
-#       TRIM_FROM_NAME "^(Test|test_)" 
+#       TRIM_FROM_NAME "^(Test|test_)"
 #       DEPENDS proxsuite_pywrap
 #       INCLUDE_FILE_PATH
 #       TEST_PATHS
@@ -125,7 +124,6 @@ endif()
 #   )
 # endif()
 if(BUILD_PYTHON_INTERFACE)
-
   find_program(pytest pytest REQUIRED)
   execute_process(
     COMMAND ${pytest} --version
@@ -135,8 +133,11 @@ if(BUILD_PYTHON_INTERFACE)
   message(STATUS "Found pytest: ${pytest} (${pytest_version})")
 
   function(python_add_test test_name)
-    add_test(NAME proxsuite-python.${test_name}
-      COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/lib/site-packages pytest ${CMAKE_CURRENT_SOURCE_DIR}/src/${test_name}.py
+    add_test(
+      NAME proxsuite-python.${test_name}
+      COMMAND
+        ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/lib/site-packages
+        pytest ${CMAKE_CURRENT_SOURCE_DIR}/src/${test_name}.py
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
   endfunction()

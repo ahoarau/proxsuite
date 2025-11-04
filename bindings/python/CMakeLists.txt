@@ -1,9 +1,15 @@
 if(PYTHON_BINDING_CUSTOM_INSTALL_DIR)
   set(PYTHON_BINDING_INSTALL_DIR ${PYTHON_BINDING_CUSTOM_INSTALL_DIR})
-  message(STATUS "[proxsuite] Using custom python binding install dir: ${PYTHON_BINDING_INSTALL_DIR}")
+  message(
+    STATUS
+    "[proxsuite] Using custom python binding install dir: ${PYTHON_BINDING_INSTALL_DIR}"
+  )
 else()
   set(PYTHON_BINDING_INSTALL_DIR "${Python_SITELIB}")
-  message(STATUS "[proxsuite] Using default python binding install dir: ${PYTHON_BINDING_INSTALL_DIR}")
+  message(
+    STATUS
+    "[proxsuite] Using default python binding install dir: ${PYTHON_BINDING_INSTALL_DIR}"
+  )
 endif()
 
 add_custom_target(proxsuite-python)
@@ -32,15 +38,30 @@ function(create_python_target target_name)
   set(options)
   set(oneValueArgs)
   set(multiValueArgs COMPILE_OPTIONS LINK_LIBRARIES)
-  cmake_parse_arguments(PARSE_ARGV 0 arg "${options}" "${oneValueArgs}" "${multiValueArgs}")
+  cmake_parse_arguments(
+    PARSE_ARGV
+    0
+    arg
+    "${options}"
+    "${oneValueArgs}"
+    "${multiValueArgs}"
+  )
 
   nanobind_add_module(${target_name} NB_STATIC LTO ${PYWRAP_SOURCES} ${PYWRAP_HEADERS})
   add_dependencies(proxsuite-python ${target_name})
 
   target_link_libraries(${target_name} PRIVATE ${arg_LINK_LIBRARIES})
   target_compile_options(${target_name} PRIVATE ${arg_COMPILE_OPTIONS})
-  target_compile_definitions(${target_name} PRIVATE PYTHON_MODULE_NAME=${target_name})
-  set_target_properties(${target_name} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/site-packages/${PROJECT_NAME})
+  target_compile_definitions(
+    ${target_name}
+    PRIVATE PYTHON_MODULE_NAME=${target_name}
+  )
+  set_target_properties(
+    ${target_name}
+    PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY
+        ${CMAKE_BINARY_DIR}/lib/site-packages/${PROJECT_NAME}
+  )
 
   if(UNIX AND NOT APPLE)
     set_target_properties(
@@ -50,20 +71,25 @@ function(create_python_target target_name)
   endif()
 endfunction()
 
-if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-  set(AVX_COMPILE_OPTION "/arch:AVX")
-  set(AVX2_COMPILE_OPTION "/arch:AVX2")
-  set(FMA_COMPILE_OPTION "/fp:fast,")
-  set(AVX512_COMPILE_OPTION "/arch:AVX512")
-else()
-  set(AVX_COMPILE_OPTION "-mavx")
-  set(AVX2_COMPILE_OPTION "-mavx2")
-  set(FMA_COMPILE_OPTION "-mfma")
-  set(AVX512_COMPILE_OPTION "-mavx512f")
-endif()
-
+# The main python binding target
 create_python_target(proxsuite_pywrap LINK_LIBRARIES proxsuite)
-if(BUILD_WITH_VECTORIZATION_SUPPORT AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
+
+# Vectorized python binding targets
+if(
+  BUILD_WITH_VECTORIZATION_SUPPORT
+  AND ${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)"
+)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(AVX_COMPILE_OPTION "/arch:AVX")
+    set(AVX2_COMPILE_OPTION "/arch:AVX2")
+    set(FMA_COMPILE_OPTION "/fp:fast")
+    set(AVX512_COMPILE_OPTION "/arch:AVX512")
+  else()
+    set(AVX_COMPILE_OPTION "-mavx")
+    set(AVX2_COMPILE_OPTION "-mavx2")
+    set(FMA_COMPILE_OPTION "-mfma")
+    set(AVX512_COMPILE_OPTION "-mavx512f")
+  endif()
 
   if(BUILD_BINDINGS_WITH_AVX2_SUPPORT)
     message(STATUS "[proxsuite] Building python bindings with AVX2 support")
@@ -89,7 +115,12 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "(x86)|(X86)|(amd64)|(AMD64)")
   nanobind_add_module(instructionset NB_STATIC LTO helpers/instruction-set.cpp)
   add_dependencies(proxsuite-python instructionset)
   target_link_libraries(instructionset PRIVATE proxsuite)
-  set_target_properties(instructionset PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/site-packages/${PROJECT_NAME})
+  set_target_properties(
+    instructionset
+    PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY
+        ${CMAKE_BINARY_DIR}/lib/site-packages/${PROJECT_NAME}
+  )
 
   if(UNIX AND NOT APPLE)
     set_target_properties(

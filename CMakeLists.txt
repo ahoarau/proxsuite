@@ -155,18 +155,21 @@ if(ENABLE_WARNINGS_AS_ERRORS)
   xxx_target_treat_all_warnings_as_errors(proxsuite INTERFACE)
 endif()
 
-target_compile_definitions(proxsuite INTERFACE
+target_compile_definitions(
+  proxsuite
+  INTERFACE
     $<$<BOOL:${INITIALIZE_EIGEN_WITH_NAN}>:EIGEN_INITIALIZE_MATRICES_BY_NAN>
     $<$<BOOL:${CHECK_RUNTIME_MALLOC}>:EIGEN_RUNTIME_NO_MALLOC>
     $<$<BOOL:${CHECK_RUNTIME_MALLOC}>:PROXSUITE_EIGEN_CHECK_MALLOC>
     $<$<BOOL:${BUILD_WITH_OPENMP_SUPPORT}>:PROXSUITE_PYTHON_INTERFACE_WITH_OPENMP>
 )
 
-target_link_libraries(proxsuite INTERFACE
-  Eigen3::Eigen
-  $<$<BOOL:${BUILD_WITH_OPENMP_SUPPORT}>:OpenMP::OpenMP_CXX>
+target_link_libraries(
+  proxsuite
+  INTERFACE
+    Eigen3::Eigen
+    $<$<BOOL:${BUILD_WITH_OPENMP_SUPPORT}>:OpenMP::OpenMP_CXX>
 )
-
 
 if(BUILD_PYTHON_INTERFACE)
   add_subdirectory(bindings/python)

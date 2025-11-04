@@ -85,6 +85,7 @@ if(BUILD_MAROS_MESZAROS_TESTS)
   )
 endif()
 
+## Option 1: all tests in a single test target
 # if(BUILD_PYTHON_INTERFACE)
 #   add_test(NAME proxsuite-python-tests
 #     COMMAND ${CMAKE_COMMAND} -E env PYTHONPATH=${CMAKE_BINARY_DIR}/lib/site-packages pytest ${CMAKE_CURRENT_SOURCE_DIR}
@@ -92,8 +93,9 @@ endif()
 #   )
 # endif()
 
+## Option2: Pytest. Either using fetchcontent, or pixi add --pypi pytest-cmake
 # if(BUILD_PYTHON_INTERFACE)
-# include(FetchContent)
+#   include(FetchContent)
 #   FetchContent_Declare(
 #     pytest-cmake
 #     URL https://github.com/python-cmake/pytest-cmake/archive/refs/tags/1.1.0.zip
@@ -101,7 +103,6 @@ endif()
 #   )
 #   FetchContent_MakeAvailable(pytest-cmake)
 #   list(APPEND CMAKE_MODULE_PATH ${pytest-cmake_SOURCE_DIR}/cmake)
-
 #   xxx_find_package(Pytest REQUIRED)
 # endif()
 
@@ -123,6 +124,8 @@ endif()
 #           ${CMAKE_CURRENT_SOURCE_DIR}/src/test_sparse_qp_wrapper.py
 #   )
 # endif()
+
+## Option 3: manual pytest tests
 if(BUILD_PYTHON_INTERFACE)
   find_program(pytest pytest REQUIRED)
   execute_process(

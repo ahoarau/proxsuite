@@ -145,6 +145,15 @@ endif()
 #add_source_group(PYWRAP_SOURCES)
 
 if(GENERATE_PYTHON_STUBS)
+
+  set(depends_lib proxsuite_pywrap)
+  if(TARGET proxsuite_pywrap_avx2)
+    set(depends_lib proxsuite_pywrap_avx2)
+  endif()
+  if(TARGET proxsuite_pywrap_avx512)
+    set(depends_lib proxsuite_pywrap_avx512)
+  endif()
+
   nanobind_add_stub(
     proxsuite_pywrap_stub
     MODULE proxsuite
@@ -158,7 +167,7 @@ if(GENERATE_PYTHON_STUBS)
       proxqp/sparse.pyi
     RECURSIVE
     PYTHON_PATH ${CMAKE_BINARY_DIR}/lib/site-packages
-    DEPENDS proxsuite_pywrap
+    DEPENDS ${depends_lib}
   )
   add_dependencies(proxsuite-python proxsuite_pywrap_stub)
 endif()

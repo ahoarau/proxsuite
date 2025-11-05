@@ -326,11 +326,7 @@ xxx_target_headers(proxsuite-serialization INTERFACE
   BASE_DIRS include
 )
 
-if(INSTALL_HEADERS)
-  xxx_install_headers()
-endif()
-
-xxx_generate_package_module_files()
+xxx_install_project()
 
 xxx_print_dependencies_summary()
 xxx_print_options_summary()

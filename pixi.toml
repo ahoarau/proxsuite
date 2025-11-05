@@ -32,6 +32,7 @@ cmd = [
   "-S", ".",
   "-B", "build/Release",
   "-G", "Ninja",
+  "-DCMAKE_UTILS_DIR=$CMAKE_UTILS_DIR",
   "--profiling-output=cmake-profiling.json",
   "--profiling-format=google-trace",
   "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",

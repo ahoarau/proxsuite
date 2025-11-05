@@ -313,18 +313,20 @@ xxx_target_headers(proxsuite INTERFACE
   BASE_DIRS include
 )
 
-xxx_target_headers(proxsuite-serialization INTERFACE
-  HEADERS
-    include/proxsuite/serialization/archive.hpp
-    include/proxsuite/serialization/eigen.hpp
-    include/proxsuite/serialization/model.hpp
-    include/proxsuite/serialization/results.hpp
-    include/proxsuite/serialization/ruiz.hpp
-    include/proxsuite/serialization/settings.hpp
-    include/proxsuite/serialization/workspace.hpp
-    include/proxsuite/serialization/wrapper.hpp
-  BASE_DIRS include
-)
+if(BUILD_WITH_SERIALIZATION)
+  xxx_target_headers(proxsuite-serialization INTERFACE
+    HEADERS
+      include/proxsuite/serialization/archive.hpp
+      include/proxsuite/serialization/eigen.hpp
+      include/proxsuite/serialization/model.hpp
+      include/proxsuite/serialization/results.hpp
+      include/proxsuite/serialization/ruiz.hpp
+      include/proxsuite/serialization/settings.hpp
+      include/proxsuite/serialization/workspace.hpp
+      include/proxsuite/serialization/wrapper.hpp
+    BASE_DIRS include
+  )
+endif()
 
 xxx_install_project()
 

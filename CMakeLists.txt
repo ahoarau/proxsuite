@@ -103,7 +103,8 @@ endif()
 
 # nanobind (Python bindings)
 if(BUILD_PYTHON_INTERFACE)
-  xxx_find_nanobind()
+  xxx_find_python(3.8 REQUIRED COMPONENTS Interpreter Development.Module)
+  xxx_find_nanobind(2.4.0 CONFIG REQUIRED)
 endif()
 
 # simde

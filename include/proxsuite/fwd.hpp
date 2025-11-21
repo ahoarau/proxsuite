@@ -7,8 +7,7 @@
 
 #if __cplusplus >= 201703L
 #define PROXSUITE_WITH_CPP_17
-#endif
-#if __cplusplus >= 201402L
+#elif __cplusplus >= 201402L
 #define PROXSUITE_WITH_CPP_14
 #endif
 

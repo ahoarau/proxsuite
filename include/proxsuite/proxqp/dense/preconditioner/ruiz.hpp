@@ -7,8 +7,8 @@
 #ifndef PROXSUITE_PROXQP_DENSE_PRECOND_RUIZ_HPP
 #define PROXSUITE_PROXQP_DENSE_PRECOND_RUIZ_HPP
 
-#include "proxsuite/proxqp/dense/views.hpp"
-#include "proxsuite/proxqp/dense/fwd.hpp"
+#include <proxsuite/proxqp/dense/views.hpp>
+#include <proxsuite/proxqp/dense/fwd.hpp>
 #include <proxsuite/linalg/dense/core.hpp>
 #include <proxsuite/proxqp/settings.hpp>
 #include <ostream>

@@ -34,7 +34,7 @@ xxx_option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
 xxx_option(BUILD_WITH_VECTORIZATION_SUPPORT "Build the library with the support of modern SIMD instructions." OFF)
 xxx_cmake_dependent_option(BUILD_BINDINGS_WITH_AVX2_SUPPORT "Build the bindings with AVX2 support." ON BUILD_WITH_VECTORIZATION_SUPPORT OFF)
 xxx_cmake_dependent_option(BUILD_BINDINGS_WITH_AVX512_SUPPORT "Build the bindings with AVX512 support." ON BUILD_WITH_VECTORIZATION_SUPPORT OFF)
-# xxx_option(TEST_JULIA_INTERFACE "Run the julia examples as unittest" OFF)
+xxx_option(TEST_JULIA_INTERFACE "Run the julia examples as unittest" OFF)
 xxx_option(BUILD_WITH_OPENMP_SUPPORT "Build the library with the OpenMP support" OFF)
 xxx_cmake_dependent_option(
   LINK_PYTHON_INTERFACE_TO_OPENMP

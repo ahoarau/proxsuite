@@ -117,7 +117,7 @@ if(GENERATE_PYTHON_STUBS)
       proxqp/sparse.pyi
     RECURSIVE
     PYTHON_PATH ${CMAKE_BINARY_DIR}/lib/site-packages
-    DEPENDS proxsuite_pywrap ${simd_lib} instructionset
+    DEPENDS proxsuite_pywrap ${simd_lib}
   )
 endif()
 

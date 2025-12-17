@@ -32,6 +32,8 @@ jobs:
     name: ${{ matrix.env.name }}
     env:
       CMAKE_ARGS: -DBUILD_WITH_VECTORIZATION_SUPPORT=${{ matrix.env.VECTORIZATION_SUPPORT }}  # Simde is available since humble
+      VERBOSE_OUTPUT: true
+      VERBOSE_TESTS: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

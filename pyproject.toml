@@ -17,7 +17,7 @@ requires = [
     "cmeel-eigen",
     "cmeel-simde",
     "typing-extensions",
-    "nanobind >=2.5.0",
+    "nanobind",
     ]
 build-backend = "cmeel.build"
 

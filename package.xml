@@ -25,6 +25,7 @@
   <build_depend>git</build_depend>
   <build_depend>doxygen</build_depend>
   <build_depend>libcereal-dev</build_depend>
+  <build_depend>graphviz</build_depend>
   <depend>eigen</depend>
   <!-- simde is only available for Ubuntu 22.04 -->
   <depend condition="$ROS_DISTRO == humble or $ROS_DISTRO == rolling or $ROS_DISTRO == iron or $ROS_DISTRO == jazzy">simde</depend>

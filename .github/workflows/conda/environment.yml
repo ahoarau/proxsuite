@@ -4,7 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - cmake
-  - cxx-compilers
+  - cxx-compiler
   - make
   - pkg-config
   - doxygen

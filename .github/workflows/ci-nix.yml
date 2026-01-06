@@ -1,4 +1,4 @@
-name: "CI - Nix"
+name: CI - Nix
 
 on:
   push:
@@ -27,6 +27,9 @@ jobs:
       - run: nix build -L .#proxsuite
 
   nix-eigen5:
+    # ⚠️ temporarly disable the Nix job for https://github.com/Simple-Robotics/nanoeigenpy/pull/40 ⚠️
+    if: false
+
     runs-on: "${{ matrix.os }}"
     strategy:
       matrix:

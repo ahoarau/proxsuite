@@ -1,4 +1,5 @@
 #include <iostream>
+#include <optional>
 #include "proxsuite/proxqp/sparse/sparse.hpp" // get the sparse backend of ProxQP
 #include "proxsuite/proxqp/dense/dense.hpp"   // get the dense backend of ProxQP
 #include "proxsuite/proxqp/utils/random_qp_problems.hpp" // used for generating a random convex qp
@@ -73,15 +74,15 @@ main()
                                                         u,
                                                         l_box,
                                                         u_box,
-                                                        proxsuite::nullopt,
-                                                        proxsuite::nullopt,
-                                                        proxsuite::nullopt,
-                                                        proxsuite::nullopt,
-                                                        proxsuite::nullopt,
-                                                        proxsuite::nullopt,
-                                                        proxsuite::nullopt,
-                                                        proxsuite::nullopt,
-                                                        proxsuite::nullopt);
+                                                        std::nullopt,
+                                                        std::nullopt,
+                                                        std::nullopt,
+                                                        std::nullopt,
+                                                        std::nullopt,
+                                                        std::nullopt,
+                                                        std::nullopt,
+                                                        std::nullopt,
+                                                        std::nullopt);
   // print an optimal solution x,y and z
   std::cout << "optimal x from dense solver: " << results_dense_solver.x
             << std::endl;

@@ -30,5 +30,5 @@ main()
           /*rho*/ 1.e-7);
   // in c++ you must follow the order speficied in the API for the parameters
   // if you don't want to change one parameter (here compute_preconditioner),
-  // just let it be nullopt
+  // just let it be std::nullopt
 }

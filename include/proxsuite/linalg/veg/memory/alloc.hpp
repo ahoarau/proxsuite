@@ -29,8 +29,7 @@ namespace veg {
 namespace alignment {
 
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 101500 &&                                 \
-  (defined(_LIBCPP_HAS_ALIGNED_ALLOC) || defined(_LIBCPP_HAS_C11_FEATURES)) && \
-  defined(PROXSUITE_WITH_CPP_17)
+  (defined(_LIBCPP_HAS_ALIGNED_ALLOC) || defined(_LIBCPP_HAS_C11_FEATURES))
 VEG_INLINE void*
 aligned_alloc(std::size_t alignment, std::size_t size)
 {
@@ -165,13 +164,13 @@ aligned_alloc(usize align, usize size) noexcept -> void*
 #if defined(_WIN32)
   return _aligned_malloc((size + mask) & ~mask, align);
 #elif defined(__APPLE__)
-#if defined(PROXSUITE_WITH_CPP_17) && defined(_LIBCPP_HAS_ALIGNED_ALLOC)
+#if defined(_LIBCPP_HAS_ALIGNED_ALLOC)
   return alignment::aligned_alloc(align, (size + mask) & ~mask);
 #else
   return alignment::detail::aligned_alloc(align, (size + mask) & ~mask);
 #endif
 #else
-#if defined(PROXSUITE_WITH_CPP_17) && defined(_LIBCPP_HAS_ALIGNED_ALLOC)
+#if defined(_LIBCPP_HAS_ALIGNED_ALLOC)
   return std::aligned_alloc(align, (size + mask) & ~mask);
 #else
   return alignment::detail::aligned_alloc(align, (size + mask) & ~mask);

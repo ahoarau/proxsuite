@@ -3,11 +3,11 @@
 //
 #include <iostream>
 #include <Eigen/Core>
-#include <proxsuite/helpers/optional.hpp> // for c++14
+#include <optional>
 #include <proxsuite/proxqp/dense/dense.hpp>
 
 using namespace proxsuite::proxqp;
-using proxsuite::nullopt; // c++17 simply use std::nullopt
+using std::nullopt;
 
 int
 main()
@@ -52,7 +52,7 @@ main()
 
   // initialize qp with matrices describing the problem
   // note: it is also possible to use update here
-  qp.init(H, g, nullopt, nullopt, C, l, u);
+  qp.init(H, g, std::nullopt, std::nullopt, C, l, u);
 
   qp.solve();
 

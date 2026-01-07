@@ -7,7 +7,6 @@
 #ifndef PROXSUITE_PROXQP_DENSE_BACKWARD_DATA_HPP
 #define PROXSUITE_PROXQP_DENSE_BACKWARD_DATA_HPP
 
-#include <proxsuite/helpers/optional.hpp>
 #include "proxsuite/linalg/veg/type_traits/core.hpp"
 #include "proxsuite/proxqp/dense/fwd.hpp"
 

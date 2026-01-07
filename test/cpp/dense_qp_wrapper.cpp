@@ -53,7 +53,7 @@ TEST_CASE(
 
   qp.init(qp_random.H,
           qp_random.g,
-          nullopt,
+          std::nullopt,
           qp_random.b,
           qp_random.C,
           qp_random.l,
@@ -128,15 +128,15 @@ TEST_CASE(
   std::cout << "setup timing " << qp.results.info.setup_time << " solve time "
             << qp.results.info.solve_time << std::endl;
 
-  // Testing with nullopt
+  // Testing with std::nullopt
   dense::QP<T> qp3{ dim, n_eq, n_in }; // creating QP object
   qp3.settings.eps_abs = eps_abs;
   qp3.settings.eps_rel = 0;
 
   qp3.init(qp_random.H,
            qp_random.g,
-           nullopt,
-           nullopt,
+           std::nullopt,
+           std::nullopt,
            qp_random.C,
            qp_random.l,
            qp_random.u);
@@ -221,7 +221,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
 
   std::cout << "testing updating H" << std::endl;
   qp_random.H.setIdentity();
-  qp.update(qp_random.H, nullopt, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp.update(qp_random.H,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt);
   std::cout << "after upating" << std::endl;
   std::cout << "H :  " << qp.model.H << std::endl;
   std::cout << "g :  " << qp.model.g << std::endl;
@@ -353,7 +359,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   std::cout << "testing updating A" << std::endl;
   qp_random.A = utils::rand::sparse_matrix_rand_not_compressed<T>(
     n_eq, dim, sparsity_factor);
-  qp.update(nullopt, nullopt, qp_random.A, nullopt, nullopt, nullopt, nullopt);
+  qp.update(std::nullopt,
+            std::nullopt,
+            qp_random.A,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt);
 
   std::cout << "after upating" << std::endl;
   std::cout << "H :  " << qp.model.H << std::endl;
@@ -485,7 +497,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   std::cout << "testing updating C" << std::endl;
   qp_random.C = utils::rand::sparse_matrix_rand_not_compressed<T>(
     n_in, dim, sparsity_factor);
-  qp.update(nullopt, nullopt, nullopt, nullopt, qp_random.C, nullopt, nullopt);
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            qp_random.C,
+            std::nullopt,
+            std::nullopt);
 
   std::cout << "after upating" << std::endl;
   std::cout << "H :  " << qp.model.H << std::endl;
@@ -617,7 +635,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   std::cout << "testing updating b" << std::endl;
   auto x_sol = utils::rand::vector_rand<T>(dim);
   qp_random.b = qp_random.A * x_sol;
-  qp.update(nullopt, nullopt, nullopt, qp_random.b, nullopt, nullopt, nullopt);
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            qp_random.b,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt);
 
   std::cout << "after upating" << std::endl;
   std::cout << "H :  " << qp.model.H << std::endl;
@@ -752,7 +776,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   }
 
   qp_random.u = qp_random.C * x_sol + delta;
-  qp.update(nullopt, nullopt, nullopt, nullopt, nullopt, nullopt, qp_random.u);
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            qp_random.u);
 
   std::cout << "after upating" << std::endl;
   std::cout << "H :  " << qp.model.H << std::endl;
@@ -883,7 +913,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   auto g = utils::rand::vector_rand<T>(dim);
 
   qp_random.g = g;
-  qp.update(nullopt, qp_random.g, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp.update(std::nullopt,
+            qp_random.g,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt);
 
   std::cout << "after upating" << std::endl;
   std::cout << "H :  " << qp.model.H << std::endl;
@@ -1025,10 +1061,10 @@ TEST_CASE("sparse random strongly convex qp with equality and inequality "
   qp_random.u = qp_random.C * x_sol + delta;
   qp_random.l = qp_random.C * x_sol - delta;
   qp.update(qp_random.H,
-            nullopt,
+            std::nullopt,
             qp_random.A,
             qp_random.b,
-            nullopt,
+            std::nullopt,
             qp_random.l,
             qp_random.u);
 
@@ -1151,17 +1187,17 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   std::cout << "before upating" << std::endl;
   std::cout << "rho :  " << qp.results.info.rho << std::endl;
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             true,
             T(1.e-7),
-            nullopt,
-            nullopt); // restart the problem with default options
+            std::nullopt,
+            std::nullopt); // restart the problem with default options
   std::cout << "after upating" << std::endl;
   std::cout << "rho :  " << qp.results.info.rho << std::endl;
 
@@ -1200,8 +1236,8 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
            qp_random.u,
            true,
            T(1.e-7),
-           nullopt,
-           nullopt);
+           std::nullopt,
+           std::nullopt);
   std::cout << "rho :  " << qp2.results.info.rho << std::endl;
   qp2.solve();
 
@@ -1281,15 +1317,15 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   std::cout << "mu_in :  " << qp.results.info.mu_in << std::endl;
   std::cout << "mu_eq :  " << qp.results.info.mu_eq << std::endl;
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             true,
-            nullopt,
+            std::nullopt,
             T(1.e-2),
             T(1.e-3));
 
@@ -1331,7 +1367,7 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
            qp_random.l,
            qp_random.u,
            true,
-           nullopt,
+           std::nullopt,
            T(1.e-2),
            T(1.e-3));
   qp2.solve();
@@ -1779,8 +1815,14 @@ TEST_CASE("sparse random strongly convex qp with equality and "
 
   qp.settings.initial_guess =
     InitialGuessStatus::WARM_START_WITH_PREVIOUS_RESULT;
-  qp.update(
-    nullopt, nullopt, nullopt, nullopt, nullopt, nullopt, nullopt, false);
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            false);
   qp.solve();
   pri_res = std::max(
     (qp_random.A * qp.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -1900,8 +1942,14 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
 
   qp.settings.initial_guess =
     InitialGuessStatus::COLD_START_WITH_PREVIOUS_RESULT;
-  qp.update(
-    nullopt, nullopt, nullopt, nullopt, nullopt, nullopt, nullopt, true);
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            true);
   qp.solve();
   pri_res = std::max(
     (qp_random.A * qp.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -2090,13 +2138,13 @@ TEST_CASE("sparse random strongly convex qp with equality and "
   std::cout << "setup timing " << qp.results.info.setup_time << " solve time "
             << qp.results.info.solve_time << std::endl;
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             true); // rederive preconditioner with previous options, i.e., redo
                    // exact same derivations
   qp.solve();
@@ -2155,13 +2203,13 @@ TEST_CASE("sparse random strongly convex qp with equality and "
             << qp2.results.info.solve_time << std::endl;
 
   qp2.update(
-    nullopt,
-    nullopt,
-    nullopt,
-    nullopt,
-    nullopt,
-    nullopt,
-    nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
+    std::nullopt,
     false); // use previous preconditioner: should get same result as well
   qp2.solve();
   CHECK(pri_res <= eps_abs);
@@ -3518,11 +3566,11 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   bool update_preconditioner = true;
   qp.update(qp_random.H,
             qp_random.g,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             update_preconditioner);
   qp.solve();
   pri_res = std::max(
@@ -4017,7 +4065,13 @@ TEST_CASE("ProxQP::dense: Test g update for different initial guess")
   CHECK(pri_res <= eps_abs);
   auto old_g = qp_random.g;
   qp_random.g = utils::rand::vector_rand<T>(dim);
-  qp.update(nullopt, qp_random.g, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp.update(std::nullopt,
+            qp_random.g,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt);
   qp.solve();
   pri_res = std::max(
     (qp_random.A * qp.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4064,7 +4118,13 @@ TEST_CASE("ProxQP::dense: Test g update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp2.update(nullopt, qp_random.g, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp2.update(std::nullopt,
+             qp_random.g,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt);
   qp2.solve();
   pri_res = std::max(
     (qp_random.A * qp2.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4111,7 +4171,13 @@ TEST_CASE("ProxQP::dense: Test g update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp3.update(nullopt, qp_random.g, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp3.update(std::nullopt,
+             qp_random.g,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt);
   qp3.solve();
   pri_res = std::max(
     (qp_random.A * qp3.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4158,7 +4224,13 @@ TEST_CASE("ProxQP::dense: Test g update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp4.update(nullopt, qp_random.g, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp4.update(std::nullopt,
+             qp_random.g,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt);
   qp4.solve();
   pri_res = std::max(
     (qp_random.A * qp4.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4204,7 +4276,13 @@ TEST_CASE("ProxQP::dense: Test g update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp5.update(nullopt, qp_random.g, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp5.update(std::nullopt,
+             qp_random.g,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt);
   qp5.solve();
   pri_res = std::max(
     (qp_random.A * qp5.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4274,7 +4352,13 @@ TEST_CASE("ProxQP::dense: Test A update for different initial guess")
   CHECK(pri_res <= eps_abs);
   auto new_A = utils::rand::sparse_matrix_rand_not_compressed<T>(
     n_eq, dim, sparsity_factor);
-  qp.update(nullopt, nullopt, new_A, nullopt, nullopt, nullopt, nullopt);
+  qp.update(std::nullopt,
+            std::nullopt,
+            new_A,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt);
   qp.solve();
   pri_res =
     std::max((new_A * qp.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4321,7 +4405,13 @@ TEST_CASE("ProxQP::dense: Test A update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp2.update(nullopt, nullopt, new_A, nullopt, nullopt, nullopt, nullopt);
+  qp2.update(std::nullopt,
+             std::nullopt,
+             new_A,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt);
   qp2.solve();
   pri_res = std::max(
     (new_A * qp2.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4368,7 +4458,13 @@ TEST_CASE("ProxQP::dense: Test A update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp3.update(nullopt, nullopt, new_A, nullopt, nullopt, nullopt, nullopt);
+  qp3.update(std::nullopt,
+             std::nullopt,
+             new_A,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt);
   qp3.solve();
   pri_res = std::max(
     (new_A * qp3.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4415,7 +4511,13 @@ TEST_CASE("ProxQP::dense: Test A update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp4.update(nullopt, nullopt, new_A, nullopt, nullopt, nullopt, nullopt);
+  qp4.update(std::nullopt,
+             std::nullopt,
+             new_A,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt);
   qp4.solve();
   pri_res = std::max(
     (new_A * qp4.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4461,7 +4563,13 @@ TEST_CASE("ProxQP::dense: Test A update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp5.update(nullopt, nullopt, new_A, nullopt, nullopt, nullopt, nullopt);
+  qp5.update(std::nullopt,
+             std::nullopt,
+             new_A,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt);
   qp5.solve();
   pri_res = std::max(
     (new_A * qp5.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4529,13 +4637,13 @@ TEST_CASE("ProxQP::dense: Test rho update for different initial guess")
                 .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             true,
             T(1.E-7));
   qp.solve();
@@ -4584,13 +4692,13 @@ TEST_CASE("ProxQP::dense: Test rho update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp2.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp2.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              true,
              T(1.E-7));
   qp2.solve();
@@ -4639,13 +4747,13 @@ TEST_CASE("ProxQP::dense: Test rho update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp3.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp3.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              true,
              T(1.E-7));
   qp3.solve();
@@ -4694,13 +4802,13 @@ TEST_CASE("ProxQP::dense: Test rho update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp4.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp4.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              true,
              T(1.E-7));
   qp4.solve();
@@ -4748,13 +4856,13 @@ TEST_CASE("ProxQP::dense: Test rho update for different initial guess")
               .lpNorm<Eigen::Infinity>();
   CHECK(dua_res <= eps_abs);
   CHECK(pri_res <= eps_abs);
-  qp5.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp5.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              true,
              T(1.E-7));
   qp5.solve();
@@ -4838,7 +4946,13 @@ TEST_CASE("ProxQP::dense: Test g update for different warm start with previous "
   // a new linear cost slightly modified
   auto g = qp_random.g * 0.95;
 
-  qp.update(nullopt, g, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp.update(std::nullopt,
+            g,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt);
   qp.solve();
   pri_res = std::max(
     (qp_random.A * qp.results.x - qp_random.b).lpNorm<Eigen::Infinity>(),
@@ -4949,13 +5063,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   CHECK(pri_res <= eps_abs);
   CHECK(dua_res <= eps_abs);
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             compute_preconditioner,
             1.e-6);
   qp.settings.initial_guess =
@@ -4992,7 +5106,7 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
            qp_random.l,
            qp_random.u,
            compute_preconditioner,
-           nullopt,
+           std::nullopt,
            mu_eq);
   CHECK(std::abs(mu_eq - qp2.settings.default_mu_eq) <= 1.E-9);
   CHECK(std::abs(mu_eq - qp2.results.info.mu_eq) <= 1.E-9);
@@ -5053,13 +5167,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
               .lpNorm<Eigen::Infinity>();
   CHECK(pri_res <= eps_abs);
   CHECK(dua_res <= eps_abs);
-  qp3.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp3.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              compute_preconditioner,
              1.e-6,
              1.e-3);
@@ -5141,13 +5255,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   CHECK(pri_res <= eps_abs);
   CHECK(dua_res <= eps_abs);
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             compute_preconditioner,
             1.e-6);
   CHECK(std::abs(1.e-6 - qp.settings.default_rho) <= 1.E-9);
@@ -5183,7 +5297,7 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
            qp_random.l,
            qp_random.u,
            compute_preconditioner,
-           nullopt,
+           std::nullopt,
            mu_eq);
   CHECK(std::abs(mu_eq - qp2.settings.default_mu_eq) <= 1.E-9);
   CHECK(std::abs(mu_eq - qp2.results.info.mu_eq) <= 1.E-9);
@@ -5246,13 +5360,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
               .lpNorm<Eigen::Infinity>();
   CHECK(pri_res <= eps_abs);
   CHECK(dua_res <= eps_abs);
-  qp3.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp3.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              compute_preconditioner,
              1.e-6,
              1.e-3);
@@ -5332,13 +5446,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   CHECK(pri_res <= eps_abs);
   CHECK(dua_res <= eps_abs);
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             compute_preconditioner,
             1.e-6);
   CHECK(std::abs(1.e-6 - qp.settings.default_rho) <= 1.E-9);
@@ -5374,7 +5488,7 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
            qp_random.l,
            qp_random.u,
            compute_preconditioner,
-           nullopt,
+           std::nullopt,
            mu_eq);
   CHECK(std::abs(mu_eq - qp2.settings.default_mu_eq) <= 1.E-9);
   CHECK(std::abs(mu_eq - qp2.results.info.mu_eq) <= 1.E-9);
@@ -5437,13 +5551,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
               .lpNorm<Eigen::Infinity>();
   CHECK(pri_res <= eps_abs);
   CHECK(dua_res <= eps_abs);
-  qp3.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp3.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              compute_preconditioner,
              1.e-6,
              1.e-3);
@@ -5522,13 +5636,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
   CHECK(pri_res <= eps_abs);
   CHECK(dua_res <= eps_abs);
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             compute_preconditioner,
             1.e-6);
   CHECK(std::abs(1.e-6 - qp.settings.default_rho) <= 1.E-9);
@@ -5563,7 +5677,7 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
            qp_random.l,
            qp_random.u,
            compute_preconditioner,
-           nullopt,
+           std::nullopt,
            mu_eq);
   CHECK(std::abs(mu_eq - qp2.settings.default_mu_eq) <= 1.E-9);
   CHECK(std::abs(mu_eq - qp2.results.info.mu_eq) <= 1.E-9);
@@ -5625,13 +5739,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
               .lpNorm<Eigen::Infinity>();
   CHECK(pri_res <= eps_abs);
   CHECK(dua_res <= eps_abs);
-  qp3.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp3.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              compute_preconditioner,
              1.e-6,
              1.e-3);
@@ -5728,13 +5842,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
     CHECK(dua_res <= eps_abs);
   }
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             compute_preconditioner,
             1.e-6);
   for (isize iter = 0; iter < 10; ++iter) {
@@ -5768,7 +5882,7 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
            qp_random.l,
            qp_random.u,
            compute_preconditioner,
-           nullopt,
+           std::nullopt,
            mu_eq);
   CHECK(std::abs(mu_eq - qp2.settings.default_mu_eq) <= 1.E-9);
   CHECK(std::abs(mu_eq - qp2.results.info.mu_eq) <= 1.E-9);
@@ -5850,13 +5964,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
     CHECK(dua_res <= eps_abs);
   }
 
-  qp3.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp3.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              compute_preconditioner,
              1.e-6,
              1.e-3);
@@ -5963,13 +6077,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
     CHECK(dua_res <= eps_abs);
   }
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             compute_preconditioner,
             1.e-6);
   for (isize iter = 0; iter < 10; ++iter) {
@@ -6005,7 +6119,7 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
            qp_random.l,
            qp_random.u,
            compute_preconditioner,
-           nullopt,
+           std::nullopt,
            mu_eq);
   CHECK(std::abs(mu_eq - qp2.settings.default_mu_eq) <= 1.E-9);
   CHECK(std::abs(mu_eq - qp2.results.info.mu_eq) <= 1.E-9);
@@ -6080,13 +6194,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
     CHECK(dua_res <= eps_abs);
   }
 
-  qp3.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp3.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              compute_preconditioner,
              1.e-6,
              1.e-3);
@@ -6191,13 +6305,13 @@ TEST_CASE(
     CHECK(dua_res <= eps_abs);
   }
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             compute_preconditioner,
             1.e-6);
   for (isize iter = 0; iter < 10; ++iter) {
@@ -6233,7 +6347,7 @@ TEST_CASE(
            qp_random.l,
            qp_random.u,
            compute_preconditioner,
-           nullopt,
+           std::nullopt,
            mu_eq);
   CHECK(std::abs(mu_eq - qp2.settings.default_mu_eq) <= 1.E-9);
   CHECK(std::abs(mu_eq - qp2.results.info.mu_eq) <= 1.E-9);
@@ -6308,13 +6422,13 @@ TEST_CASE(
     CHECK(dua_res <= eps_abs);
   }
 
-  qp3.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp3.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              compute_preconditioner,
              1.e-6,
              1.e-3);
@@ -6417,13 +6531,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
     CHECK(dua_res <= eps_abs);
   }
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             compute_preconditioner,
             1.e-6);
   for (isize iter = 0; iter < 10; ++iter) {
@@ -6458,7 +6572,7 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
            qp_random.l,
            qp_random.u,
            compute_preconditioner,
-           nullopt,
+           std::nullopt,
            mu_eq);
   CHECK(std::abs(mu_eq - qp2.settings.default_mu_eq) <= 1.E-9);
   CHECK(std::abs(mu_eq - qp2.results.info.mu_eq) <= 1.E-9);
@@ -6532,13 +6646,13 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with equality and "
     CHECK(dua_res <= eps_abs);
   }
 
-  qp3.update(nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
-             nullopt,
+  qp3.update(std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
+             std::nullopt,
              compute_preconditioner,
              1.e-6,
              1.e-3);
@@ -6616,11 +6730,11 @@ TEST_CASE("ProxQP::dense: init must be called before update")
   qp_random.g = utils::rand::vector_rand<T>(dim);
   qp.update(qp_random.H,
             qp_random.g,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             true);
 
   qp.solve();
@@ -6959,11 +7073,11 @@ TEST_CASE("ProxQP::dense: check updates work when there are box constraints")
   u_box.array() += 1.E1;
   l_box.array() -= 1.E1;
 
-  qp.update(nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
+  qp.update(std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             qp_random.l,
             qp_random.u,
             l_box,
@@ -7082,9 +7196,9 @@ TEST_CASE("ProxQP::dense: estimate of minimal eigenvalues using Eigen")
             qp_random.l,
             qp_random.u,
             true,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             estimate_minimal_eigen_value);
 
     CHECK(std::abs(qp.results.info.minimal_H_eigenvalue_estimate + 1) <= tol);
@@ -7118,9 +7232,9 @@ TEST_CASE("ProxQP::dense: estimate of minimal eigenvalues using Eigen")
             qp_random.l,
             qp_random.u,
             true,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             estimate_minimal_eigen_value);
     CHECK(std::abs(qp.results.info.minimal_H_eigenvalue_estimate -
                    minimal_eigenvalue) <= tol);
@@ -7155,9 +7269,9 @@ TEST_CASE("ProxQP::dense: estimate of minimal eigenvalues using Eigen")
             qp_random.l,
             qp_random.u,
             true,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             estimate_minimal_eigen_value);
 
     CHECK(std::abs(qp.results.info.minimal_H_eigenvalue_estimate -
@@ -7197,9 +7311,9 @@ TEST_CASE(
             qp_random.l,
             qp_random.u,
             true,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             -1);
 
     CHECK(std::abs(qp.results.info.minimal_H_eigenvalue_estimate + 1) <= tol);
@@ -7229,9 +7343,9 @@ TEST_CASE(
             qp_random.l,
             qp_random.u,
             true,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             minimal_eigenvalue);
     CHECK(std::abs(qp.results.info.minimal_H_eigenvalue_estimate -
                    minimal_eigenvalue) <= tol);
@@ -7262,9 +7376,9 @@ TEST_CASE(
             qp_random.l,
             qp_random.u,
             true,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             minimal_eigenvalue);
 
     CHECK(std::abs(qp.results.info.minimal_H_eigenvalue_estimate -
@@ -7311,9 +7425,9 @@ TEST_CASE(
             qp_random.l,
             qp_random.u,
             true,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             estimate_minimal_eigen_value);
 
     CHECK(std::abs(qp.results.info.minimal_H_eigenvalue_estimate + 0.5) <= tol);
@@ -7350,9 +7464,9 @@ TEST_CASE(
             qp_random.l,
             qp_random.u,
             true,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             estimate_minimal_eigen_value);
     CHECK(std::abs(qp.results.info.minimal_H_eigenvalue_estimate -
                    minimal_eigenvalue) <= tol);
@@ -7391,9 +7505,9 @@ TEST_CASE(
             qp_random.l,
             qp_random.u,
             true,
-            nullopt,
-            nullopt,
-            nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
             estimate_minimal_eigen_value);
 
     CHECK(std::abs(qp.results.info.minimal_H_eigenvalue_estimate -
@@ -7422,7 +7536,13 @@ TEST_CASE("check that model.is_valid function for symmetric matrices "
   // initialize a model with a symmetric matrix as Hessian, this runs
   // model.is_valid() that performs the check above
   proxqp::dense::QP<T> qp(3, 0, 0);
-  qp.init(symmetric_mat, nullopt, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp.init(symmetric_mat,
+          std::nullopt,
+          std::nullopt,
+          std::nullopt,
+          std::nullopt,
+          std::nullopt,
+          std::nullopt);
 }
 
 TEST_CASE("ProxQP::dense: test memory allocation when estimating biggest "
@@ -7480,10 +7600,10 @@ TEST_CASE("ProxQP::dense: sparse random strongly convex qp with"
   qp.settings.verbose = true;
   qp.init(qp_random.H,
           qp_random.g,
-          nullopt,
-          nullopt,
+          std::nullopt,
+          std::nullopt,
           qp_random.C,
-          nullopt,
+          std::nullopt,
           qp_random.u);
   qp.solve();
 

@@ -74,20 +74,20 @@ struct Model
     A.setZero();
     C.setZero();
     b.setZero();
-    u.fill(+infinite_bound_value); // in case it appears u is nullopt (i.e., the
-                                   // problem is only lower bounded)
-    l.fill(-infinite_bound_value); // in case it appears l is nullopt (i.e., the
-                                   // problem is only upper bounded)
+    u.fill(+infinite_bound_value); // in case it appears u is std::nullopt
+                                   // (i.e., the problem is only lower bounded)
+    l.fill(-infinite_bound_value); // in case it appears l is std::nullopt
+                                   // (i.e., the problem is only upper bounded)
 
     if (box_constraints) {
       u_box.resize(dim);
       l_box.resize(dim);
       u_box.fill(
-        +infinite_bound_value); // in case it appears u is nullopt (i.e., the
-                                // problem is only lower bounded)
+        +infinite_bound_value); // in case it appears u is std::nullopt (i.e.,
+                                // the problem is only lower bounded)
       l_box.fill(
-        -infinite_bound_value); // in case it appears l is nullopt (i.e., the
-                                // problem is only upper bounded)
+        -infinite_bound_value); // in case it appears l is std::nullopt (i.e.,
+                                // the problem is only upper bounded)
     }
   }
 

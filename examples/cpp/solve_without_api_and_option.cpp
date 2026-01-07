@@ -28,13 +28,13 @@ main()
                                        qp_random.C,
                                        qp_random.l,
                                        qp_random.u,
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
                                        T(1.E-9),
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
                                        T(1.E-7));
   // print an optimal solution x,y and z
   std::cout << "optimal x: " << results.x << std::endl;

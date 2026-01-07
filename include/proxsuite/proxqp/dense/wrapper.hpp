@@ -351,18 +351,18 @@ public:
    * @param mu_in proximal step size wrt inequality constrained multiplier.
    * @param manual_minimal_H_eigenvalue manual minimal eigenvalue proposed for H
    */
-  void init(optional<MatRef<T>> H,
-            optional<VecRef<T>> g,
-            optional<MatRef<T>> A,
-            optional<VecRef<T>> b,
-            optional<MatRef<T>> C,
-            optional<VecRef<T>> l,
-            optional<VecRef<T>> u,
+  void init(std::optional<MatRef<T>> H,
+            std::optional<VecRef<T>> g,
+            std::optional<MatRef<T>> A,
+            std::optional<VecRef<T>> b,
+            std::optional<MatRef<T>> C,
+            std::optional<VecRef<T>> l,
+            std::optional<VecRef<T>> u,
             bool compute_preconditioner = true,
-            optional<T> rho = nullopt,
-            optional<T> mu_eq = nullopt,
-            optional<T> mu_in = nullopt,
-            optional<T> manual_minimal_H_eigenvalue = nullopt)
+            std::optional<T> rho = std::nullopt,
+            std::optional<T> mu_eq = std::nullopt,
+            std::optional<T> mu_in = std::nullopt,
+            std::optional<T> manual_minimal_H_eigenvalue = std::nullopt)
   {
     PROXSUITE_THROW_PRETTY(
       box_constraints == true,
@@ -377,7 +377,7 @@ public:
     }
     settings.compute_preconditioner = compute_preconditioner;
     // check the model is valid
-    if (g != nullopt && g.value().size() != 0) {
+    if (g != std::nullopt && g.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         g.value().size(),
         model.dim,
@@ -386,7 +386,7 @@ public:
     } else {
       g.reset();
     }
-    if (b != nullopt && b.value().size() != 0) {
+    if (b != std::nullopt && b.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         b.value().size(),
         model.n_eq,
@@ -395,7 +395,7 @@ public:
     } else {
       b.reset();
     }
-    if (u != nullopt && u.value().size() != 0) {
+    if (u != std::nullopt && u.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         u.value().size(),
         model.n_in,
@@ -404,7 +404,7 @@ public:
     } else {
       u.reset();
     }
-    if (l != nullopt && l.value().size() != 0) {
+    if (l != std::nullopt && l.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         l.value().size(),
         model.n_in,
@@ -413,7 +413,7 @@ public:
     } else {
       l.reset();
     }
-    if (H != nullopt && H.value().size() != 0) {
+    if (H != std::nullopt && H.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         H.value().rows(),
         model.dim,
@@ -425,7 +425,7 @@ public:
     } else {
       H.reset();
     }
-    if (A != nullopt && A.value().size() != 0) {
+    if (A != std::nullopt && A.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         A.value().rows(),
         model.n_eq,
@@ -437,7 +437,7 @@ public:
     } else {
       A.reset();
     }
-    if (C != nullopt && C.value().size() != 0) {
+    if (C != std::nullopt && C.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         C.value().rows(),
         model.n_in,
@@ -473,7 +473,7 @@ public:
     proxsuite::proxqp::dense::
       update_default_rho_with_minimal_Hessian_eigen_value(
         manual_minimal_H_eigenvalue, results, settings);
-    typedef optional<VecRef<T>> optional_VecRef;
+    typedef std::optional<VecRef<T>> optional_VecRef;
     proxsuite::proxqp::dense::setup(H,
                                     g,
                                     A,
@@ -481,8 +481,8 @@ public:
                                     C,
                                     l,
                                     u,
-                                    optional_VecRef(nullopt),
-                                    optional_VecRef(nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
                                     settings,
                                     model,
                                     work,
@@ -517,20 +517,20 @@ public:
    * @param mu_in proximal step size wrt inequality constrained multiplier.
    * @param manual_minimal_H_eigenvalue manual minimal eigenvalue proposed for H
    */
-  void init(optional<MatRef<T>> H,
-            optional<VecRef<T>> g,
-            optional<MatRef<T>> A,
-            optional<VecRef<T>> b,
-            optional<MatRef<T>> C,
-            optional<VecRef<T>> l,
-            optional<VecRef<T>> u,
-            optional<VecRef<T>> l_box,
-            optional<VecRef<T>> u_box,
+  void init(std::optional<MatRef<T>> H,
+            std::optional<VecRef<T>> g,
+            std::optional<MatRef<T>> A,
+            std::optional<VecRef<T>> b,
+            std::optional<MatRef<T>> C,
+            std::optional<VecRef<T>> l,
+            std::optional<VecRef<T>> u,
+            std::optional<VecRef<T>> l_box,
+            std::optional<VecRef<T>> u_box,
             bool compute_preconditioner = true,
-            optional<T> rho = nullopt,
-            optional<T> mu_eq = nullopt,
-            optional<T> mu_in = nullopt,
-            optional<T> manual_minimal_H_eigenvalue = nullopt)
+            std::optional<T> rho = std::nullopt,
+            std::optional<T> mu_eq = std::nullopt,
+            std::optional<T> mu_in = std::nullopt,
+            std::optional<T> manual_minimal_H_eigenvalue = std::nullopt)
   {
 
     // dense case
@@ -540,11 +540,12 @@ public:
     }
     settings.compute_preconditioner = compute_preconditioner;
     PROXSUITE_THROW_PRETTY(
-      box_constraints == false && (l_box != nullopt || u_box != nullopt),
+      box_constraints == false &&
+        (l_box != std::nullopt || u_box != std::nullopt),
       std::invalid_argument,
       "wrong model setup: the QP object is designed without box "
       "constraints, but is initialized with lower or upper box inequalities.");
-    if (l_box != nullopt && l_box.value().size() != 0) {
+    if (l_box != std::nullopt && l_box.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(l_box.value().size(),
                                     model.dim,
                                     "the dimension wrt the primal variable x "
@@ -553,7 +554,7 @@ public:
     } else {
       l_box.reset();
     }
-    if (u_box != nullopt && u_box.value().size() != 0) {
+    if (u_box != std::nullopt && u_box.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(u_box.value().size(),
                                     model.dim,
                                     "the dimension wrt the primal variable x "
@@ -563,7 +564,7 @@ public:
       l_box.reset();
     }
     // check the model is valid
-    if (g != nullopt && g.value().size() != 0) {
+    if (g != std::nullopt && g.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         g.value().size(),
         model.dim,
@@ -572,7 +573,7 @@ public:
     } else {
       g.reset();
     }
-    if (b != nullopt && b.value().size() != 0) {
+    if (b != std::nullopt && b.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         b.value().size(),
         model.n_eq,
@@ -581,7 +582,7 @@ public:
     } else {
       b.reset();
     }
-    if (u != nullopt && u.value().size() != 0) {
+    if (u != std::nullopt && u.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         u.value().size(),
         model.n_in,
@@ -590,7 +591,7 @@ public:
     } else {
       u.reset();
     }
-    if (u_box != nullopt && u_box.value().size() != 0) {
+    if (u_box != std::nullopt && u_box.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         u_box.value().size(),
         model.dim,
@@ -600,7 +601,7 @@ public:
     } else {
       u_box.reset();
     }
-    if (l != nullopt && l.value().size() != 0) {
+    if (l != std::nullopt && l.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         l.value().size(),
         model.n_in,
@@ -609,7 +610,7 @@ public:
     } else {
       l.reset();
     }
-    if (l_box != nullopt && l_box.value().size() != 0) {
+    if (l_box != std::nullopt && l_box.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         l_box.value().size(),
         model.dim,
@@ -619,7 +620,7 @@ public:
     } else {
       l_box.reset();
     }
-    if (H != nullopt && H.value().size() != 0) {
+    if (H != std::nullopt && H.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         H.value().rows(),
         model.dim,
@@ -631,7 +632,7 @@ public:
     } else {
       H.reset();
     }
-    if (A != nullopt && A.value().size() != 0) {
+    if (A != std::nullopt && A.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         A.value().rows(),
         model.n_eq,
@@ -643,7 +644,7 @@ public:
     } else {
       A.reset();
     }
-    if (C != nullopt && C.value().size() != 0) {
+    if (C != std::nullopt && C.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         C.value().rows(),
         model.n_in,
@@ -720,18 +721,18 @@ public:
    * @note The init method should be called before update. If it has not been
    * done before, init is called depending on the is_initialized flag.
    */
-  void update(optional<MatRef<T>> H,
-              optional<VecRef<T>> g,
-              optional<MatRef<T>> A,
-              optional<VecRef<T>> b,
-              optional<MatRef<T>> C,
-              optional<VecRef<T>> l,
-              optional<VecRef<T>> u,
+  void update(std::optional<MatRef<T>> H,
+              std::optional<VecRef<T>> g,
+              std::optional<MatRef<T>> A,
+              std::optional<VecRef<T>> b,
+              std::optional<MatRef<T>> C,
+              std::optional<VecRef<T>> l,
+              std::optional<VecRef<T>> u,
               bool update_preconditioner = false,
-              optional<T> rho = nullopt,
-              optional<T> mu_eq = nullopt,
-              optional<T> mu_in = nullopt,
-              optional<T> manual_minimal_H_eigenvalue = nullopt)
+              std::optional<T> rho = std::nullopt,
+              std::optional<T> mu_eq = std::nullopt,
+              std::optional<T> mu_in = std::nullopt,
+              std::optional<T> manual_minimal_H_eigenvalue = std::nullopt)
   {
     PROXSUITE_THROW_PRETTY(
       box_constraints == true,
@@ -758,10 +759,11 @@ public:
       preconditioner_status = proxsuite::proxqp::PreconditionerStatus::KEEP;
     }
     const bool matrix_update =
-      !(H == nullopt && g == nullopt && A == nullopt && b == nullopt &&
-        C == nullopt && u == nullopt && l == nullopt);
+      !(H == std::nullopt && g == std::nullopt && A == std::nullopt &&
+        b == std::nullopt && C == std::nullopt && u == std::nullopt &&
+        l == std::nullopt);
     if (matrix_update) {
-      typedef optional<VecRef<T>> optional_VecRef;
+      typedef std::optional<VecRef<T>> optional_VecRef;
       proxsuite::proxqp::dense::update(H,
                                        g,
                                        A,
@@ -769,8 +771,8 @@ public:
                                        C,
                                        l,
                                        u,
-                                       optional_VecRef(nullopt),
-                                       optional_VecRef(nullopt),
+                                       optional_VecRef(std::nullopt),
+                                       optional_VecRef(std::nullopt),
                                        model,
                                        work,
                                        box_constraints);
@@ -780,18 +782,18 @@ public:
     proxsuite::proxqp::dense::
       update_default_rho_with_minimal_Hessian_eigen_value(
         manual_minimal_H_eigenvalue, results, settings);
-    typedef optional<MatRef<T>> optional_MatRef;
-    typedef optional<VecRef<T>> optional_VecRef;
+    typedef std::optional<MatRef<T>> optional_MatRef;
+    typedef std::optional<VecRef<T>> optional_VecRef;
     proxsuite::proxqp::dense::setup(/* avoid double assignation */
-                                    optional_MatRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_MatRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_MatRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_VecRef(nullopt),
+                                    optional_MatRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_MatRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_MatRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
                                     settings,
                                     model,
                                     work,
@@ -828,23 +830,24 @@ public:
    * @note The init method should be called before update. If it has not been
    * done before, init is called depending on the is_initialized flag.
    */
-  void update(optional<MatRef<T>> H,
-              optional<VecRef<T>> g,
-              optional<MatRef<T>> A,
-              optional<VecRef<T>> b,
-              optional<MatRef<T>> C,
-              optional<VecRef<T>> l,
-              optional<VecRef<T>> u,
-              optional<VecRef<T>> l_box,
-              optional<VecRef<T>> u_box,
+  void update(std::optional<MatRef<T>> H,
+              std::optional<VecRef<T>> g,
+              std::optional<MatRef<T>> A,
+              std::optional<VecRef<T>> b,
+              std::optional<MatRef<T>> C,
+              std::optional<VecRef<T>> l,
+              std::optional<VecRef<T>> u,
+              std::optional<VecRef<T>> l_box,
+              std::optional<VecRef<T>> u_box,
               bool update_preconditioner = false,
-              optional<T> rho = nullopt,
-              optional<T> mu_eq = nullopt,
-              optional<T> mu_in = nullopt,
-              optional<T> manual_minimal_H_eigenvalue = nullopt)
+              std::optional<T> rho = std::nullopt,
+              std::optional<T> mu_eq = std::nullopt,
+              std::optional<T> mu_in = std::nullopt,
+              std::optional<T> manual_minimal_H_eigenvalue = std::nullopt)
   {
     PROXSUITE_THROW_PRETTY(
-      box_constraints == false && (l_box != nullopt || u_box != nullopt),
+      box_constraints == false &&
+        (l_box != std::nullopt || u_box != std::nullopt),
       std::invalid_argument,
       "wrong model setup: the QP object is designed without box "
       "constraints, but the update includes lower or upper box inequalities.");
@@ -879,9 +882,9 @@ public:
       preconditioner_status = proxsuite::proxqp::PreconditionerStatus::KEEP;
     }
     const bool matrix_update =
-      !(H == nullopt && g == nullopt && A == nullopt && b == nullopt &&
-        C == nullopt && u == nullopt && l == nullopt && u_box == nullopt &&
-        l_box == nullopt);
+      !(H == std::nullopt && g == std::nullopt && A == std::nullopt &&
+        b == std::nullopt && C == std::nullopt && u == std::nullopt &&
+        l == std::nullopt && u_box == std::nullopt && l_box == std::nullopt);
     if (matrix_update) {
       proxsuite::proxqp::dense::update(
         H, g, A, b, C, l, u, l_box, u_box, model, work, box_constraints);
@@ -891,18 +894,18 @@ public:
     proxsuite::proxqp::dense::
       update_default_rho_with_minimal_Hessian_eigen_value(
         manual_minimal_H_eigenvalue, results, settings);
-    typedef optional<MatRef<T>> optional_MatRef;
-    typedef optional<VecRef<T>> optional_VecRef;
+    typedef std::optional<MatRef<T>> optional_MatRef;
+    typedef std::optional<VecRef<T>> optional_VecRef;
     proxsuite::proxqp::dense::setup(/* avoid double assignation */
-                                    optional_MatRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_MatRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_MatRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_VecRef(nullopt),
-                                    optional_VecRef(nullopt),
+                                    optional_MatRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_MatRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_MatRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
+                                    optional_VecRef(std::nullopt),
                                     settings,
                                     model,
                                     work,
@@ -937,9 +940,9 @@ public:
    * @param y dual equality warm start.
    * @param z dual inequality warm start.
    */
-  void solve(optional<VecRef<T>> x,
-             optional<VecRef<T>> y,
-             optional<VecRef<T>> z)
+  void solve(std::optional<VecRef<T>> x,
+             std::optional<VecRef<T>> y,
+             std::optional<VecRef<T>> z)
   {
     proxsuite::proxqp::dense::warm_start(x, y, z, results, settings, model);
     qp_solve( //
@@ -1000,43 +1003,43 @@ public:
 template<typename T>
 proxqp::Results<T>
 solve(
-  optional<MatRef<T>> H,
-  optional<VecRef<T>> g,
-  optional<MatRef<T>> A,
-  optional<VecRef<T>> b,
-  optional<MatRef<T>> C,
-  optional<VecRef<T>> l,
-  optional<VecRef<T>> u,
-  optional<VecRef<T>> x = nullopt,
-  optional<VecRef<T>> y = nullopt,
-  optional<VecRef<T>> z = nullopt,
-  optional<T> eps_abs = nullopt,
-  optional<T> eps_rel = nullopt,
-  optional<T> rho = nullopt,
-  optional<T> mu_eq = nullopt,
-  optional<T> mu_in = nullopt,
-  optional<bool> verbose = nullopt,
+  std::optional<MatRef<T>> H,
+  std::optional<VecRef<T>> g,
+  std::optional<MatRef<T>> A,
+  std::optional<VecRef<T>> b,
+  std::optional<MatRef<T>> C,
+  std::optional<VecRef<T>> l,
+  std::optional<VecRef<T>> u,
+  std::optional<VecRef<T>> x = std::nullopt,
+  std::optional<VecRef<T>> y = std::nullopt,
+  std::optional<VecRef<T>> z = std::nullopt,
+  std::optional<T> eps_abs = std::nullopt,
+  std::optional<T> eps_rel = std::nullopt,
+  std::optional<T> rho = std::nullopt,
+  std::optional<T> mu_eq = std::nullopt,
+  std::optional<T> mu_in = std::nullopt,
+  std::optional<bool> verbose = std::nullopt,
   bool compute_preconditioner = true,
   bool compute_timings = false,
-  optional<isize> max_iter = nullopt,
+  std::optional<isize> max_iter = std::nullopt,
   proxsuite::proxqp::InitialGuessStatus initial_guess =
     proxsuite::proxqp::InitialGuessStatus::EQUALITY_CONSTRAINED_INITIAL_GUESS,
   bool check_duality_gap = false,
-  optional<T> eps_duality_gap_abs = nullopt,
-  optional<T> eps_duality_gap_rel = nullopt,
+  std::optional<T> eps_duality_gap_abs = std::nullopt,
+  std::optional<T> eps_duality_gap_rel = std::nullopt,
   bool primal_infeasibility_solving = false,
-  optional<T> manual_minimal_H_eigenvalue = nullopt)
+  std::optional<T> manual_minimal_H_eigenvalue = std::nullopt)
 {
   isize n(0);
   isize n_eq(0);
   isize n_in(0);
-  if (H != nullopt) {
+  if (H != std::nullopt) {
     n = H.value().rows();
   }
-  if (A != nullopt) {
+  if (A != std::nullopt) {
     n_eq = A.value().rows();
   }
-  if (C != nullopt) {
+  if (C != std::nullopt) {
     n_in = C.value().rows();
   }
 
@@ -1044,27 +1047,27 @@ solve(
   Qp.settings.initial_guess = initial_guess;
   Qp.settings.check_duality_gap = check_duality_gap;
 
-  if (eps_abs != nullopt) {
+  if (eps_abs != std::nullopt) {
     Qp.settings.eps_abs = eps_abs.value();
   }
-  if (eps_rel != nullopt) {
+  if (eps_rel != std::nullopt) {
     Qp.settings.eps_rel = eps_rel.value();
   }
-  if (verbose != nullopt) {
+  if (verbose != std::nullopt) {
     Qp.settings.verbose = verbose.value();
   }
-  if (max_iter != nullopt) {
+  if (max_iter != std::nullopt) {
     Qp.settings.max_iter = max_iter.value();
   }
-  if (eps_duality_gap_abs != nullopt) {
+  if (eps_duality_gap_abs != std::nullopt) {
     Qp.settings.eps_duality_gap_abs = eps_duality_gap_abs.value();
   }
-  if (eps_duality_gap_rel != nullopt) {
+  if (eps_duality_gap_rel != std::nullopt) {
     Qp.settings.eps_duality_gap_rel = eps_duality_gap_rel.value();
   }
   Qp.settings.compute_timings = compute_timings;
   Qp.settings.primal_infeasibility_solving = primal_infeasibility_solving;
-  if (manual_minimal_H_eigenvalue != nullopt) {
+  if (manual_minimal_H_eigenvalue != std::nullopt) {
     Qp.init(H,
             g,
             A,
@@ -1078,8 +1081,18 @@ solve(
             mu_in,
             manual_minimal_H_eigenvalue.value());
   } else {
-    Qp.init(
-      H, g, A, b, C, l, u, compute_preconditioner, rho, mu_eq, mu_in, nullopt);
+    Qp.init(H,
+            g,
+            A,
+            b,
+            C,
+            l,
+            u,
+            compute_preconditioner,
+            rho,
+            mu_eq,
+            mu_in,
+            std::nullopt);
   }
   Qp.solve(x, y, z);
 
@@ -1130,45 +1143,45 @@ solve(
 template<typename T>
 proxqp::Results<T>
 solve(
-  optional<MatRef<T>> H,
-  optional<VecRef<T>> g,
-  optional<MatRef<T>> A,
-  optional<VecRef<T>> b,
-  optional<MatRef<T>> C,
-  optional<VecRef<T>> l,
-  optional<VecRef<T>> u,
-  optional<VecRef<T>> l_box,
-  optional<VecRef<T>> u_box,
-  optional<VecRef<T>> x = nullopt,
-  optional<VecRef<T>> y = nullopt,
-  optional<VecRef<T>> z = nullopt,
-  optional<T> eps_abs = nullopt,
-  optional<T> eps_rel = nullopt,
-  optional<T> rho = nullopt,
-  optional<T> mu_eq = nullopt,
-  optional<T> mu_in = nullopt,
-  optional<bool> verbose = nullopt,
+  std::optional<MatRef<T>> H,
+  std::optional<VecRef<T>> g,
+  std::optional<MatRef<T>> A,
+  std::optional<VecRef<T>> b,
+  std::optional<MatRef<T>> C,
+  std::optional<VecRef<T>> l,
+  std::optional<VecRef<T>> u,
+  std::optional<VecRef<T>> l_box,
+  std::optional<VecRef<T>> u_box,
+  std::optional<VecRef<T>> x = std::nullopt,
+  std::optional<VecRef<T>> y = std::nullopt,
+  std::optional<VecRef<T>> z = std::nullopt,
+  std::optional<T> eps_abs = std::nullopt,
+  std::optional<T> eps_rel = std::nullopt,
+  std::optional<T> rho = std::nullopt,
+  std::optional<T> mu_eq = std::nullopt,
+  std::optional<T> mu_in = std::nullopt,
+  std::optional<bool> verbose = std::nullopt,
   bool compute_preconditioner = true,
   bool compute_timings = false,
-  optional<isize> max_iter = nullopt,
+  std::optional<isize> max_iter = std::nullopt,
   proxsuite::proxqp::InitialGuessStatus initial_guess =
     proxsuite::proxqp::InitialGuessStatus::EQUALITY_CONSTRAINED_INITIAL_GUESS,
   bool check_duality_gap = false,
-  optional<T> eps_duality_gap_abs = nullopt,
-  optional<T> eps_duality_gap_rel = nullopt,
+  std::optional<T> eps_duality_gap_abs = std::nullopt,
+  std::optional<T> eps_duality_gap_rel = std::nullopt,
   bool primal_infeasibility_solving = false,
-  optional<T> manual_minimal_H_eigenvalue = nullopt)
+  std::optional<T> manual_minimal_H_eigenvalue = std::nullopt)
 {
   isize n(0);
   isize n_eq(0);
   isize n_in(0);
-  if (H != nullopt) {
+  if (H != std::nullopt) {
     n = H.value().rows();
   }
-  if (A != nullopt) {
+  if (A != std::nullopt) {
     n_eq = A.value().rows();
   }
-  if (C != nullopt) {
+  if (C != std::nullopt) {
     n_in = C.value().rows();
   }
 
@@ -1176,27 +1189,27 @@ solve(
   Qp.settings.initial_guess = initial_guess;
   Qp.settings.check_duality_gap = check_duality_gap;
 
-  if (eps_abs != nullopt) {
+  if (eps_abs != std::nullopt) {
     Qp.settings.eps_abs = eps_abs.value();
   }
-  if (eps_rel != nullopt) {
+  if (eps_rel != std::nullopt) {
     Qp.settings.eps_rel = eps_rel.value();
   }
-  if (verbose != nullopt) {
+  if (verbose != std::nullopt) {
     Qp.settings.verbose = verbose.value();
   }
-  if (max_iter != nullopt) {
+  if (max_iter != std::nullopt) {
     Qp.settings.max_iter = max_iter.value();
   }
-  if (eps_duality_gap_abs != nullopt) {
+  if (eps_duality_gap_abs != std::nullopt) {
     Qp.settings.eps_duality_gap_abs = eps_duality_gap_abs.value();
   }
-  if (eps_duality_gap_rel != nullopt) {
+  if (eps_duality_gap_rel != std::nullopt) {
     Qp.settings.eps_duality_gap_rel = eps_duality_gap_rel.value();
   }
   Qp.settings.compute_timings = compute_timings;
   Qp.settings.primal_infeasibility_solving = primal_infeasibility_solving;
-  if (manual_minimal_H_eigenvalue != nullopt) {
+  if (manual_minimal_H_eigenvalue != std::nullopt) {
     Qp.init(H,
             g,
             A,
@@ -1225,7 +1238,7 @@ solve(
             rho,
             mu_eq,
             mu_in,
-            nullopt);
+            std::nullopt);
   }
   Qp.solve(x, y, z);
 

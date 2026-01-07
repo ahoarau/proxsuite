@@ -35,7 +35,7 @@ TEST_CASE("proxqp::dense: test compute backward for g (feasible QP)")
   qp.settings.eps_abs = eps_abs;
   qp.settings.eps_rel = 0;
 
-  qp.init(H, g, A, b, nullopt, nullopt, nullopt);
+  qp.init(H, g, A, b, std::nullopt, std::nullopt, std::nullopt);
   qp.solve();
 
   // Compute dx_dg using backward function
@@ -55,12 +55,12 @@ TEST_CASE("proxqp::dense: test compute backward for g (feasible QP)")
   T eps = 1e-5;
   for (int i = 0; i < g.size(); i++) {
     g_fd(i) += eps;
-    qp.init(H, g_fd, A, b, nullopt, nullopt, nullopt);
+    qp.init(H, g_fd, A, b, std::nullopt, std::nullopt, std::nullopt);
     qp.solve();
     Eigen::VectorXd x_plus = qp.results.x;
     g_fd(i) = g(i);
     g_fd(i) -= eps;
-    qp.init(H, g_fd, A, b, nullopt, nullopt, nullopt);
+    qp.init(H, g_fd, A, b, std::nullopt, std::nullopt, std::nullopt);
     qp.solve();
     Eigen::VectorXd x_minus = qp.results.x;
 
@@ -101,7 +101,7 @@ TEST_CASE("proxqp::dense: test compute backward for b (feasible QP)")
   qp.settings.eps_abs = eps_abs;
   qp.settings.eps_rel = 0;
 
-  qp.init(H, g, A, b, nullopt, nullopt, nullopt);
+  qp.init(H, g, A, b, std::nullopt, std::nullopt, std::nullopt);
   qp.solve();
 
   // Compute dx_db using backward function
@@ -121,12 +121,12 @@ TEST_CASE("proxqp::dense: test compute backward for b (feasible QP)")
   T eps = 1e-5;
   for (int i = 0; i < b.size(); i++) {
     b_fd(i) += eps;
-    qp.init(H, g, A, b_fd, nullopt, nullopt, nullopt);
+    qp.init(H, g, A, b_fd, std::nullopt, std::nullopt, std::nullopt);
     qp.solve();
     Eigen::VectorXd x_plus = qp.results.x;
 
     b_fd(i) -= 2 * eps;
-    qp.init(H, g, A, b_fd, nullopt, nullopt, nullopt);
+    qp.init(H, g, A, b_fd, std::nullopt, std::nullopt, std::nullopt);
     qp.solve();
     Eigen::VectorXd x_minus = qp.results.x;
 
@@ -174,7 +174,7 @@ TEST_CASE("proxqp::dense: test compute backward for g (QP with "
   qp.settings.eps_abs = eps_abs;
   qp.settings.eps_rel = 0;
 
-  qp.init(H, g, nullopt, nullopt, C, l, nullopt);
+  qp.init(H, g, std::nullopt, std::nullopt, C, l, std::nullopt);
   std::cout << "solving qp " << std::endl;
   qp.solve();
   std::cout << "active ineq  " << qp.work.active_inequalities.count()
@@ -197,12 +197,12 @@ TEST_CASE("proxqp::dense: test compute backward for g (QP with "
   T eps = 1e-5;
   for (int i = 0; i < g.size(); i++) {
     g_fd(i) += eps;
-    qp.init(H, g_fd, nullopt, nullopt, C, l, nullopt);
+    qp.init(H, g_fd, std::nullopt, std::nullopt, C, l, std::nullopt);
     qp.solve();
     Eigen::VectorXd x_plus = qp.results.x;
     g_fd(i) = g(i);
     g_fd(i) -= eps;
-    qp.init(H, g_fd, nullopt, nullopt, C, l, nullopt);
+    qp.init(H, g_fd, std::nullopt, std::nullopt, C, l, std::nullopt);
     qp.solve();
     Eigen::VectorXd x_minus = qp.results.x;
 

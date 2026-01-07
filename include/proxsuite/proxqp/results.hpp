@@ -7,7 +7,7 @@
 #ifndef PROXSUITE_PROXQP_RESULTS_HPP
 #define PROXSUITE_PROXQP_RESULTS_HPP
 
-#include <proxsuite/helpers/optional.hpp>
+#include <optional>
 #include <Eigen/Core>
 #include <proxsuite/linalg/veg/type_traits/core.hpp>
 #include <proxsuite/linalg/veg/vec.hpp>
@@ -146,7 +146,7 @@ struct Results
    * cleanups the Result variables and set the info variables to their initial
    * values.
    */
-  void cleanup(optional<Settings<T>> settings = nullopt)
+  void cleanup(std::optional<Settings<T>> settings = std::nullopt)
   {
     x.setZero();
     y.setZero();
@@ -172,7 +172,7 @@ struct Results
     info.status = QPSolverOutput::PROXQP_MAX_ITER_REACHED;
     info.sparse_backend = SparseBackend::Automatic;
   }
-  void cold_start(optional<Settings<T>> settings = nullopt)
+  void cold_start(std::optional<Settings<T>> settings = std::nullopt)
   {
     info.rho = 1e-6;
     info.mu_eq_inv = 1e3;
@@ -181,7 +181,7 @@ struct Results
     info.mu_in = 1e-1;
     info.nu = 1.;
     info.minimal_H_eigenvalue_estimate = 0.;
-    if (settings != nullopt) {
+    if (settings != std::nullopt) {
       info.rho = settings.value().default_rho;
       info.mu_eq = settings.value().default_mu_eq;
       info.mu_eq_inv = T(1) / info.mu_eq;

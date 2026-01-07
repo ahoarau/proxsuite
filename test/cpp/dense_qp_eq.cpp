@@ -245,7 +245,7 @@ TEST_CASE("infeasible qp")
       n_in, -std::numeric_limits<double>::infinity());
 
   proxsuite::proxqp::dense::QP<T> qp(n, n_eq, n_in);
-  qp.init(H, g, nullopt, nullopt, C, l, u);
+  qp.init(H, g, std::nullopt, std::nullopt, C, l, u);
   qp.settings.eps_rel = 0.;
   qp.settings.eps_abs = 1e-9;
 

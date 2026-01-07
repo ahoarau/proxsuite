@@ -6,7 +6,7 @@
 #define PROXSUITE_PROXQP_SPARSE_HELPERS_HPP
 
 #include <Eigen/Sparse>
-#include <proxsuite/helpers/optional.hpp>
+#include <optional>
 
 #include <proxsuite/linalg/veg/vec.hpp>
 #include <proxsuite/proxqp/sparse/fwd.hpp>
@@ -157,11 +157,11 @@ estimate_minimal_eigen_value_of_symmetric_matrix(SparseMat<T, I>& H,
 template<typename T>
 void
 update_default_rho_with_minimal_Hessian_eigen_value(
-  optional<T> manual_minimal_H_eigenvalue,
+  std::optional<T> manual_minimal_H_eigenvalue,
   Results<T>& results,
   Settings<T>& settings)
 {
-  if (manual_minimal_H_eigenvalue != nullopt) {
+  if (manual_minimal_H_eigenvalue != std::nullopt) {
     settings.default_H_eigenvalue_estimate =
       manual_minimal_H_eigenvalue.value();
     results.info.minimal_H_eigenvalue_estimate =
@@ -183,22 +183,22 @@ void
 update_proximal_parameters(Settings<T>& settings,
                            Results<T>& results,
                            Workspace<T, I>& work,
-                           optional<T> rho_new,
-                           optional<T> mu_eq_new,
-                           optional<T> mu_in_new)
+                           std::optional<T> rho_new,
+                           std::optional<T> mu_eq_new,
+                           std::optional<T> mu_in_new)
 {
-  if (rho_new != nullopt) {
+  if (rho_new != std::nullopt) {
     settings.default_rho = rho_new.value();
     results.info.rho = rho_new.value();
     work.internal.proximal_parameter_update = true;
   }
-  if (mu_eq_new != nullopt) {
+  if (mu_eq_new != std::nullopt) {
     settings.default_mu_eq = mu_eq_new.value();
     results.info.mu_eq = mu_eq_new.value();
     results.info.mu_eq_inv = T(1) / results.info.mu_eq;
     work.internal.proximal_parameter_update = true;
   }
-  if (mu_in_new != nullopt) {
+  if (mu_in_new != std::nullopt) {
     settings.default_mu_in = mu_in_new.value();
     results.info.mu_in = mu_in_new.value();
     results.info.mu_in_inv = T(1) / results.info.mu_in;
@@ -216,34 +216,34 @@ update_proximal_parameters(Settings<T>& settings,
  */
 template<typename T, typename I>
 void
-warm_start(optional<VecRef<T>> x_wm,
-           optional<VecRef<T>> y_wm,
-           optional<VecRef<T>> z_wm,
+warm_start(std::optional<VecRef<T>> x_wm,
+           std::optional<VecRef<T>> y_wm,
+           std::optional<VecRef<T>> z_wm,
            Results<T>& results,
            Settings<T>& settings,
            Model<T, I>& model)
 {
-  if (x_wm == nullopt && y_wm == nullopt && z_wm == nullopt)
+  if (x_wm == std::nullopt && y_wm == std::nullopt && z_wm == std::nullopt)
     return;
 
   settings.initial_guess = InitialGuessStatus::WARM_START;
 
   // first check problem dimensions
-  if (x_wm != nullopt) {
+  if (x_wm != std::nullopt) {
     PROXSUITE_CHECK_ARGUMENT_SIZE(
       x_wm.value().rows(),
       model.dim,
       "the dimension wrt primal variable x for warm start is not valid.");
   }
 
-  if (y_wm != nullopt) {
+  if (y_wm != std::nullopt) {
     PROXSUITE_CHECK_ARGUMENT_SIZE(y_wm.value().rows(),
                                   model.n_eq,
                                   "the dimension wrt equality constrained "
                                   "variables for warm start is not valid.");
   }
 
-  if (z_wm != nullopt) {
+  if (z_wm != std::nullopt) {
     PROXSUITE_CHECK_ARGUMENT_SIZE(
       z_wm.value().rows(),
       model.n_in,
@@ -251,15 +251,15 @@ warm_start(optional<VecRef<T>> x_wm,
       "is not valid.");
   }
 
-  if (x_wm != nullopt) {
+  if (x_wm != std::nullopt) {
     results.x = x_wm.value().eval();
   }
 
-  if (y_wm != nullopt) {
+  if (y_wm != std::nullopt) {
     results.y = y_wm.value().eval();
   }
 
-  if (z_wm != nullopt) {
+  if (z_wm != std::nullopt) {
     results.z = z_wm.value().eval();
   }
 }

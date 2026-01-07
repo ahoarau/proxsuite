@@ -8,7 +8,6 @@
 #include <nanobind/operators.h>
 #include "optional-eigen-fix.hpp"
 
-#include <proxsuite/helpers/optional.hpp>
 #include <proxsuite/serialization/archive.hpp>
 #include <proxsuite/serialization/results.hpp>
 

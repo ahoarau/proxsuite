@@ -17,12 +17,12 @@ namespace dense {
 template<typename T>
 void
 solve_in_parallel(std::vector<proxqp::dense::QP<T>>& qps,
-                  const optional<size_t> num_threads = nullopt)
+                  const std::optional<size_t> num_threads = std::nullopt)
 {
   size_t NUM_THREADS =
     std::max((size_t)(omp_get_max_threads() / 2),
              (size_t)(1)); // TODO(jcarpent): find optimal dispatch
-  if (num_threads != nullopt) {
+  if (num_threads != std::nullopt) {
     NUM_THREADS = num_threads.value();
   }
   set_default_omp_options(NUM_THREADS);
@@ -40,11 +40,11 @@ solve_in_parallel(std::vector<proxqp::dense::QP<T>>& qps,
 template<typename T>
 void
 solve_in_parallel(proxqp::dense::BatchQP<T>& qps,
-                  const optional<size_t> num_threads = nullopt)
+                  const std::optional<size_t> num_threads = std::nullopt)
 {
   size_t NUM_THREADS =
     std::max((size_t)(omp_get_max_threads() / 2), (size_t)(1));
-  if (num_threads != nullopt) {
+  if (num_threads != std::nullopt) {
     NUM_THREADS = num_threads.value();
   }
   set_default_omp_options(NUM_THREADS);
@@ -61,10 +61,10 @@ solve_in_parallel(proxqp::dense::BatchQP<T>& qps,
 
 template<typename T>
 void
-qp_solve_in_parallel(optional<const size_t> num_threads,
+qp_solve_in_parallel(std::optional<const size_t> num_threads,
                      proxqp::dense::BatchQP<T>& qps)
 {
-  if (num_threads != nullopt) {
+  if (num_threads != std::nullopt) {
     set_default_omp_options(num_threads.value());
   } else {
     size_t NUM_THREADS =
@@ -84,14 +84,14 @@ qp_solve_in_parallel(optional<const size_t> num_threads,
 template<typename T>
 void
 qp_solve_backward_in_parallel(
-  optional<const size_t> num_threads,
+  std::optional<const size_t> num_threads,
   std::vector<proxqp::dense::QP<T>>& qps,
   std::vector<proxqp::dense::Vec<T>>& loss_derivatives,
   T eps = 1.E-4,
   T rho_new = 1.E-6,
   T mu_new = 1.E-6)
 {
-  if (num_threads != nullopt) {
+  if (num_threads != std::nullopt) {
     set_default_omp_options(num_threads.value());
   } else {
     size_t NUM_THREADS =
@@ -112,14 +112,14 @@ qp_solve_backward_in_parallel(
 template<typename T>
 void
 qp_solve_backward_in_parallel(
-  optional<const size_t> num_threads,
+  std::optional<const size_t> num_threads,
   proxqp::dense::BatchQP<T>& qps,
   std::vector<proxqp::dense::Vec<T>>& loss_derivatives,
   T eps = 1.E-4,
   T rho_new = 1.E-6,
   T mu_new = 1.E-6)
 {
-  if (num_threads != nullopt) {
+  if (num_threads != std::nullopt) {
     set_default_omp_options(num_threads.value());
   } else {
     size_t NUM_THREADS =
@@ -142,11 +142,11 @@ namespace sparse {
 template<typename T, typename I>
 void
 solve_in_parallel(proxqp::sparse::BatchQP<T, I>& qps,
-                  const optional<size_t> num_threads = nullopt)
+                  const std::optional<size_t> num_threads = std::nullopt)
 {
   size_t NUM_THREADS =
     std::max((size_t)(omp_get_max_threads() / 2), (size_t)(1));
-  if (num_threads != nullopt) {
+  if (num_threads != std::nullopt) {
     NUM_THREADS = num_threads.value();
   }
   set_default_omp_options(NUM_THREADS);
@@ -164,11 +164,11 @@ solve_in_parallel(proxqp::sparse::BatchQP<T, I>& qps,
 template<typename T, typename I>
 void
 solve_in_parallel(std::vector<proxqp::sparse::QP<T, I>>& qps,
-                  const optional<size_t> num_threads = nullopt)
+                  const std::optional<size_t> num_threads = std::nullopt)
 {
   size_t NUM_THREADS =
     std::max((size_t)(omp_get_max_threads() / 2), (size_t)(1));
-  if (num_threads != nullopt) {
+  if (num_threads != std::nullopt) {
     NUM_THREADS = num_threads.value();
   }
   set_default_omp_options(NUM_THREADS);

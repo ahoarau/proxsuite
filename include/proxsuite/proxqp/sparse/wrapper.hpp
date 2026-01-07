@@ -167,24 +167,24 @@ struct QP
    * @param mu_eq proximal step size wrt equality constrained multiplier.
    * @param mu_in proximal step size wrt inequality constrained multiplier.
    */
-  void init(optional<SparseMat<T, I>> H,
-            optional<VecRef<T>> g,
-            optional<SparseMat<T, I>> A,
-            optional<VecRef<T>> b,
-            optional<SparseMat<T, I>> C,
-            optional<VecRef<T>> l,
-            optional<VecRef<T>> u,
+  void init(std::optional<SparseMat<T, I>> H,
+            std::optional<VecRef<T>> g,
+            std::optional<SparseMat<T, I>> A,
+            std::optional<VecRef<T>> b,
+            std::optional<SparseMat<T, I>> C,
+            std::optional<VecRef<T>> l,
+            std::optional<VecRef<T>> u,
             bool compute_preconditioner_ = true,
-            optional<T> rho = nullopt,
-            optional<T> mu_eq = nullopt,
-            optional<T> mu_in = nullopt,
-            optional<T> manual_minimal_H_eigenvalue = nullopt)
+            std::optional<T> rho = std::nullopt,
+            std::optional<T> mu_eq = std::nullopt,
+            std::optional<T> mu_in = std::nullopt,
+            std::optional<T> manual_minimal_H_eigenvalue = std::nullopt)
   {
     if (settings.compute_timings) {
       work.timer.stop();
       work.timer.start();
     }
-    if (g != nullopt && g.value().size() != 0) {
+    if (g != std::nullopt && g.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         g.value().size(),
         model.dim,
@@ -193,7 +193,7 @@ struct QP
     } else {
       g.reset();
     }
-    if (b != nullopt && b.value().size() != 0) {
+    if (b != std::nullopt && b.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         b.value().size(),
         model.n_eq,
@@ -202,7 +202,7 @@ struct QP
     } else {
       b.reset();
     }
-    if (u != nullopt && u.value().size() != 0) {
+    if (u != std::nullopt && u.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         u.value().size(),
         model.n_in,
@@ -211,7 +211,7 @@ struct QP
     } else {
       u.reset();
     }
-    if (l != nullopt && l.value().size() != 0) {
+    if (l != std::nullopt && l.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         l.value().size(),
         model.n_in,
@@ -220,7 +220,7 @@ struct QP
     } else {
       l.reset();
     }
-    if (H != nullopt && H.value().size() != 0) {
+    if (H != std::nullopt && H.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         H.value().rows(),
         model.dim,
@@ -232,7 +232,7 @@ struct QP
     } else {
       H.reset();
     }
-    if (A != nullopt && A.value().size() != 0) {
+    if (A != std::nullopt && A.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         A.value().rows(),
         model.n_eq,
@@ -244,7 +244,7 @@ struct QP
     } else {
       A.reset();
     }
-    if (C != nullopt && C.value().size() != 0) {
+    if (C != std::nullopt && C.value().size() != 0) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         C.value().rows(),
         model.n_in,
@@ -266,37 +266,37 @@ struct QP
     proxsuite::proxqp::sparse::update_proximal_parameters(
       settings, results, work, rho, mu_eq, mu_in);
 
-    if (g != nullopt) {
+    if (g != std::nullopt) {
       model.g = g.value();
     } // else qpmodel.g remains initialzed to a matrix with zero elements or
       // zero shape
-    if (b != nullopt) {
+    if (b != std::nullopt) {
       model.b = b.value();
     } // else qpmodel.b remains initialzed to a matrix with zero elements or
       // zero shape
-    if (u != nullopt) {
+    if (u != std::nullopt) {
       model.u = u.value();
     } // else qpmodel.u remains initialzed to a matrix with zero elements or
       // zero shape
-    if (l != nullopt) {
+    if (l != std::nullopt) {
       model.l = l.value();
     } // else qpmodel.l remains initialzed to a matrix with zero elements or
       // zero shape
 
-    // avoid allocations when H is not nullopt
+    // avoid allocations when H is not std::nullopt
     SparseMat<T, I> AT(model.dim, model.n_eq);
-    if (A != nullopt) {
+    if (A != std::nullopt) {
       AT = (A.value()).transpose();
     } else {
       AT.setZero();
     }
     SparseMat<T, I> CT(model.dim, model.n_in);
-    if (C != nullopt) {
+    if (C != std::nullopt) {
       CT = (C.value()).transpose();
     } else {
       CT.setZero();
     }
-    if (H != nullopt) {
+    if (H != std::nullopt) {
       SparseMat<T, I> H_triu =
         (H.value()).template triangularView<Eigen::Upper>();
 
@@ -354,18 +354,18 @@ struct QP
    * @note The init method should be called before update. If it has not been
    * done before, init is called depending on the is_initialized flag.
    */
-  void update(const optional<SparseMat<T, I>> H,
-              optional<VecRef<T>> g,
-              const optional<SparseMat<T, I>> A,
-              optional<VecRef<T>> b,
-              const optional<SparseMat<T, I>> C,
-              optional<VecRef<T>> l,
-              optional<VecRef<T>> u,
+  void update(const std::optional<SparseMat<T, I>> H,
+              std::optional<VecRef<T>> g,
+              const std::optional<SparseMat<T, I>> A,
+              std::optional<VecRef<T>> b,
+              const std::optional<SparseMat<T, I>> C,
+              std::optional<VecRef<T>> l,
+              std::optional<VecRef<T>> u,
               bool update_preconditioner = false,
-              optional<T> rho = nullopt,
-              optional<T> mu_eq = nullopt,
-              optional<T> mu_in = nullopt,
-              optional<T> manual_minimal_H_eigenvalue = nullopt)
+              std::optional<T> rho = std::nullopt,
+              std::optional<T> mu_eq = std::nullopt,
+              std::optional<T> mu_in = std::nullopt,
+              std::optional<T> manual_minimal_H_eigenvalue = std::nullopt)
   {
     if (!work.internal.is_initialized) {
       init(H, g, A, b, C, l, u, update_preconditioner, rho, mu_eq, mu_in);
@@ -402,31 +402,31 @@ struct QP
       detail::middle_cols_mut(kkt_top_n_rows, n + n_eq, n_in, model.C_nnz);
 
     // check the model is valid
-    if (g != nullopt) {
+    if (g != std::nullopt) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(g.value().size(),
                                     model.dim,
                                     "the dimension wrt the primal variable x "
                                     "variable for updating g is not valid.");
     }
-    if (b != nullopt) {
+    if (b != std::nullopt) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(b.value().size(),
                                     model.n_eq,
                                     "the dimension wrt equality constrained "
                                     "variables for updating b is not valid.");
     }
-    if (u != nullopt) {
+    if (u != std::nullopt) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(u.value().size(),
                                     model.n_in,
                                     "the dimension wrt inequality constrained "
                                     "variables for updating u is not valid.");
     }
-    if (l != nullopt) {
+    if (l != std::nullopt) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(l.value().size(),
                                     model.n_in,
                                     "the dimension wrt inequality constrained "
                                     "variables for updating l is not valid.");
     }
-    if (H != nullopt) {
+    if (H != std::nullopt) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         H.value().rows(),
         model.dim,
@@ -436,7 +436,7 @@ struct QP
         model.dim,
         "the column dimension for updating H is not valid.");
     }
-    if (A != nullopt) {
+    if (A != std::nullopt) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         A.value().rows(),
         model.n_eq,
@@ -446,7 +446,7 @@ struct QP
         model.dim,
         "the column dimension for updating A is not valid.");
     }
-    if (C != nullopt) {
+    if (C != std::nullopt) {
       PROXSUITE_CHECK_ARGUMENT_SIZE(
         C.value().rows(),
         model.n_in,
@@ -459,23 +459,23 @@ struct QP
 
     // update the model
 
-    if (g != nullopt) {
+    if (g != std::nullopt) {
       model.g = g.value();
     }
-    if (b != nullopt) {
+    if (b != std::nullopt) {
       model.b = b.value();
     }
-    if (u != nullopt) {
+    if (u != std::nullopt) {
       model.u = u.value();
     }
-    if (l != nullopt) {
+    if (l != std::nullopt) {
       model.l = l.value();
     }
-    if (H != nullopt) {
+    if (H != std::nullopt) {
       SparseMat<T, I> H_triu =
         H.value().template triangularView<Eigen::Upper>();
-      if (A != nullopt) {
-        if (C != nullopt) {
+      if (A != std::nullopt) {
+        if (C != std::nullopt) {
           bool res =
             have_same_structure(
               H_unscaled.as_const(),
@@ -523,7 +523,7 @@ struct QP
                 SparseMat<T, I>(A.value().transpose()) }); // copy rhs into lhs
           }
         }
-      } else if (C != nullopt) {
+      } else if (C != std::nullopt) {
         bool res =
           have_same_structure(
             H_unscaled.as_const(),
@@ -556,8 +556,8 @@ struct QP
                  H.value() }); // copy rhs into lhs
         }
       }
-    } else if (A != nullopt) {
-      if (C != nullopt) {
+    } else if (A != std::nullopt) {
+      if (C != std::nullopt) {
         bool res =
           have_same_structure(AT_unscaled.as_const(),
                               { proxsuite::linalg::sparse::from_eigen,
@@ -590,7 +590,7 @@ struct QP
                  SparseMat<T, I>(A.value().transpose()) }); // copy rhs into lhs
         }
       }
-    } else if (C != nullopt) {
+    } else if (C != std::nullopt) {
       bool res =
         have_same_structure(CT_unscaled.as_const(),
                             { proxsuite::linalg::sparse::from_eigen,
@@ -626,7 +626,7 @@ struct QP
              ruiz,
              preconditioner_status); // store model value + performs scaling
                                      // according to chosen options
-    if (H != nullopt) {
+    if (H != std::nullopt) {
       proxsuite::proxqp::sparse::
         update_default_rho_with_minimal_Hessian_eigen_value(
           manual_minimal_H_eigenvalue, results, settings);
@@ -654,9 +654,9 @@ struct QP
    * @param y dual equality warm start.
    * @param z dual inequality warm start.
    */
-  void solve(optional<VecRef<T>> x,
-             optional<VecRef<T>> y,
-             optional<VecRef<T>> z)
+  void solve(std::optional<VecRef<T>> x,
+             std::optional<VecRef<T>> y,
+             std::optional<VecRef<T>> z)
   {
     proxsuite::proxqp::sparse::warm_start(x, y, z, results, settings, model);
     qp_solve( //
@@ -710,46 +710,46 @@ struct QP
 template<typename T, typename I>
 proxqp::Results<T>
 solve(
-  optional<SparseMat<T, I>> H,
-  optional<VecRef<T>> g,
-  optional<SparseMat<T, I>> A,
-  optional<VecRef<T>> b,
-  optional<SparseMat<T, I>> C,
-  optional<VecRef<T>> l,
-  optional<VecRef<T>> u,
-  optional<VecRef<T>> x = nullopt,
-  optional<VecRef<T>> y = nullopt,
-  optional<VecRef<T>> z = nullopt,
-  optional<T> eps_abs = nullopt,
-  optional<T> eps_rel = nullopt,
-  optional<T> rho = nullopt,
-  optional<T> mu_eq = nullopt,
-  optional<T> mu_in = nullopt,
-  optional<bool> verbose = nullopt,
+  std::optional<SparseMat<T, I>> H,
+  std::optional<VecRef<T>> g,
+  std::optional<SparseMat<T, I>> A,
+  std::optional<VecRef<T>> b,
+  std::optional<SparseMat<T, I>> C,
+  std::optional<VecRef<T>> l,
+  std::optional<VecRef<T>> u,
+  std::optional<VecRef<T>> x = std::nullopt,
+  std::optional<VecRef<T>> y = std::nullopt,
+  std::optional<VecRef<T>> z = std::nullopt,
+  std::optional<T> eps_abs = std::nullopt,
+  std::optional<T> eps_rel = std::nullopt,
+  std::optional<T> rho = std::nullopt,
+  std::optional<T> mu_eq = std::nullopt,
+  std::optional<T> mu_in = std::nullopt,
+  std::optional<bool> verbose = std::nullopt,
   bool compute_preconditioner = true,
   bool compute_timings = false,
-  optional<isize> max_iter = nullopt,
+  std::optional<isize> max_iter = std::nullopt,
   proxsuite::proxqp::InitialGuessStatus initial_guess =
     proxsuite::proxqp::InitialGuessStatus::EQUALITY_CONSTRAINED_INITIAL_GUESS,
   proxsuite::proxqp::SparseBackend sparse_backend =
     proxsuite::proxqp::SparseBackend::Automatic,
   bool check_duality_gap = false,
-  optional<T> eps_duality_gap_abs = nullopt,
-  optional<T> eps_duality_gap_rel = nullopt,
+  std::optional<T> eps_duality_gap_abs = std::nullopt,
+  std::optional<T> eps_duality_gap_rel = std::nullopt,
   bool primal_infeasibility_solving = false,
-  optional<T> manual_minimal_H_eigenvalue = nullopt)
+  std::optional<T> manual_minimal_H_eigenvalue = std::nullopt)
 {
 
   isize n(0);
   isize n_eq(0);
   isize n_in(0);
-  if (H != nullopt) {
+  if (H != std::nullopt) {
     n = H.value().rows();
   }
-  if (A != nullopt) {
+  if (A != std::nullopt) {
     n_eq = A.value().rows();
   }
-  if (C != nullopt) {
+  if (C != std::nullopt) {
     n_in = C.value().rows();
   }
 
@@ -757,28 +757,28 @@ solve(
   Qp.settings.initial_guess = initial_guess;
   Qp.settings.check_duality_gap = check_duality_gap;
 
-  if (eps_abs != nullopt) {
+  if (eps_abs != std::nullopt) {
     Qp.settings.eps_abs = eps_abs.value();
   }
-  if (eps_rel != nullopt) {
+  if (eps_rel != std::nullopt) {
     Qp.settings.eps_rel = eps_rel.value();
   }
-  if (verbose != nullopt) {
+  if (verbose != std::nullopt) {
     Qp.settings.verbose = verbose.value();
   }
-  if (max_iter != nullopt) {
+  if (max_iter != std::nullopt) {
     Qp.settings.max_iter = max_iter.value();
   }
-  if (eps_duality_gap_abs != nullopt) {
+  if (eps_duality_gap_abs != std::nullopt) {
     Qp.settings.eps_duality_gap_abs = eps_duality_gap_abs.value();
   }
-  if (eps_duality_gap_rel != nullopt) {
+  if (eps_duality_gap_rel != std::nullopt) {
     Qp.settings.eps_duality_gap_rel = eps_duality_gap_rel.value();
   }
   Qp.settings.compute_timings = compute_timings;
   Qp.settings.sparse_backend = sparse_backend;
   Qp.settings.primal_infeasibility_solving = primal_infeasibility_solving;
-  if (manual_minimal_H_eigenvalue != nullopt) {
+  if (manual_minimal_H_eigenvalue != std::nullopt) {
     Qp.init(H,
             g,
             A,
@@ -792,8 +792,18 @@ solve(
             mu_in,
             manual_minimal_H_eigenvalue.value());
   } else {
-    Qp.init(
-      H, g, A, b, C, l, u, compute_preconditioner, rho, mu_eq, mu_in, nullopt);
+    Qp.init(H,
+            g,
+            A,
+            b,
+            C,
+            l,
+            u,
+            compute_preconditioner,
+            rho,
+            mu_eq,
+            mu_in,
+            std::nullopt);
   }
   Qp.solve(x, y, z);
 

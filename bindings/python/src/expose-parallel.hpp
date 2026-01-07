@@ -30,36 +30,37 @@ solveDenseQpParallel(nanobind::module_ m)
   nanobind::bind_vector<std::vector<proxsuite::proxqp::dense::QP<T>>>(
     m, "VectorQP");
 
-  m.def("solve_in_parallel",
-        nanobind::overload_cast<std::vector<proxqp::dense::QP<T>>&,
-                                const optional<size_t>>(&solve_in_parallel<T>),
-        "Function for solving a list of dense QPs in parallel.",
-        nanobind::arg("qps"),
-        nanobind::arg("num_threads") = nullopt);
+  m.def(
+    "solve_in_parallel",
+    nanobind::overload_cast<std::vector<proxqp::dense::QP<T>>&,
+                            const std::optional<size_t>>(&solve_in_parallel<T>),
+    "Function for solving a list of dense QPs in parallel.",
+    nanobind::arg("qps"),
+    nanobind::arg("num_threads") = std::nullopt);
 
   m.def(
     "solve_in_parallel",
-    nanobind::overload_cast<proxqp::dense::BatchQP<T>&, const optional<size_t>>(
-      &solve_in_parallel<T>),
+    nanobind::overload_cast<proxqp::dense::BatchQP<T>&,
+                            const std::optional<size_t>>(&solve_in_parallel<T>),
     "Function for solving a list of dense QPs in parallel.",
     nanobind::arg("qps"),
-    nanobind::arg("num_threads") = nullopt);
+    nanobind::arg("num_threads") = std::nullopt);
 
   // m.def("solve_in_parallel",
   //       &qp_solve_in_parallel<T>,
   //       "Function for solving a list of dense QPs in parallel.",
-  //       nanobind::arg("num_threads") = nullopt,
+  //       nanobind::arg("num_threads") = std::nullopt,
   //       nanobind::arg("qps"));
 
   m.def("solve_backward_in_parallel",
-        nanobind::overload_cast<optional<const size_t>,
+        nanobind::overload_cast<std::optional<const size_t>,
                                 proxqp::dense::BatchQP<T>&,
                                 std::vector<proxqp::dense::Vec<T>>&,
                                 T,
                                 T,
                                 T>(&qp_solve_backward_in_parallel<T>),
         "Function for solving a list of dense QPs in parallel.",
-        nanobind::arg("num_threads") = nullopt,
+        nanobind::arg("num_threads") = std::nullopt,
         nanobind::arg("qps"),
         nanobind::arg("loss_derivatives"),
         nanobind::arg("eps") = 1e-4,
@@ -67,14 +68,14 @@ solveDenseQpParallel(nanobind::module_ m)
         nanobind::arg("mu_backward") = 1e-6);
 
   m.def("solve_backward_in_parallel",
-        nanobind::overload_cast<optional<const size_t>,
+        nanobind::overload_cast<std::optional<const size_t>,
                                 std::vector<proxqp::dense::QP<T>>&,
                                 std::vector<proxqp::dense::Vec<T>>&,
                                 T,
                                 T,
                                 T>(&qp_solve_backward_in_parallel<T>),
         "Function for solving a list of dense QPs in parallel.",
-        nanobind::arg("num_threads") = nullopt,
+        nanobind::arg("num_threads") = std::nullopt,
         nanobind::arg("qps"),
         nanobind::arg("loss_derivatives"),
         nanobind::arg("eps") = 1e-4,
@@ -91,13 +92,13 @@ template<typename T, typename I>
 void
 solveSparseQpParallel(nanobind::module_ m)
 {
-  m.def(
-    "solve_in_parallel",
-    nanobind::overload_cast<proxqp::sparse::BatchQP<T, I>&,
-                            const optional<size_t>>(&solve_in_parallel<T, I>),
-    "Function for solving a list of sparse QPs in parallel.",
-    nanobind::arg("qps"),
-    nanobind::arg("num_threads") = nullopt);
+  m.def("solve_in_parallel",
+        nanobind::overload_cast<proxqp::sparse::BatchQP<T, I>&,
+                                const std::optional<size_t>>(
+          &solve_in_parallel<T, I>),
+        "Function for solving a list of sparse QPs in parallel.",
+        nanobind::arg("qps"),
+        nanobind::arg("num_threads") = std::nullopt);
 }
 
 } // namespace python

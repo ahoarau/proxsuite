@@ -32,26 +32,32 @@ main()
   // update H
   auto H_new = 2 * H; // keep the same sparsity structure
   qp.update(H_new,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt); // update H with H_new, it will work
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt); // update H with H_new, it will work
   qp.solve();
   // generate H2 with another sparsity structure
   auto H2 = ::proxsuite::proxqp::utils::rand::sparse_positive_definite_rand(
     n, conditioning, p);
   qp.update(H2,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt,
-            nullopt); // nothing will happen
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt); // nothing will happen
   // if only a vector changes, then the update takes effect
   auto g_new = ::proxsuite::proxqp::utils::rand::vector_rand<T>(n);
-  qp.update(nullopt, g, nullopt, nullopt, nullopt, nullopt, nullopt);
+  qp.update(std::nullopt,
+            g,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt);
   qp.solve(); // it solves the problem with another vector
   // to solve the problem with H2 matrix create a new qp object
   proxsuite::proxqp::sparse::QP<T, isize> qp2(

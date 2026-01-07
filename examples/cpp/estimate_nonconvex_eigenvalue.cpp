@@ -41,9 +41,9 @@ main()
           qp_random.l,
           qp_random.u,
           compute_preconditioner,
-          nullopt,
-          nullopt,
-          nullopt,
+          std::nullopt,
+          std::nullopt,
+          std::nullopt,
           estimate_minimal_eigen_value);
   // print the estimates
   std::cout << "ProxQP estimate "

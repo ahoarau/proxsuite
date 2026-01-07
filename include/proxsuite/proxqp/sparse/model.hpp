@@ -66,10 +66,10 @@ struct Model
     g.setZero();
     b.setZero();
     u.setZero();
-    u.fill(+infinite_bound_value); // in case it appears u is nullopt (i.e., the
-                                   // problem is only lower bounded)
-    l.fill(-infinite_bound_value); // in case it appears l is nullopt (i.e., the
-                                   // problem is only upper bounded)
+    u.fill(+infinite_bound_value); // in case it appears u is std::nullopt
+                                   // (i.e., the problem is only lower bounded)
+    l.fill(-infinite_bound_value); // in case it appears l is std::nullopt
+                                   // (i.e., the problem is only upper bounded)
   }
   /*!
    * Returns the current (scaled) KKT matrix of the problem.

@@ -34,8 +34,18 @@ TEST_CASE("proxqp::dense: test init with fixed sizes matrices")
   Eigen::Matrix<T, 2, 1> u = qp.u;
 
   {
-    Results<T> results = dense::solve<T>(
-      H, g, A, b, C, l, u, nullopt, nullopt, nullopt, eps_abs, 0);
+    Results<T> results = dense::solve<T>(H,
+                                         g,
+                                         A,
+                                         b,
+                                         C,
+                                         l,
+                                         u,
+                                         std::nullopt,
+                                         std::nullopt,
+                                         std::nullopt,
+                                         eps_abs,
+                                         0);
 
     T pri_res = std::max((qp.A * results.x - qp.b).lpNorm<Eigen::Infinity>(),
                          (helpers::positive_part(qp.C * results.x - qp.u) +
@@ -59,7 +69,7 @@ TEST_CASE("proxqp::dense: test init with fixed sizes matrices")
 
   {
     dense::QP<T> qp_problem(dim, n_eq, 0);
-    qp_problem.init(H, g, A, b, nullopt, nullopt, nullopt);
+    qp_problem.init(H, g, A, b, std::nullopt, std::nullopt, std::nullopt);
     qp_problem.settings.eps_abs = eps_abs;
     qp_problem.solve();
 
@@ -106,9 +116,9 @@ TEST_CASE("sparse random strongly convex qp with equality and "
                                        qp.C,
                                        qp.l,
                                        qp.u,
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
                                        eps_abs,
                                        0);
 
@@ -155,9 +165,9 @@ TEST_CASE("sparse random strongly convex qp with equality and "
                                        qp.C,
                                        qp.l,
                                        qp.u,
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
                                        eps_abs,
                                        0,
                                        T(1.E-7));
@@ -207,12 +217,12 @@ TEST_CASE(
                                        qp.C,
                                        qp.l,
                                        qp.u,
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
                                        eps_abs,
                                        0,
-                                       nullopt,
+                                       std::nullopt,
                                        T(1.E-2),
                                        T(1.E-2));
   T pri_res = std::max((qp.A * results.x - qp.b).lpNorm<Eigen::Infinity>(),
@@ -300,14 +310,14 @@ TEST_CASE("sparse random strongly convex qp with equality and "
                                        qp.C,
                                        qp.l,
                                        qp.u,
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
                                        eps_abs,
                                        0,
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
                                        verbose);
   T pri_res = std::max((qp.A * results.x - qp.b).lpNorm<Eigen::Infinity>(),
                        (helpers::positive_part(qp.C * results.x - qp.u) +
@@ -353,18 +363,18 @@ TEST_CASE("sparse random strongly convex qp with equality and "
                                        qp.C,
                                        qp.l,
                                        qp.u,
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
                                        eps_abs,
                                        0,
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
-                                       nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
+                                       std::nullopt,
                                        true,
                                        true,
-                                       nullopt,
+                                       std::nullopt,
                                        initial_guess);
   T pri_res = std::max((qp.A * results.x - qp.b).lpNorm<Eigen::Infinity>(),
                        (helpers::positive_part(qp.C * results.x - qp.u) +

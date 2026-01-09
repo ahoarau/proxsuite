@@ -63,9 +63,10 @@ jrl_option(GENERATE_PYTHON_STUBS "Generate Python stubs" OFF)
 jrl_find_package(Eigen3 CONFIG REQUIRED)
 
 # Catch2
+# NOTE: We have to keep the FetchContent support because:
+# - pixi does not have debug symbols for Catch2 on Windows.
+# - Ubuntu 22.04 LTS ships Catch2 v2 which is incompatible with our tests.
 if(BUILD_TESTING)
-  # pixi does not have debug symbols for Catch2 on Windows,
-  # So we force building from source via FetchContent.
   if(WIN32)
     set(Catch2_USE_FETCHCONTENT ON)
   endif()
@@ -98,6 +99,8 @@ if(BUILD_TESTING)
 endif()
 
 # cereal (Serialization)
+# NOTE: We have to keep the FetchContent support because:
+# - Cereal is not available via CMeel
 if(BUILD_WITH_SERIALIZATION)
   jrl_find_package(cereal CONFIG QUIET)
   if(NOT cereal_FOUND)
@@ -121,6 +124,9 @@ if(BUILD_WITH_SERIALIZATION)
 endif()
 
 # nanobind (Python bindings)
+# NOTE: We have to keep the FetchContent support because:
+# - Ubuntu 24.04 ships an incompatible 1.9.2 version of nanobind via apt-get.
+# - Ubuntu 22.04 does not ship nanobind at all via apt-get.
 if(BUILD_PYTHON_INTERFACE)
   jrl_find_python(3.8 REQUIRED COMPONENTS Interpreter Development.Module)
   jrl_find_nanobind(2.4.0 CONFIG QUIET)

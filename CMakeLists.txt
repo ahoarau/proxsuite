@@ -60,7 +60,9 @@ jrl_option(GENERATE_PYTHON_STUBS "Generate Python stubs" OFF)
 ############################################################
 
 # Eigen3
-jrl_find_package(Eigen3 CONFIG REQUIRED)
+if(NOT TARGET Eigen3::Eigen)
+  jrl_find_package(Eigen3 CONFIG REQUIRED)
+endif()
 
 # Catch2
 # NOTE: We have to keep the FetchContent support because:

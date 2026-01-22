@@ -31,6 +31,7 @@ endif()
 message(STATUS "[proxsuite] PROXSUITE_CXX_STANDARD set to '${PROXSUITE_CXX_STANDARD}'")
 
 jrl_option(BUILD_TESTING "Build the tests" OFF)
+jrl_option(EXPORT_PACKAGE "Export the package" OFF)
 jrl_option(BUILD_EXAMPLES "Build the examples" OFF)
 jrl_option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
 jrl_option(BUILD_DOCUMENTATION "Build the documentation." OFF)
@@ -355,18 +356,20 @@ if(BUILD_WITH_SERIALIZATION)
   )
 endif()
 
-jrl_add_export_component(NAME proxsuite TARGETS proxsuite)
+if(EXPORT_PACKAGE)
+  jrl_add_export_component(NAME proxsuite TARGETS proxsuite)
 
-if(BUILD_WITH_VECTORIZATION_SUPPORT)
-  jrl_add_export_component(NAME vectorized TARGETS proxsuite-vectorized)
+  if(BUILD_WITH_VECTORIZATION_SUPPORT)
+    jrl_add_export_component(NAME vectorized TARGETS proxsuite-vectorized)
+  endif()
+
+  jrl_export_package()
+
+  jrl_generate_ros2_package_files(
+    INSTALL_CPP_PACKAGE_FILES [[NOT BUILD_STANDALONE_PYTHON_INTERFACE]]
+    INSTALL_PYTHON_PACKAGE_FILES [[BUILD_PYTHON_INTERFACE]]
+  )
 endif()
-
-jrl_export_package()
-
-jrl_generate_ros2_package_files(
-  INSTALL_CPP_PACKAGE_FILES [[NOT BUILD_STANDALONE_PYTHON_INTERFACE]]
-  INSTALL_PYTHON_PACKAGE_FILES [[BUILD_PYTHON_INTERFACE]]
-)
 
 jrl_print_dependencies_summary()
 jrl_print_options_summary()

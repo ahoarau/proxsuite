@@ -61,7 +61,8 @@ doxygen_add_docs(
 
 if(INSTALL_DOCUMENTATION)
   install(
-    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
     DESTINATION ${CMAKE_INSTALL_PREFIX}/share/doc/proxsuite
+    COMPONENT doc
   )
 endif()

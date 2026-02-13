@@ -26,3 +26,8 @@ repos:
   rev: v6.0.0
   hooks:
   - id: trailing-whitespace
+- repo: https://github.com/ComPWA/taplo-pre-commit
+  rev: v0.9.3
+  hooks:
+    - id: taplo-format
+    - id: taplo-lint

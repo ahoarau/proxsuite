@@ -3,26 +3,30 @@ name = "proxsuite"
 version = "0.7.2"
 description = "Quadratic Programming Solver for Robotics and beyond."
 readme = "README.md"
-requires-python = ">= 3.8"
+requires-python = ">=3.10"
 license = "BSD-2-Clause"
-dependencies = ["numpy","scipy"]
+dependencies = ["numpy>=1.24.0", "scipy>=1.8.0"]
 
 [project.urls]
 homepage = "https://github.com/Simple-Robotics/proxsuite"
 repository = "https://github.com/Simple-Robotics/proxsuite.git"
 
 [build-system]
-requires = [
-    "cmeel[build]",
-    "cmeel-eigen",
-    "cmeel-simde",
-    "typing-extensions",
-    ]
+requires = ["cmeel[build]", "cmeel-eigen", "cmeel-simde", "typing-extensions"]
 build-backend = "cmeel.build"
 
 [tool.cmeel]
 run-tests = false
-configure-args = ["-DBUILD_TESTING:BOOL=OFF","-DBUILD_PYTHON_INTERFACE:BOOL=ON","-DBUILD_WITH_VECTORIZATION_SUPPORT:BOOL=ON","-DINSTALL_DOCUMENTATION:BOOL=OFF","-DBUILD_WITH_OPENMP_SUPPORT=OFF"]
+log-level = "DEBUG"
+configure-args = [
+  "--log-level=DEBUG",
+  "-GNinja",
+  "-DBUILD_TESTING:BOOL=OFF",
+  "-DBUILD_PYTHON_INTERFACE:BOOL=ON",
+  "-DBUILD_WITH_VECTORIZATION_SUPPORT:BOOL=ON",
+  "-DINSTALL_DOCUMENTATION:BOOL=OFF",
+  "-DBUILD_WITH_OPENMP_SUPPORT:BOOL=OFF",
+]
 
 [tool.ruff.lint]
-ignore = [ "E741" ]
+ignore = ["E741"]

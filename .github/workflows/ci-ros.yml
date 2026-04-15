@@ -1,11 +1,6 @@
 name: CI - ROS - Linux
-on:
-  push:
-    branches:
-      - devel
-  pull_request:
-    paths-ignore:
-      - CHANGELOG.md
+
+on: [push, pull_request]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

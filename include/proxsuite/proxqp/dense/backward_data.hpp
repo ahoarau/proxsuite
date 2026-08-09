@@ -45,62 +45,46 @@ struct BackwardData
 
   bool is_valid(isize dim, isize n_eq, isize n_in)
   {
-#define PROXSUITE_CHECK_SIZE(size, expected_size)                              \
-  if (size != 0) {                                                             \
-    if (!(size == expected_size))                                              \
-      return false;                                                            \
-  }
-
     // check that all matrices and vectors of qpmodel have the correct size
-    // and that H and C have expected properties
+    // and that H and C have expected properties.
+    // A dimension of zero means "not set", and is accepted; any other value
+    // has to match exactly.
+    auto matches = [](isize size, isize expected) {
+      return size == 0 || size == expected;
+    };
 
-    // dx_dg
-    if (dL_dH.size()) {
-      PROXSUITE_CHECK_SIZE(dL_dH.rows(), dim);
-      PROXSUITE_CHECK_SIZE(dL_dH.cols(), dim);
-    } else {
+    // dL_dH
+    if (!dL_dH.size() || !matches(dL_dH.rows(), dim) ||
+        !matches(dL_dH.cols(), dim)) {
       return false;
     }
     // dL_dg
-    if (dL_dg.size()) {
-      PROXSUITE_CHECK_SIZE(dL_dg.rows(), dim);
-    } else {
+    if (!dL_dg.size() || !matches(dL_dg.rows(), dim)) {
       return false;
     }
     // dL_dA
-    if (dL_dA.size()) {
-      PROXSUITE_CHECK_SIZE(dL_dA.rows(), n_eq);
-      PROXSUITE_CHECK_SIZE(dL_dA.cols(), dim);
-    } else {
+    if (!dL_dA.size() || !matches(dL_dA.rows(), n_eq) ||
+        !matches(dL_dA.cols(), dim)) {
       return false;
     }
     // dL_db
-    if (dL_db.size()) {
-      PROXSUITE_CHECK_SIZE(dL_db.rows(), n_eq);
-    } else {
+    if (!dL_db.size() || !matches(dL_db.rows(), n_eq)) {
       return false;
     }
     // dL_dC
-    if (dL_dC.size()) {
-      PROXSUITE_CHECK_SIZE(dL_dC.rows(), n_in);
-      PROXSUITE_CHECK_SIZE(dL_dC.cols(), dim);
-    } else {
+    if (!dL_dC.size() || !matches(dL_dC.rows(), n_in) ||
+        !matches(dL_dC.cols(), dim)) {
       return false;
     }
     // dL_du
-    if (dL_du.size()) {
-      PROXSUITE_CHECK_SIZE(dL_du.rows(), n_in);
-    } else {
+    if (!dL_du.size() || !matches(dL_du.rows(), n_in)) {
       return false;
     }
     // dL_dl
-    if (dL_dl.size()) {
-      PROXSUITE_CHECK_SIZE(dL_dl.rows(), n_in);
-    } else {
+    if (!dL_dl.size() || !matches(dL_dl.rows(), n_in)) {
       return false;
     }
     return true;
-#undef PROXSUITE_CHECK_SIZE
   }
 
   void initialize(isize dim, isize n_eq, isize n_in)

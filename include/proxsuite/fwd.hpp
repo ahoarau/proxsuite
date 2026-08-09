@@ -2,8 +2,8 @@
 // Copyright (c) 2022 INRIA
 //
 
-#ifndef __proxsuite_fwd_hpp__
-#define __proxsuite_fwd_hpp__
+#ifndef PROXSUITE_FWD_HPP
+#define PROXSUITE_FWD_HPP
 
 // `inline`, upgraded to a hard always-inline request in optimized builds. Used
 // on the small accessors of the linear algebra backends, where the call
@@ -87,4 +87,4 @@ using remove_cvref_t =
 #define PROXSUITE_EIGEN_MALLOC_NOT_ALLOWED()
 #endif
 
-#endif // #ifndef __proxsuite_fwd_hpp__
+#endif // #ifndef PROXSUITE_FWD_HPP

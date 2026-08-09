@@ -31,7 +31,7 @@
 #define LDLT_CONCAT(a, b) LDLT_CONCAT_IMPL(a, b)
 #define LDLT_ID(id) LDLT_CONCAT(id, __LINE__)
 
-#define __LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, Make)                    \
+#define PROXSUITE_LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, Make)                    \
   auto LDLT_ID(vec_storage) = (Stack).template Make<Type>(                     \
     (Rows), ::proxsuite::linalg::dense::_detail::align<Type>());               \
   auto Name /* NOLINT */ =                                                     \
@@ -47,7 +47,7 @@
     };                                                                         \
   static_assert(true, ".")
 
-#define __LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, Make)              \
+#define PROXSUITE_LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, Make)              \
   ::proxsuite::isize LDLT_ID(rows) = (Rows);                                   \
   ::proxsuite::isize LDLT_ID(cols) = (Cols);                                   \
   ::proxsuite::isize LDLT_ID(stride) =                                         \
@@ -71,14 +71,14 @@
   static_assert(true, ".")
 
 #define LDLT_TEMP_VEC(Type, Name, Rows, Stack)                                 \
-  __LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, make_new)
+  PROXSUITE_LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, make_new)
 #define LDLT_TEMP_VEC_UNINIT(Type, Name, Rows, Stack)                          \
-  __LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, make_new_for_overwrite)
+  PROXSUITE_LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, make_new_for_overwrite)
 
 #define LDLT_TEMP_MAT(Type, Name, Rows, Cols, Stack)                           \
-  __LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, make_new)
+  PROXSUITE_LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, make_new)
 #define LDLT_TEMP_MAT_UNINIT(Type, Name, Rows, Cols, Stack)                    \
-  __LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, make_new_for_overwrite)
+  PROXSUITE_LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, make_new_for_overwrite)
 
 namespace proxsuite {
 namespace linalg {

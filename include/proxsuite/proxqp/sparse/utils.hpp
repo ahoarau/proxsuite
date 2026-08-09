@@ -803,7 +803,7 @@ struct generic_product_impl<
   static void scaleAndAddTo(Dst& dst,
                             Mat_ const& lhs,
                             Rhs const& rhs,
-                            PROXSUITE_MAYBE_UNUSED Scalar const& alpha)
+                            [[maybe_unused]] Scalar const& alpha)
   {
     using proxsuite::isize;
 

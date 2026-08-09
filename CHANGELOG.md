@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Docker images `ghcr.io/Simple-Robotics/proxsuite` ([#470](https://github.com/Simple-Robotics/proxsuite/pull/470))
 - `proxsuite/linalg/dynstack.hpp`: `proxsuite::linalg::dynstack::{StackReq, DynStackMut, DynStackArray}`, a plain-C++17 reimplementation of the bump allocator used for solver workspaces
 - `proxsuite/linalg/slice.hpp`: `proxsuite::linalg::{Slice, SliceMut}`, minimal pointer/length views
+- `doc/6-migration.md`: migration guide for the `veg` removal
 
 ### Changed
 - `proxsuite::isize` / `proxsuite::usize` replace `proxsuite::linalg::veg::isize` / `usize`

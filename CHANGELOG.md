@@ -8,9 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - Docker images `ghcr.io/Simple-Robotics/proxsuite` ([#470](https://github.com/Simple-Robotics/proxsuite/pull/470))
+- `proxsuite/linalg/dynstack.hpp`: `proxsuite::linalg::dynstack::{StackReq, DynStackMut, DynStackArray}`, a plain-C++17 reimplementation of the bump allocator used for solver workspaces
+- `proxsuite/linalg/slice.hpp`: `proxsuite::linalg::{Slice, SliceMut}`, minimal pointer/length views
+
+### Changed
+- `proxsuite::isize` / `proxsuite::usize` replace `proxsuite::linalg::veg::isize` / `usize`
+- Owning buffers (`Results::active_constraints`, workspace and model storage, `dense::Ldlt` storage) are now `std::vector`
+- `PROXSUITE_THROW_PRETTY` and `PROXSUITE_CHECK_ARGUMENT_SIZE` moved to `proxsuite/helpers/common.hpp`
+- `*_req` functions take their element type as an explicit template argument instead of a `Tag<T>` parameter, e.g. `StackReq::with_len<T>(n)` and `stack.make_new_for_overwrite<T>(n)`
 
 ### Removed
 - CMake: remove unconditional `DOXYGEN_USE_MATHJAX`. You can turn it on if necessary with `cmake -DDOXYGEN_USE_MATHJAX=ON`. ([#467](https://github.com/Simple-Robotics/proxsuite/pull/467))
+- The bundled `proxsuite::linalg::veg` metaprogramming library (`proxsuite/linalg/veg/**`) and its macros (`VEG_*`, `LDLT_EXPLICIT_TPL_*`). Its C++11 emulations of concepts, tuples, tags and allocators are replaced by their standard C++17 equivalents.
+- `PROXSUITE_DEDUCE_RET`, replaced by C++14 return type deduction
 
 ## [0.7.3] - 2026-05-11
 

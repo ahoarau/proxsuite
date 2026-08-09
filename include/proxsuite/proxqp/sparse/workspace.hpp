@@ -517,18 +517,14 @@ struct Workspace
       insert_submatrix(qp.CT);
       data.kkt_values_unscaled = data.kkt_values;
     }
-#define PROX_QP_ALL_OF(...)                                                    \
-  ::proxsuite::linalg::dynstack::StackReq::and_(__VA_ARGS__)
-#define PROX_QP_ANY_OF(...)                                                    \
-  ::proxsuite::linalg::dynstack::StackReq::or_(__VA_ARGS__)
     //  ? --> if
     auto refactorize_req =
-      do_ldlt ? PROX_QP_ANY_OF({
+      do_ldlt ? SR::or_({
                   proxsuite::linalg::sparse::factorize_symbolic_req<I>(
                     n_tot,
                     nnz_tot,
                     proxsuite::linalg::sparse::Ordering::user_provided),
-                  PROX_QP_ALL_OF({
+                  SR::and_({
                     SR::with_len<T>(n_tot), // diag
                     proxsuite::linalg::sparse::factorize_numeric_req<T, I>(
                       n_tot,
@@ -536,7 +532,7 @@ struct Workspace
                       proxsuite::linalg::sparse::Ordering::user_provided),
                   }),
                 })
-              : PROX_QP_ALL_OF({
+              : SR::and_({
                   SR::with_len<I>(0), // compute necessary space for storing n
                                       // elts of type I (n = 0 here)
                   SR::with_len<T>(0), // compute necessary space for storing n
@@ -547,14 +543,14 @@ struct Workspace
       return proxsuite::linalg::dense::temp_vec_req<T>(n);
     };
 
-    auto ldl_solve_in_place_req = PROX_QP_ALL_OF({
+    auto ldl_solve_in_place_req = SR::and_({
       x_vec(n_tot), // tmp
       x_vec(n_tot), // err
       x_vec(n_tot), // work
     });
 
     auto unscaled_primal_dual_residual_req = x_vec(n); // Hx
-    auto line_search_req = PROX_QP_ALL_OF({
+    auto line_search_req = SR::and_({
       x_vec(2 * n_in), // alphas
       x_vec(n),        // Cdx_active
       x_vec(n_in),     // active_part_z
@@ -562,25 +558,25 @@ struct Workspace
       x_vec(n_in),     // tmp_up
     });
     // define memory needed for primal_dual_newton_semi_smooth
-    // PROX_QP_ALL_OF --> need to store all argument inside
-    // PROX_QP_ANY_OF --> au moins un de  ceux en entrée
-    auto primal_dual_newton_semi_smooth_req = PROX_QP_ALL_OF({
+    // and_ --> need to store all arguments at the same time
+    // or_  --> au moins un de ceux en entrée
+    auto primal_dual_newton_semi_smooth_req = SR::and_({
       x_vec(n_tot), // dw
-      PROX_QP_ANY_OF({
+      SR::or_({
         ldl_solve_in_place_req,
-        PROX_QP_ALL_OF({
+        SR::and_({
           SR::with_len<bool>(n_in), // active_set_lo
           SR::with_len<bool>(n_in), // active_set_up
           SR::with_len<bool>(n_in), // new_active_constraints
           (do_ldlt && n_in > 0)
-            ? PROX_QP_ANY_OF({
+            ? SR::or_({
                 proxsuite::linalg::sparse::add_row_req<T, I>(
                   n_tot, false, n, n_tot),
                 proxsuite::linalg::sparse::delete_row_req<T, I>(n_tot, n_tot),
               })
             : refactorize_req,
         }),
-        PROX_QP_ALL_OF({
+        SR::and_({
           x_vec(n),    // Hdx
           x_vec(n_eq), // Adx
           x_vec(n_in), // Cdx
@@ -591,15 +587,15 @@ struct Workspace
       line_search_req,
     });
 
-    auto iter_req = PROX_QP_ANY_OF({
-      PROX_QP_ALL_OF({ x_vec(n_eq), // primal_residual_eq_scaled
+    auto iter_req = SR::or_({
+      SR::and_({ x_vec(n_eq), // primal_residual_eq_scaled
                        x_vec(n_in), // primal_residual_in_scaled_lo
                        x_vec(n_in), // primal_residual_in_scaled_up
                        x_vec(n_in), // primal_residual_in_scaled_up
                        x_vec(n),    // dual_residual_scaled
-                       PROX_QP_ANY_OF({
+                       SR::or_({
                          unscaled_primal_dual_residual_req,
-                         PROX_QP_ALL_OF({
+                         SR::and_({
                            x_vec(n),    // x_prev
                            x_vec(n_eq), // y_prev
                            x_vec(n_in), // z_prev
@@ -610,7 +606,7 @@ struct Workspace
     });
 
     auto req = //
-      PROX_QP_ALL_OF({
+      SR::and_({
         x_vec(n),                 // g_scaled
         x_vec(n_eq),              // b_scaled
         x_vec(n_in),              // l_scaled
@@ -618,17 +614,17 @@ struct Workspace
         SR::with_len<bool>(n_in), // active constr
         SR::with_len<I>(n_tot),   // kkt nnz counts
         refactorize_req,
-        PROX_QP_ANY_OF({
+        SR::or_({
           precond_req,
-          PROX_QP_ALL_OF({
-            do_ldlt ? PROX_QP_ALL_OF({
+          SR::and_({
+            do_ldlt ? SR::and_({
                         SR::with_len<I>(n_tot), // perm
                         SR::with_len<I>(n_tot), // etree
                         SR::with_len<I>(n_tot), // ldl nnz counts
                         SR::with_len<I>(lnnz),  // ldl row indices
                         SR::with_len<T>(lnnz),  // ldl values
                       })
-                    : PROX_QP_ALL_OF({
+                    : SR::and_({
                         SR::with_len<I>(0),
                         SR::with_len<T>(0),
                       }),

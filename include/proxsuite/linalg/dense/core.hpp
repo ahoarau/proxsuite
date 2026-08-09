@@ -27,58 +27,60 @@
 
 // Pastes the current line number onto `id`, so that a macro can declare a
 // uniquely named variable in the caller's scope.
-#define LDLT_CONCAT_IMPL(a, b) a##b
-#define LDLT_CONCAT(a, b) LDLT_CONCAT_IMPL(a, b)
-#define LDLT_ID(id) LDLT_CONCAT(id, __LINE__)
+#define PROXSUITE_LDLT_CONCAT_IMPL(a, b) a##b
+#define PROXSUITE_LDLT_CONCAT(a, b) PROXSUITE_LDLT_CONCAT_IMPL(a, b)
+#define PROXSUITE_LDLT_ID(id) PROXSUITE_LDLT_CONCAT(id, __LINE__)
 
-#define PROXSUITE_LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, Make)                    \
-  auto LDLT_ID(vec_storage) = (Stack).template Make<Type>(                     \
+#define PROXSUITE_LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, Make)            \
+  auto PROXSUITE_LDLT_ID(vec_storage) = (Stack).template Make<Type>(           \
     (Rows), ::proxsuite::linalg::dense::_detail::align<Type>());               \
   auto Name /* NOLINT */ =                                                     \
     ::Eigen::Map<::Eigen::Matrix<Type, ::Eigen::Dynamic, 1>,                   \
                  ::Eigen::Unaligned,                                           \
                  ::Eigen::Stride<::Eigen::Dynamic, 1>>{                        \
-      LDLT_ID(vec_storage).ptr_mut(),                                          \
-      LDLT_ID(vec_storage).len(),                                              \
+      PROXSUITE_LDLT_ID(vec_storage).ptr_mut(),                                \
+      PROXSUITE_LDLT_ID(vec_storage).len(),                                    \
       ::Eigen::Stride<::Eigen::Dynamic, 1>{                                    \
-        LDLT_ID(vec_storage).len(),                                            \
+        PROXSUITE_LDLT_ID(vec_storage).len(),                                  \
         1,                                                                     \
       },                                                                       \
     };                                                                         \
   static_assert(true, ".")
 
-#define PROXSUITE_LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, Make)              \
-  ::proxsuite::isize LDLT_ID(rows) = (Rows);                                   \
-  ::proxsuite::isize LDLT_ID(cols) = (Cols);                                   \
-  ::proxsuite::isize LDLT_ID(stride) =                                         \
-    ::proxsuite::linalg::dense::_detail::adjusted_stride<Type>(LDLT_ID(rows)); \
-  auto LDLT_ID(vec_storage) = (Stack).template Make<Type>(                     \
-    LDLT_ID(stride) * LDLT_ID(cols),                                           \
+#define PROXSUITE_LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, Make)      \
+  ::proxsuite::isize PROXSUITE_LDLT_ID(rows) = (Rows);                         \
+  ::proxsuite::isize PROXSUITE_LDLT_ID(cols) = (Cols);                         \
+  ::proxsuite::isize PROXSUITE_LDLT_ID(stride) =                               \
+    ::proxsuite::linalg::dense::_detail::adjusted_stride<Type>(                \
+      PROXSUITE_LDLT_ID(rows));                                                \
+  auto PROXSUITE_LDLT_ID(vec_storage) = (Stack).template Make<Type>(           \
+    PROXSUITE_LDLT_ID(stride) * PROXSUITE_LDLT_ID(cols),                       \
     ::proxsuite::linalg::dense::_detail::align<Type>());                       \
   auto Name /* NOLINT */ = ::Eigen::Map<                                       \
     ::Eigen::                                                                  \
       Matrix<Type, ::Eigen::Dynamic, ::Eigen::Dynamic, ::Eigen::ColMajor>,     \
     ::Eigen::Unaligned,                                                        \
     ::Eigen::Stride<::Eigen::Dynamic, 1>>{                                     \
-    LDLT_ID(vec_storage).ptr_mut(),                                            \
-    LDLT_ID(rows),                                                             \
-    LDLT_ID(cols),                                                             \
+    PROXSUITE_LDLT_ID(vec_storage).ptr_mut(),                                  \
+    PROXSUITE_LDLT_ID(rows),                                                   \
+    PROXSUITE_LDLT_ID(cols),                                                   \
     ::Eigen::Stride<::Eigen::Dynamic, 1>{                                      \
-      LDLT_ID(stride),                                                         \
+      PROXSUITE_LDLT_ID(stride),                                               \
       1,                                                                       \
     },                                                                         \
   };                                                                           \
   static_assert(true, ".")
 
-#define LDLT_TEMP_VEC(Type, Name, Rows, Stack)                                 \
+#define PROXSUITE_LDLT_TEMP_VEC(Type, Name, Rows, Stack)                       \
   PROXSUITE_LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, make_new)
-#define LDLT_TEMP_VEC_UNINIT(Type, Name, Rows, Stack)                          \
+#define PROXSUITE_LDLT_TEMP_VEC_UNINIT(Type, Name, Rows, Stack)                \
   PROXSUITE_LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, make_new_for_overwrite)
 
-#define LDLT_TEMP_MAT(Type, Name, Rows, Cols, Stack)                           \
+#define PROXSUITE_LDLT_TEMP_MAT(Type, Name, Rows, Cols, Stack)                 \
   PROXSUITE_LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, make_new)
-#define LDLT_TEMP_MAT_UNINIT(Type, Name, Rows, Cols, Stack)                    \
-  PROXSUITE_LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, make_new_for_overwrite)
+#define PROXSUITE_LDLT_TEMP_MAT_UNINIT(Type, Name, Rows, Cols, Stack)          \
+  PROXSUITE_LDLT_TEMP_MAT_IMPL(                                                \
+    Type, Name, Rows, Cols, Stack, make_new_for_overwrite)
 
 namespace proxsuite {
 namespace linalg {
@@ -295,6 +297,11 @@ struct NativePackInfo<f64>
 
 template<typename T>
 using NativePack = typename NativePackInfo<T>::Type;
+#undef LDLT_ARITHMETIC_IMPL
+#undef LDLT_LOAD_STORE
+#undef LDLT_FN_IMPL3
+#undef DENSE_LDLT_FP_PRAGMA
+
 } // namespace _simd
 } // namespace _detail
 

@@ -637,7 +637,7 @@ unscaled_primal_dual_residual(Workspace<T, I>& work,
 {
   isize n = x_e.rows();
 
-  LDLT_TEMP_VEC_UNINIT(T, tmp, n, stack);
+  PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, tmp, n, stack);
   dual_residual_scaled = qp_scaled.g.to_eigen();
   {
     tmp.setZero();

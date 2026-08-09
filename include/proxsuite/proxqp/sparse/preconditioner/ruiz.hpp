@@ -130,7 +130,7 @@ ruiz_scale_qp_in_place( //
   T gamma = 1;
   i64 iter = 1;
 
-  LDLT_TEMP_VEC(T, delta, n + n_eq + n_in, stack);
+  PROXSUITE_LDLT_TEMP_VEC(T, delta, n + n_eq + n_in, stack);
 
   I* Hi = qp.H.row_indices_mut();
   T* Hx = qp.H.values_mut();

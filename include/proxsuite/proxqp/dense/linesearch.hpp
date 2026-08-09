@@ -654,7 +654,7 @@ active_set_change(const Model<T>& qpmodel,
         //     qpwork.C_scaled.row(index) ;
         //   }
         // }
-        LDLT_TEMP_MAT_UNINIT(
+        PROXSUITE_LDLT_TEMP_MAT_UNINIT(
           T, new_cols, qpmodel.dim, planned_to_delete_count, stack);
         qpwork.dw_aug.head(planned_to_delete_count).setOnes();
         T mu_in_inv_neg(-qpresults.info.mu_in_inv);
@@ -714,7 +714,7 @@ active_set_change(const Model<T>& qpmodel,
         case DenseBackend::PrimalDualLDLT: {
           isize n = qpmodel.dim;
           isize n_eq = qpmodel.n_eq;
-          LDLT_TEMP_MAT_UNINIT(
+          PROXSUITE_LDLT_TEMP_MAT_UNINIT(
             T, new_cols, n + n_eq + n_c_f, planned_to_add_count, stack);
 
           for (isize k = 0; k < planned_to_add_count; ++k) {
@@ -748,7 +748,7 @@ active_set_change(const Model<T>& qpmodel,
           //     qpwork.C_scaled.row(index) ;
           //   }
           // }
-          LDLT_TEMP_MAT_UNINIT(
+          PROXSUITE_LDLT_TEMP_MAT_UNINIT(
             T, new_cols, qpmodel.dim, planned_to_add_count, stack);
           qpwork.dw_aug.head(planned_to_add_count).setOnes();
           qpwork.dw_aug.head(planned_to_add_count).array() *=

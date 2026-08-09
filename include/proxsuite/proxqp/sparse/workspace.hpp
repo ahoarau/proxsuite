@@ -589,19 +589,19 @@ struct Workspace
 
     auto iter_req = SR::or_({
       SR::and_({ x_vec(n_eq), // primal_residual_eq_scaled
-                       x_vec(n_in), // primal_residual_in_scaled_lo
-                       x_vec(n_in), // primal_residual_in_scaled_up
-                       x_vec(n_in), // primal_residual_in_scaled_up
-                       x_vec(n),    // dual_residual_scaled
-                       SR::or_({
-                         unscaled_primal_dual_residual_req,
-                         SR::and_({
-                           x_vec(n),    // x_prev
-                           x_vec(n_eq), // y_prev
-                           x_vec(n_in), // z_prev
-                           primal_dual_newton_semi_smooth_req,
-                         }),
-                       }) }),
+                 x_vec(n_in), // primal_residual_in_scaled_lo
+                 x_vec(n_in), // primal_residual_in_scaled_up
+                 x_vec(n_in), // primal_residual_in_scaled_up
+                 x_vec(n),    // dual_residual_scaled
+                 SR::or_({
+                   unscaled_primal_dual_residual_req,
+                   SR::and_({
+                     x_vec(n),    // x_prev
+                     x_vec(n_eq), // y_prev
+                     x_vec(n_in), // z_prev
+                     primal_dual_newton_semi_smooth_req,
+                   }),
+                 }) }),
       refactorize_req, // mu_update
     });
 

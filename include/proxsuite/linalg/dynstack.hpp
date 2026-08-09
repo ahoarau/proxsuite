@@ -110,9 +110,9 @@ struct StackReq
   friend constexpr auto operator&(StackReq a, StackReq b) noexcept -> StackReq
   {
     return {
-      detail::round_up_pow2(
-        detail::round_up_pow2(a.size_bytes, b.align) + b.size_bytes,
-        detail::max2(a.align, b.align)),
+      detail::round_up_pow2(detail::round_up_pow2(a.size_bytes, b.align) +
+                              b.size_bytes,
+                            detail::max2(a.align, b.align)),
       detail::max2(a.align, b.align),
     };
   }
@@ -191,8 +191,7 @@ struct DynStackMut
    * @param align alignment of the allocation, defaults to `alignof(T)`
    */
   template<typename T>
-  [[nodiscard]] auto make_new_for_overwrite(isize len,
-                                            isize align = alignof(T))
+  [[nodiscard]] auto make_new_for_overwrite(isize len, isize align = alignof(T))
     -> DynStackArray<T>
   {
     return DynStackArray<T>{ *this, len, align, /* value_init = */ false };
@@ -271,7 +270,10 @@ struct DynStackArray
   {
     return { m_data, m_len };
   }
-  [[nodiscard]] auto as_mut() noexcept -> SliceMut<T> { return { m_data, m_len }; }
+  [[nodiscard]] auto as_mut() noexcept -> SliceMut<T>
+  {
+    return { m_data, m_len };
+  }
 
 private:
   friend struct DynStackMut;
@@ -334,7 +336,8 @@ private:
       // Allocations must be released in reverse order: nothing may have been
       // taken from the parent stack after this one without being released
       // first.
-      assert(reinterpret_cast<unsigned char*>(m_data) + m_len * isize(sizeof(T)) ==
+      assert(reinterpret_cast<unsigned char*>(m_data) +
+               m_len * isize(sizeof(T)) ==
              m_parent->m_data);
     }
 

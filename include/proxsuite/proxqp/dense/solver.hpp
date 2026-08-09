@@ -67,7 +67,7 @@ refactorize(const Model<T>& qpmodel,
       isize n_in = qpmodel.n_in;
       isize n_c = qpwork.n_c;
 
-      LDLT_TEMP_MAT(T, new_cols, n + n_eq + n_c, n_c, stack);
+      PROXSUITE_LDLT_TEMP_MAT(T, new_cols, n + n_eq + n_c, n_c, stack);
       T mu_in_neg(-qpresults.info.mu_in);
       for (isize i = 0; i < n_constraints; ++i) {
         isize j = qpwork.current_bijection_map[i];
@@ -150,7 +150,7 @@ mu_update(const Model<T>& qpmodel,
   }
   switch (dense_backend) {
     case DenseBackend::PrimalDualLDLT: {
-      LDLT_TEMP_VEC_UNINIT(T, rank_update_alpha, n_eq + n_c, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, rank_update_alpha, n_eq + n_c, stack);
 
       rank_update_alpha.head(n_eq).setConstant(qpresults.info.mu_eq -
                                                mu_eq_new);
@@ -194,7 +194,8 @@ mu_update(const Model<T>& qpmodel,
 
       // mu update for C_J
       {
-        LDLT_TEMP_MAT_UNINIT(T, new_cols, qpmodel.dim, qpwork.n_c, stack);
+        PROXSUITE_LDLT_TEMP_MAT_UNINIT(
+          T, new_cols, qpmodel.dim, qpwork.n_c, stack);
         qpwork.dw_aug.head(qpmodel.dim).setOnes();
         T delta_mu(T(1) / mu_in_new - qpresults.info.mu_in_inv);
         qpwork.dw_aug.head(qpmodel.dim).array() *= delta_mu;
@@ -217,7 +218,8 @@ mu_update(const Model<T>& qpmodel,
       }
       // mu update for A
       {
-        LDLT_TEMP_MAT_UNINIT(T, new_cols, qpmodel.dim, qpmodel.n_eq, stack);
+        PROXSUITE_LDLT_TEMP_MAT_UNINIT(
+          T, new_cols, qpmodel.dim, qpmodel.n_eq, stack);
         qpwork.dw_aug.head(qpmodel.n_eq).setOnes();
         T delta_mu(1 / mu_eq_new - qpresults.info.mu_eq_inv);
         qpwork.dw_aug.head(qpmodel.n_eq).array() *= delta_mu;
@@ -934,7 +936,7 @@ primal_dual_newton_semi_smooth(const Settings<T>& qpsettings,
     auto dx = qpwork.dw_aug.head(qpmodel.dim);
     auto dy = qpwork.dw_aug.segment(qpmodel.dim, qpmodel.n_eq);
     auto dz = qpwork.dw_aug.tail(n_constraints);
-    LDLT_TEMP_VEC(T, CTdz, qpmodel.dim, stack);
+    PROXSUITE_LDLT_TEMP_VEC(T, CTdz, qpmodel.dim, stack);
     if (qpmodel.n_in > 0) {
       Cdx.head(qpmodel.n_in).noalias() = qpwork.C_scaled * dx;
       CTdz.noalias() = qpwork.C_scaled.transpose() * dz.head(qpmodel.n_in);

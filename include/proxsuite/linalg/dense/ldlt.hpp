@@ -376,7 +376,7 @@ public:
                                a(i + k, k));
     }
 
-    LDLT_TEMP_MAT_UNINIT(T, permuted_a, n + r, r, stack);
+    PROXSUITE_LDLT_TEMP_MAT_UNINIT(T, permuted_a, n + r, r, stack);
 
     for (isize k = 0; k < r; ++k) {
       for (isize j = 0; j < n + r; ++j) {
@@ -460,8 +460,8 @@ public:
     auto first = sorted_indices[0];
     auto n = dim() - first;
 
-    LDLT_TEMP_MAT(T, _w, n, r, stack);
-    LDLT_TEMP_VEC_UNINIT(T, _alpha, r, stack);
+    PROXSUITE_LDLT_TEMP_MAT(T, _w, n, r, stack);
+    PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, _alpha, r, stack);
 
     for (isize k = 0; k < r; ++k) {
       _alpha(k) = alpha(positions[k]);
@@ -503,8 +503,8 @@ public:
 
     assert(w.rows() == n);
 
-    LDLT_TEMP_MAT_UNINIT(T, _w, n, r, stack);
-    LDLT_TEMP_VEC_UNINIT(T, _alpha, r, stack);
+    PROXSUITE_LDLT_TEMP_MAT_UNINIT(T, _w, n, r, stack);
+    PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, _alpha, r, stack);
 
     for (isize k = 0; k < r; ++k) {
       auto alpha_tmp = alpha(k);
@@ -641,7 +641,7 @@ public:
       util::diagonal(mat));
 
     {
-      LDLT_TEMP_MAT_UNINIT(T, work, n, n, stack);
+      PROXSUITE_LDLT_TEMP_MAT_UNINIT(T, work, n, n, stack);
       ld_col_mut() = mat;
       proxsuite::linalg::dense::_detail::apply_permutation_tri_lower(
         ld_col_mut(), work, perm.data());
@@ -677,7 +677,7 @@ public:
                       proxsuite::linalg::dynstack::DynStackMut stack) const
   {
     isize n = rhs.rows();
-    LDLT_TEMP_VEC_UNINIT(T, work, n, stack);
+    PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, work, n, stack);
 
     for (isize i = 0; i < n; ++i) {
       work[i] = rhs[perm[usize(i)]];
@@ -695,7 +695,7 @@ public:
                            proxsuite::linalg::dynstack::DynStackMut stack) const
   {
     isize m = rhs.rows();
-    LDLT_TEMP_VEC_UNINIT(T, work, m, stack);
+    PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, work, m, stack);
 
     for (isize i = 0; i < m; ++i) {
       work[i] = rhs[perm[usize(n + i)] -

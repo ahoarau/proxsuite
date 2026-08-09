@@ -72,7 +72,7 @@ ruiz_scale_qp_in_place( //
   }
 
   T gamma = T(1);
-  LDLT_TEMP_VEC(T, delta, n + n_eq + n_constraints, stack);
+  PROXSUITE_LDLT_TEMP_VEC(T, delta, n + n_eq + n_constraints, stack);
   i64 iter = 1;
   while (infty_norm((1 - delta.array()).matrix()) > epsilon) {
 

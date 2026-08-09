@@ -52,7 +52,7 @@ ldl_solve(VectorViewMut<T> sol,
           I* ldl_col_ptrs,
           I const* perm_inv)
 {
-  LDLT_TEMP_VEC_UNINIT(T, work_, n_tot, stack);
+  PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, work_, n_tot, stack);
   auto rhs_e = rhs.to_eigen();
   auto sol_e = sol.to_eigen();
   auto zx = [](auto i) {
@@ -118,7 +118,7 @@ ldl_iter_solve_noalias(
     sol_e.setZero();
   }
 
-  LDLT_TEMP_VEC_UNINIT(T, err, n_tot, stack);
+  PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, err, n_tot, stack);
 
   T prev_err_norm = std::numeric_limits<T>::max();
 
@@ -221,7 +221,7 @@ ldl_solve_in_place(
   proxsuite::linalg::sparse::MatMut<T, I> kkt_active,
   proxsuite::linalg::SliceMut<bool> active_constraints)
 {
-  LDLT_TEMP_VEC_UNINIT(T, tmp, n_tot, stack);
+  PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, tmp, n_tot, stack);
   ldl_iter_solve_noalias({ proxqp::from_eigen, tmp },
                          rhs.as_const(),
                          init_guess,
@@ -686,8 +686,8 @@ qp_solve(Results<T>& results,
     work, results, settings, kkt_active, active_constraints, data, stack);
   switch (settings.initial_guess) {
     case InitialGuessStatus::EQUALITY_CONSTRAINED_INITIAL_GUESS: {
-      LDLT_TEMP_VEC_UNINIT(T, rhs, n_tot, stack);
-      LDLT_TEMP_VEC_UNINIT(T, no_guess, 0, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, rhs, n_tot, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, no_guess, 0, stack);
 
       rhs.head(n) = -g_scaled_e;
       rhs.segment(n, n_eq) = b_scaled_e;
@@ -753,11 +753,13 @@ qp_solve(Results<T>& results,
       T dual_feasibility_rhs_1(0);
       T dual_feasibility_rhs_3(0);
 
-      LDLT_TEMP_VEC_UNINIT(T, primal_residual_eq_scaled, n_eq, stack);
-      LDLT_TEMP_VEC_UNINIT(T, primal_residual_in_scaled_lo, n_in, stack);
-      LDLT_TEMP_VEC_UNINIT(T, primal_residual_in_scaled_up, n_in, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, primal_residual_eq_scaled, n_eq, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(
+        T, primal_residual_in_scaled_lo, n_in, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(
+        T, primal_residual_in_scaled_up, n_in, stack);
 
-      LDLT_TEMP_VEC_UNINIT(T, dual_residual_scaled, n, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, dual_residual_scaled, n, stack);
 
       // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
       auto is_primal_feasible = [&](T primal_feasibility_lhs) -> bool {
@@ -820,7 +822,7 @@ qp_solve(Results<T>& results,
       }
       */
       if (settings.verbose) {
-        LDLT_TEMP_VEC_UNINIT(T, tmp, n, stack);
+        PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, tmp, n, stack);
         tmp.setZero();
         detail::noalias_symhiv_add(tmp, qp_scaled.H.to_eigen(), x_e);
         precond.unscale_dual_residual_in_place({ proxqp::from_eigen, tmp });
@@ -874,10 +876,10 @@ qp_solve(Results<T>& results,
         }
       }
 
-      LDLT_TEMP_VEC_UNINIT(T, x_prev_e, n, stack);
-      LDLT_TEMP_VEC_UNINIT(T, y_prev_e, n_eq, stack);
-      LDLT_TEMP_VEC_UNINIT(T, z_prev_e, n_in, stack);
-      LDLT_TEMP_VEC(T, dw_prev, n_tot, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, x_prev_e, n, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, y_prev_e, n_eq, stack);
+      PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, z_prev_e, n_in, stack);
+      PROXSUITE_LDLT_TEMP_VEC(T, dw_prev, n_tot, stack);
 
       x_prev_e = x_e;
       y_prev_e = y_e;
@@ -905,7 +907,7 @@ qp_solve(Results<T>& results,
       auto primal_dual_newton_semi_smooth = [&]() -> void {
         for (isize iter_inner = 0; iter_inner < settings.max_iter_in;
              ++iter_inner) {
-          LDLT_TEMP_VEC_UNINIT(T, dw, n_tot, stack);
+          PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, dw, n_tot, stack);
 
           if (iter_inner == settings.max_iter_in - 1) {
             results.info.iter += settings.max_iter_in;
@@ -914,7 +916,8 @@ qp_solve(Results<T>& results,
 
           // primal_dual_semi_smooth_newton_step
           {
-            LDLT_TEMP_VEC_UNINIT(bool, new_active_constraints, n_in, stack);
+            PROXSUITE_LDLT_TEMP_VEC_UNINIT(
+              bool, new_active_constraints, n_in, stack);
             auto rhs = dw;
 
             work.active_set_low.array() =
@@ -1061,12 +1064,12 @@ qp_solve(Results<T>& results,
           auto dx = dw.head(n);
           auto dy = dw.segment(n, n_eq);
           auto dz = dw.segment(n + n_eq, n_in);
-          LDLT_TEMP_VEC(T, Hdx, n, stack);
-          LDLT_TEMP_VEC(T, Adx, n_eq, stack);
-          LDLT_TEMP_VEC(T, Cdx, n_in, stack);
+          PROXSUITE_LDLT_TEMP_VEC(T, Hdx, n, stack);
+          PROXSUITE_LDLT_TEMP_VEC(T, Adx, n_eq, stack);
+          PROXSUITE_LDLT_TEMP_VEC(T, Cdx, n_in, stack);
 
-          LDLT_TEMP_VEC(T, ATdy, n, stack);
-          LDLT_TEMP_VEC(T, CTdz, n, stack);
+          PROXSUITE_LDLT_TEMP_VEC(T, ATdy, n, stack);
+          PROXSUITE_LDLT_TEMP_VEC(T, CTdz, n, stack);
 
           detail::noalias_symhiv_add(Hdx, H_scaled.to_eigen(), dx);
           detail::noalias_gevmmv_add(Adx, ATdy, AT_scaled.to_eigen(), dx, dy);
@@ -1084,11 +1087,11 @@ qp_solve(Results<T>& results,
           if (n_in > 0) {
             auto primal_dual_gradient_norm =
               [&](T alpha_cur) -> PrimalDualGradResult<T> {
-              LDLT_TEMP_VEC_UNINIT(T, Cdx_active, n_in, stack);
-              LDLT_TEMP_VEC_UNINIT(T, active_part_z, n_in, stack);
+              PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, Cdx_active, n_in, stack);
+              PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, active_part_z, n_in, stack);
               {
-                LDLT_TEMP_VEC_UNINIT(T, tmp_lo, n_in, stack);
-                LDLT_TEMP_VEC_UNINIT(T, tmp_up, n_in, stack);
+                PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, tmp_lo, n_in, stack);
+                PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, tmp_up, n_in, stack);
 
                 auto zero = Eigen::Matrix<T, Eigen::Dynamic, 1>::Zero(n_in);
 
@@ -1132,11 +1135,11 @@ qp_solve(Results<T>& results,
 
             // auto gpdal_derivative_results =
             //   [&](T alpha_cur) -> PrimalDualGradResult<T> {
-            //   LDLT_TEMP_VEC_UNINIT(T, Cdx_active, n_in, stack);
-            //   LDLT_TEMP_VEC_UNINIT(T, active_part_z, n_in, stack);
+            //   PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, Cdx_active, n_in, stack);
+            //   PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, active_part_z, n_in, stack);
             //   {
-            //     LDLT_TEMP_VEC_UNINIT(T, tmp_lo, n_in, stack);
-            //     LDLT_TEMP_VEC_UNINIT(T, tmp_up, n_in, stack);
+            //     PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, tmp_lo, n_in, stack);
+            //     PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, tmp_up, n_in, stack);
 
             //     auto zero = Eigen::Matrix<T, Eigen::Dynamic, 1>::Zero(n_in);
 
@@ -1181,7 +1184,7 @@ qp_solve(Results<T>& results,
             //   };
             // };
 
-            LDLT_TEMP_VEC_UNINIT(T, alphas, 2 * n_in, stack);
+            PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, alphas, 2 * n_in, stack);
             isize alphas_count = 0;
             const T machine_eps = std::numeric_limits<T>::epsilon();
 
@@ -1402,9 +1405,9 @@ qp_solve(Results<T>& results,
       if (scaled_eps == settings.eps_abs &&
           settings.primal_infeasibility_solving &&
           results.info.status == QPSolverOutput::PROXQP_PRIMAL_INFEASIBLE) {
-        LDLT_TEMP_VEC(T, rhs_dim, n, stack);
-        LDLT_TEMP_VEC(T, rhs_n_eq, n_eq, stack);
-        LDLT_TEMP_VEC(T, rhs_n_in, n_in, stack);
+        PROXSUITE_LDLT_TEMP_VEC(T, rhs_dim, n, stack);
+        PROXSUITE_LDLT_TEMP_VEC(T, rhs_n_eq, n_eq, stack);
+        PROXSUITE_LDLT_TEMP_VEC(T, rhs_n_in, n_in, stack);
         rhs_n_eq.setConstant(T(1));
         rhs_n_in.setConstant(T(1));
         rhs_dim.noalias() =
@@ -1586,7 +1589,7 @@ qp_solve(Results<T>& results,
     results.info.mu_eq_inv = new_bcl_mu_eq_inv;
     results.info.mu_in_inv = new_bcl_mu_in_inv;
   }
-  LDLT_TEMP_VEC_UNINIT(T, tmp, n, stack);
+  PROXSUITE_LDLT_TEMP_VEC_UNINIT(T, tmp, n, stack);
   tmp.setZero();
   detail::noalias_symhiv_add(tmp, qp_scaled.H.to_eigen(), x_e);
   precond.unscale_dual_residual_in_place({ proxqp::from_eigen, tmp });

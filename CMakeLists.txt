@@ -253,6 +253,8 @@ jrl_target_headers(proxsuite INTERFACE
     include/proxsuite/helpers/instruction-set.hpp
     include/proxsuite/helpers/optional.hpp
     include/proxsuite/helpers/version.hpp
+    include/proxsuite/linalg/dynstack.hpp
+    include/proxsuite/linalg/slice.hpp
     include/proxsuite/linalg/dense/core.hpp
     include/proxsuite/linalg/dense/factorize.hpp
     include/proxsuite/linalg/dense/ldlt.hpp

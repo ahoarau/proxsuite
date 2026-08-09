@@ -2,8 +2,7 @@
 //
 // Copyright (c) 2022 INRIA
 //
-#ifndef PROXSUITE_LINALG_SPARSE_LDLT_UPDATE_HPP
-#define PROXSUITE_LINALG_SPARSE_LDLT_UPDATE_HPP
+#pragma once
 
 #include "proxsuite/linalg/sparse/core.hpp"
 
@@ -333,5 +332,3 @@ rank1_update(MatMut<T, I> ld,
 } // namespace sparse
 } // namespace linalg
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_LINALG_SPARSE_LDLT_UPDATE_HPP */

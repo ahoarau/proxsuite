@@ -5,8 +5,7 @@
  * @file instruction-set.hpp
  */
 
-#ifndef PROXSUITE_HELPERS_INSTRUCTION_SET_HPP
-#define PROXSUITE_HELPERS_INSTRUCTION_SET_HPP
+#pragma once
 
 #include <vector>
 #include <bitset>
@@ -271,5 +270,3 @@ struct InstructionSet : public internal::InstructionSetBase<>
 
 } // helpers
 } // proxsuite
-
-#endif // ifndef PROXSUITE_HELPERS_INSTRUCTION_SET_HPP

@@ -2,8 +2,7 @@
 // Copyright (c) 2023 INRIA
 //
 
-#ifndef PROXSUITE_PROXQP_PARALLEL_OMP_HPP
-#define PROXSUITE_PROXQP_PARALLEL_OMP_HPP
+#pragma once
 
 #include <omp.h>
 
@@ -16,5 +15,3 @@ set_default_omp_options(const size_t num_threads = (size_t)
   omp_set_dynamic(0);
 }
 }
-
-#endif // ifndef PROXSUITE_PROXQP_PARALLEL_OMP_HPP

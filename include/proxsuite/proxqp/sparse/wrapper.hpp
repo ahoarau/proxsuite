@@ -5,8 +5,7 @@
  * @file wrapper.hpp
  */
 
-#ifndef PROXSUITE_PROXQP_SPARSE_WRAPPER_HPP
-#define PROXSUITE_PROXQP_SPARSE_WRAPPER_HPP
+#pragma once
 #include <proxsuite/helpers/common.hpp>
 #include <proxsuite/proxqp/results.hpp>
 #include <proxsuite/proxqp/settings.hpp>
@@ -881,5 +880,3 @@ struct BatchQP
 } // namespace sparse
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_SPARSE_WRAPPER_HPP */

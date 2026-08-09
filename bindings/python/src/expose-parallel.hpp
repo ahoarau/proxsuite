@@ -2,6 +2,7 @@
 // Copyright (c) 2023 INRIA
 //
 
+#pragma once
 #include <proxsuite/proxqp/dense/wrapper.hpp>
 #include <proxsuite/proxqp/sparse/wrapper.hpp>
 #include <proxsuite/proxqp/parallel/qp_solve.hpp>

@@ -5,8 +5,7 @@
  * @file wrapper.hpp
  */
 
-#ifndef PROXSUITE_PROXQP_DENSE_WRAPPER_HPP
-#define PROXSUITE_PROXQP_DENSE_WRAPPER_HPP
+#pragma once
 #include <proxsuite/helpers/common.hpp>
 #include <proxsuite/proxqp/sparse/wrapper.hpp>
 #include <proxsuite/proxqp/dense/solver.hpp>
@@ -1314,5 +1313,3 @@ struct BatchQP
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_WRAPPER_HPP */

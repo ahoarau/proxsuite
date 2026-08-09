@@ -4,8 +4,7 @@
 /**
  * @file ruiz.hpp
  */
-#ifndef PROXSUITE_PROXQP_DENSE_PRECOND_RUIZ_HPP
-#define PROXSUITE_PROXQP_DENSE_PRECOND_RUIZ_HPP
+#pragma once
 
 #include "proxsuite/proxqp/dense/views.hpp"
 #include "proxsuite/proxqp/dense/fwd.hpp"
@@ -720,5 +719,3 @@ operator!=(const RuizEquilibration<T>& ruiz1, const RuizEquilibration<T>& ruiz2)
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_PRECOND_RUIZ_HPP */

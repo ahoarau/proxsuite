@@ -4,8 +4,7 @@
 /**
  * @file constants.hpp
  */
-#ifndef PROXSUITE_PROXQP_CONSTANTS_HPP
-#define PROXSUITE_PROXQP_CONSTANTS_HPP
+#pragma once
 
 #include <type_traits>
 #include "proxsuite/proxqp/sparse/fwd.hpp"
@@ -44,5 +43,3 @@ enum struct PreconditionerStatus
 
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_CONSTANTS_HPP */

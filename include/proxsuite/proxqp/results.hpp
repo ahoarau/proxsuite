@@ -4,8 +4,7 @@
 /**
  * @file results.hpp
  */
-#ifndef PROXSUITE_PROXQP_RESULTS_HPP
-#define PROXSUITE_PROXQP_RESULTS_HPP
+#pragma once
 
 #include <algorithm>
 #include <proxsuite/helpers/optional.hpp>
@@ -256,5 +255,3 @@ operator!=(const Results<T>& results1, const Results<T>& results2)
 
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_RESULTS_HPP */

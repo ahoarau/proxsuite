@@ -1,5 +1,4 @@
-#ifndef PROXSUITE_PROXQP_UTILS_RANDOM_QP_PROBLEMS_HPP
-#define PROXSUITE_PROXQP_UTILS_RANDOM_QP_PROBLEMS_HPP
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/SparseCore>
@@ -663,6 +662,3 @@ sparse_strongly_convex_qp(proxqp::isize dim,
 } // namespace utils
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_UTILS_RANDOM_QP_PROBLEMS_HPP   \
-        */

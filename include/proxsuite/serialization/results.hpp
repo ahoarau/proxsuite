@@ -5,8 +5,7 @@
  * @file results.hpp
  */
 
-#ifndef PROXSUITE_SERIALIZATION_RESULTS_HPP
-#define PROXSUITE_SERIALIZATION_RESULTS_HPP
+#pragma once
 
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
@@ -54,5 +53,3 @@ serialize(Archive& archive, proxsuite::proxqp::Results<T>& results)
 }
 
 } // namespace cereal
-
-#endif /* end of include guard PROXSUITE_SERIALIZATION_RESULTS_HPP */

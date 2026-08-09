@@ -5,8 +5,7 @@
  * @file model.hpp
  */
 
-#ifndef PROXSUITE_SERIALIZATION_WORKSPACE_HPP
-#define PROXSUITE_SERIALIZATION_WORKSPACE_HPP
+#pragma once
 
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
@@ -65,5 +64,3 @@ serialize(Archive& archive, proxsuite::proxqp::dense::Workspace<T>& work)
 }
 
 } // namespace cereal
-
-#endif /* end of include guard PROXSUITE_SERIALIZATION_WORKSPACE_HPP */

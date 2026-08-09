@@ -5,8 +5,7 @@
  * @file settings.hpp
  */
 
-#ifndef PROXSUITE_SERIALIZATION_SETTINGS_HPP
-#define PROXSUITE_SERIALIZATION_SETTINGS_HPP
+#pragma once
 
 #include <cereal/cereal.hpp>
 #include <proxsuite/proxqp/settings.hpp>
@@ -57,5 +56,3 @@ serialize(Archive& archive, proxsuite::proxqp::Settings<T>& settings)
           CEREAL_NVP(settings.primal_infeasibility_solving));
 }
 } // namespace cereal
-
-#endif /* end of include guard PROXSUITE_SERIALIZATION_SETTINGS_HPP */

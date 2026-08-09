@@ -4,8 +4,7 @@
 /**
  * @file identity.hpp
  */
-#ifndef PROXSUITE_PROXQP_DENSE_PRECOND_IDENTITY_HPP
-#define PROXSUITE_PROXQP_DENSE_PRECOND_IDENTITY_HPP
+#pragma once
 
 #include "proxsuite/proxqp/dense/views.hpp"
 
@@ -108,6 +107,3 @@ struct IdentityPrecond
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_PRECOND_IDENTITY_HPP     \
-        */

@@ -1,8 +1,7 @@
 //
 // Copyright (c) 2022-2023 INRIA
 //
-#ifndef proxsuite_python_algorithms_hpp
-#define proxsuite_python_algorithms_hpp
+#pragma once
 
 #include "expose-model.hpp"
 #include "expose-results.hpp"
@@ -16,4 +15,3 @@
 #ifdef PROXSUITE_PYTHON_INTERFACE_WITH_OPENMP
 #include "expose-parallel.hpp"
 #endif
-#endif /* end of include guard proxsuite_python_algorithms_hpp */

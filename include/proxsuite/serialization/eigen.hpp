@@ -5,8 +5,7 @@
  * @file eigen.hpp
  */
 
-#ifndef PROXSUITE_SERIALIZATION_EIGEN_HPP
-#define PROXSUITE_SERIALIZATION_EIGEN_HPP
+#pragma once
 
 #include <Eigen/Sparse>
 #include <Eigen/Dense>
@@ -103,5 +102,3 @@ load(Archive& ar, Eigen::SparseMatrix<_Scalar, _Options, _StorageIndex>& m)
 }
 
 } // namespace cereal
-
-#endif /* end of include guard PROXSUITE_SERIALIZATION_EIGEN_HPP */

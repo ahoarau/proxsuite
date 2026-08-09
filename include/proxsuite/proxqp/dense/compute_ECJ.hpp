@@ -5,8 +5,7 @@
  * @file compute_ECJ.hpp
  */
 
-#ifndef PROXSUITE_PROXQP_DENSE_COMPUTE_ECJ_HPP
-#define PROXSUITE_PROXQP_DENSE_COMPUTE_ECJ_HPP
+#pragma once
 #include <proxsuite/helpers/common.hpp>
 #include <proxsuite/proxqp/dense/wrapper.hpp>
 
@@ -191,5 +190,3 @@ compute_backward_loss_ESG(dense::QP<T>& solved_qp, VecRef<T> loss_derivative)
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_COMPUTE_ECJ_HPP */

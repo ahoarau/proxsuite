@@ -1,6 +1,7 @@
 //
 // Copyright (c) 2022-2024 INRIA
 //
+#pragma once
 #include <proxsuite/proxqp/dense/wrapper.hpp>
 #include <proxsuite/proxqp/sparse/wrapper.hpp>
 #include <nanobind/nanobind.h>

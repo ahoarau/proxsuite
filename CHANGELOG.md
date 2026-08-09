@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `*_req` functions take their element type as an explicit template argument instead of a `Tag<T>` parameter, e.g. `StackReq::with_len<T>(n)` and `stack.make_new_for_overwrite<T>(n)`
 - Macros defined by installed headers are now prefixed and no longer leak: `LDLT_TEMP_{VEC,MAT}[_UNINIT]` become `PROXSUITE_LDLT_TEMP_{VEC,MAT}[_UNINIT]`, and `DENSE_LDLT_FP_PRAGMA`, `LDLT_FN_IMPL3`, `LDLT_LOAD_STORE`, `LDLT_ARITHMETIC_IMPL` are `#undef`'d after use
 - `__proxsuite_fwd_hpp__`, `__LDLT_TEMP_VEC_IMPL` and `__LDLT_TEMP_MAT_IMPL` are renamed: identifiers with a leading double underscore are reserved to the implementation
+- Headers use `#pragma once` instead of include guards, so the `PROXSUITE_*_HPP` guard macros are no longer defined
 
 ### Removed
 - CMake: remove unconditional `DOXYGEN_USE_MATHJAX`. You can turn it on if necessary with `cmake -DDOXYGEN_USE_MATHJAX=ON`. ([#467](https://github.com/Simple-Robotics/proxsuite/pull/467))

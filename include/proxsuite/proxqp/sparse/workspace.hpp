@@ -3,8 +3,7 @@
 //
 /** \file */
 
-#ifndef PROXSUITE_PROXQP_SPARSE_WORKSPACE_HPP
-#define PROXSUITE_PROXQP_SPARSE_WORKSPACE_HPP
+#pragma once
 
 #include <proxsuite/linalg/dense/core.hpp>
 #include <proxsuite/linalg/sparse/core.hpp>
@@ -771,5 +770,3 @@ struct Workspace
 } // namespace sparse
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_SPARSE_WORKSPACE_HPP */

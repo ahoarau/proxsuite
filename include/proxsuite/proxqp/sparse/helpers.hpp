@@ -2,8 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 /** \file */
-#ifndef PROXSUITE_PROXQP_SPARSE_HELPERS_HPP
-#define PROXSUITE_PROXQP_SPARSE_HELPERS_HPP
+#pragma once
 
 #include <proxsuite/helpers/common.hpp>
 #include <Eigen/Sparse>
@@ -460,5 +459,3 @@ copy(proxsuite::linalg::sparse::MatMut<T, I> a,
 } // namespace sparse
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_SPARSE_HELPERS_HPP */

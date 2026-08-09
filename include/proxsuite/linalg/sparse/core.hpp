@@ -2,8 +2,7 @@
 //
 // Copyright (c) 2022 INRIA
 //
-#ifndef PROXSUITE_LINALG_SPARSE_LDLT_CORE_HPP
-#define PROXSUITE_LINALG_SPARSE_LDLT_CORE_HPP
+#pragma once
 
 #include <proxsuite/fwd.hpp>
 #include <proxsuite/linalg/dynstack.hpp>
@@ -463,5 +462,3 @@ private:
 } // namespace sparse
 } // namespace linalg
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_LINALG_SPARSE_LDLT_CORE_HPP */

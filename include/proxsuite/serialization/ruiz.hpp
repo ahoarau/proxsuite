@@ -5,8 +5,7 @@
  * @file ruiz.hpp
  */
 
-#ifndef PROXSUITE_SERIALIZATION_RUIZ_HPP
-#define PROXSUITE_SERIALIZATION_RUIZ_HPP
+#pragma once
 
 #include <cereal/cereal.hpp>
 #include <proxsuite/proxqp/dense/preconditioner/ruiz.hpp>
@@ -28,5 +27,3 @@ serialize(Archive& archive,
   );
 }
 } // namespace cereal
-
-#endif /* end of include guard PROXSUITE_SERIALIZATION_RUIZ_HPP */

@@ -4,8 +4,7 @@
 /**
  * @file utils.hpp
  */
-#ifndef PROXSUITE_PROXQP_DENSE_UTILS_HPP
-#define PROXSUITE_PROXQP_DENSE_UTILS_HPP
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -589,5 +588,3 @@ global_dual_residual(Results<T>& qpresults,
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_UTILS_HPP */

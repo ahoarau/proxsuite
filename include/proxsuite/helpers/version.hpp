@@ -5,8 +5,7 @@
  * @file version.hpp
  */
 
-#ifndef PROXSUITE_HELPERS_VERSION_HPP
-#define PROXSUITE_HELPERS_VERSION_HPP
+#pragma once
 
 #include "proxsuite/config.hpp"
 #include <string>
@@ -35,5 +34,3 @@ checkVersionAtLeast(signed int major_version,
 
 } // helpers
 } // proxsuite
-
-#endif // ifndef PROXSUITE_HELPERS_VERSION_HPP

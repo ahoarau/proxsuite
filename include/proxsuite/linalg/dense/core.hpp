@@ -2,8 +2,7 @@
 //
 // Copyright (c) 2022 INRIA
 //
-#ifndef PROXSUITE_LINALG_DENSE_LDLT_CORE_HPP
-#define PROXSUITE_LINALG_DENSE_LDLT_CORE_HPP
+#pragma once
 
 #include <proxsuite/fwd.hpp>
 #include <proxsuite/linalg/dynstack.hpp>
@@ -854,5 +853,3 @@ temp_vec_req(isize rows) noexcept -> proxsuite::linalg::dynstack::StackReq
 } // namespace dense
 } // namespace linalg
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_LINALG_DENSE_LDLT_CORE_HPP */

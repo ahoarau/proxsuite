@@ -2,8 +2,7 @@
 //
 // Copyright (c) 2022 INRIA
 //
-#ifndef PROXSUITE_LINALG_DENSE_LDLT_FACTORIZE_HPP
-#define PROXSUITE_LINALG_DENSE_LDLT_FACTORIZE_HPP
+#pragma once
 
 #include "proxsuite/linalg/dense/core.hpp"
 #include <algorithm>
@@ -356,5 +355,3 @@ factorize(Mat&& mat, proxsuite::linalg::dynstack::DynStackMut stack)
 } // namespace dense
 } // namespace linalg
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_LINALG_DENSE_LDLT_FACTORIZE_HPP */

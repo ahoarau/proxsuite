@@ -2,8 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 /** \file */
-#ifndef PROXSUITE_PROXQP_DENSE_MODEL_HPP
-#define PROXSUITE_PROXQP_DENSE_MODEL_HPP
+#pragma once
 
 #include <proxsuite/helpers/common.hpp>
 #include <Eigen/Core>
@@ -173,5 +172,3 @@ operator!=(const Model<T>& model1, const Model<T>& model2)
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_MODEL_HPP */

@@ -2,8 +2,7 @@
 //
 // Copyright (c) 2026 INRIA
 //
-#ifndef PROXSUITE_LINALG_DYNSTACK_HPP
-#define PROXSUITE_LINALG_DYNSTACK_HPP
+#pragma once
 
 #include <proxsuite/fwd.hpp>
 #include <proxsuite/linalg/slice.hpp>
@@ -358,5 +357,3 @@ private:
 } // namespace dynstack
 } // namespace linalg
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_LINALG_DYNSTACK_HPP */

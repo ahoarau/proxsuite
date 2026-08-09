@@ -2,8 +2,7 @@
 // Copyright (c) 2023 INRIA
 //
 /** \file */
-#ifndef PROXSUITE_PROXQP_PARALLEL_QPSOLVE_HPP
-#define PROXSUITE_PROXQP_PARALLEL_QPSOLVE_HPP
+#pragma once
 
 // #include "proxsuite/proxqp/dense/wrapper.hpp"
 #include "proxsuite/proxqp/dense/compute_ECJ.hpp"
@@ -186,5 +185,3 @@ solve_in_parallel(std::vector<proxqp::sparse::QP<T, I>>& qps,
 
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_PARALLEL_QPSOLVE_HPP */

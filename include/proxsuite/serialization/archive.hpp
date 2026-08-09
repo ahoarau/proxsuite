@@ -5,8 +5,7 @@
  * @file archive.hpp
  */
 
-#ifndef PROXSUITE_SERIALIZATION_ARCHIVE_HPP
-#define PROXSUITE_SERIALIZATION_ARCHIVE_HPP
+#pragma once
 
 #include <fstream>
 #include <string>
@@ -227,5 +226,3 @@ saveToXML(const T& object, const std::string& filename)
 
 }
 }
-
-#endif /* end of include guard PROXSUITE_SERIALIZATION_ARCHIVE_HPP */

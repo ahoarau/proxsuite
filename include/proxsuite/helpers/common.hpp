@@ -5,8 +5,7 @@
  * @file common.hpp
  */
 
-#ifndef PROXSUITE_HELPERS_COMMON_HPP
-#define PROXSUITE_HELPERS_COMMON_HPP
+#pragma once
 
 #include "proxsuite/config.hpp"
 #include <limits>
@@ -97,5 +96,3 @@ select(Condition const& condition, T const& expr, const Scalar value)
 
 } // helpers
 } // proxsuite
-
-#endif // ifndef PROXSUITE_HELPERS_COMMON_HPP

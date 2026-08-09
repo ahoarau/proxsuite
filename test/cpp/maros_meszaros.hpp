@@ -1,3 +1,4 @@
+#pragma once
 #include <Eigen/SparseCore>
 #include <matio.h>
 #include <string>

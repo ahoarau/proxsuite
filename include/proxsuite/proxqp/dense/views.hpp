@@ -4,8 +4,7 @@
 /**
  * @file views.hpp
  */
-#ifndef PROXSUITE_PROXQP_DENSE_VIEWS_HPP
-#define PROXSUITE_PROXQP_DENSE_VIEWS_HPP
+#pragma once
 
 #include <proxsuite/fwd.hpp>
 
@@ -1303,5 +1302,3 @@ infty_norm(Eigen::MatrixBase<D> const& mat) -> typename D::Scalar
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_VIEWS_HPP */

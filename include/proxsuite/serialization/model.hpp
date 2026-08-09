@@ -5,8 +5,7 @@
  * @file model.hpp
  */
 
-#ifndef PROXSUITE_SERIALIZATION_MODEL_HPP
-#define PROXSUITE_SERIALIZATION_MODEL_HPP
+#pragma once
 
 #include <cereal/cereal.hpp>
 #include <proxsuite/proxqp/dense/model.hpp>
@@ -30,5 +29,3 @@ serialize(Archive& archive, proxsuite::proxqp::dense::Model<T>& model)
           CEREAL_NVP(model.u));
 }
 } // namespace cereal
-
-#endif /* end of include guard PROXSUITE_SERIALIZATION_MODEL_HPP */

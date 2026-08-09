@@ -2,8 +2,7 @@
 //
 // Copyright (c) 2026 INRIA
 //
-#ifndef PROXSUITE_LINALG_SLICE_HPP
-#define PROXSUITE_LINALG_SLICE_HPP
+#pragma once
 
 #include <proxsuite/fwd.hpp>
 
@@ -107,5 +106,3 @@ Slice<T>::Slice(SliceMut<T> const& other) noexcept
 
 } // namespace linalg
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_LINALG_SLICE_HPP */

@@ -4,8 +4,7 @@
 /**
  * @file results.hpp
  */
-#ifndef PROXSUITE_PROXQP_DENSE_BACKWARD_DATA_HPP
-#define PROXSUITE_PROXQP_DENSE_BACKWARD_DATA_HPP
+#pragma once
 
 #include <proxsuite/helpers/optional.hpp>
 #include <type_traits>
@@ -113,5 +112,3 @@ struct BackwardData
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_BACKWARD_DATA_HPP */

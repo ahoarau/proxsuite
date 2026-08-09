@@ -2,6 +2,7 @@
 // Copyright (c) 2022-2024 INRIA
 //
 
+#pragma once
 #include <nanobind/nanobind.h>
 #include <nanobind/eigen/dense.h>
 #include <nanobind/operators.h>

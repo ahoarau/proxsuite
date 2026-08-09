@@ -2,8 +2,7 @@
 //
 // Copyright (c) 2022 INRIA
 //
-#ifndef PROXSUITE_LINALG_SPARSE_LDLT_FACTORIZE_HPP
-#define PROXSUITE_LINALG_SPARSE_LDLT_FACTORIZE_HPP
+#pragma once
 
 #include "proxsuite/linalg/sparse/core.hpp"
 #include <Eigen/OrderingMethods>
@@ -1270,4 +1269,3 @@ factorize_numeric( //
 } // namespace sparse
 } // namespace linalg
 } // namespace proxsuite
-#endif /* end of include guard PROXSUITE_LINALG_SPARSE_LDLT_FACTORIZE_HPP */

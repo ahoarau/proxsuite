@@ -3,8 +3,7 @@
 //
 /** \file */
 
-#ifndef PROXSUITE_PROXQP_SPARSE_UTILS_HPP
-#define PROXSUITE_PROXQP_SPARSE_UTILS_HPP
+#pragma once
 
 #include <iostream>
 #include <Eigen/IterativeLinearSolvers>
@@ -835,5 +834,3 @@ struct generic_product_impl<
 };
 } // namespace internal
 } // namespace Eigen
-
-#endif /* end of include guard PROXSUITE_PROXQP_SPARSE_UTILS_HPP */

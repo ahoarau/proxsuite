@@ -4,8 +4,7 @@
 /**
  * @file settings.hpp
  */
-#ifndef PROXSUITE_PROXQP_SETTINGS_HPP
-#define PROXSUITE_PROXQP_SETTINGS_HPP
+#pragma once
 
 #include <Eigen/Core>
 #include <proxsuite/proxqp/status.hpp>
@@ -379,5 +378,3 @@ operator!=(const Settings<T>& settings1, const Settings<T>& settings2)
 
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_SETTINGS_HPP */

@@ -2,8 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 
-#ifndef PROXSUITE_FWD_HPP
-#define PROXSUITE_FWD_HPP
+#pragma once
 
 // `inline`, upgraded to a hard always-inline request in optimized builds. Used
 // on the small accessors of the linear algebra backends, where the call
@@ -86,5 +85,3 @@ using remove_cvref_t =
 #define PROXSUITE_EIGEN_MALLOC_ALLOWED()
 #define PROXSUITE_EIGEN_MALLOC_NOT_ALLOWED()
 #endif
-
-#endif // #ifndef PROXSUITE_FWD_HPP

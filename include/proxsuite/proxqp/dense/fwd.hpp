@@ -2,8 +2,7 @@
 // Copyright (c) 2022-2023 INRIA
 //
 /** \file */
-#ifndef PROXSUITE_PROXQP_DENSE_FWD_HPP
-#define PROXSUITE_PROXQP_DENSE_FWD_HPP
+#pragma once
 
 #include <Eigen/Sparse>
 #include "proxsuite/helpers/common.hpp"
@@ -53,5 +52,3 @@ using VecBool = Eigen::Matrix<bool, DYN, 1>;
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_FWD_HPP */

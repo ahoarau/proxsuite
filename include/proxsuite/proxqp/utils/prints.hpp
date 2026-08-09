@@ -3,8 +3,7 @@
 //
 /** \file */
 
-#ifndef PROXSUITE_PROXQP_UTILS_PRINTS_HPP
-#define PROXSUITE_PROXQP_UTILS_PRINTS_HPP
+#pragma once
 
 #include <iostream>
 
@@ -43,5 +42,3 @@ print_preambule()
 
 } // end namespace proxqp
 } // end namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_UTILS_PRINTS_HPP */

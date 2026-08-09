@@ -5,8 +5,7 @@
  * @file solver.hpp
  */
 
-#ifndef PROXSUITE_PROXQP_DENSE_SOLVER_HPP
-#define PROXSUITE_PROXQP_DENSE_SOLVER_HPP
+#pragma once
 
 #include <proxsuite/helpers/common.hpp>
 #include "proxsuite/fwd.hpp"
@@ -1843,5 +1842,3 @@ qp_solve( //
 
 } // namespace proxqp
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_PROXQP_DENSE_SOLVER_HPP */

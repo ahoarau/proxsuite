@@ -2,8 +2,7 @@
 //
 // Copyright (c) 2022 INRIA
 //
-#ifndef PROXSUITE_LINALG_DENSE_LDLT_SOLVE_HPP
-#define PROXSUITE_LINALG_DENSE_LDLT_SOLVE_HPP
+#pragma once
 
 #include "proxsuite/linalg/dense/core.hpp"
 #include <Eigen/Core>
@@ -34,5 +33,3 @@ solve(Mat const& mat, Rhs&& rhs)
 } // namespace dense
 } // namespace linalg
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_LINALG_DENSE_LDLT_SOLVE_HPP */

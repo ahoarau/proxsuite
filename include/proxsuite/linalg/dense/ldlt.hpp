@@ -2,8 +2,7 @@
 //
 // Copyright (c) 2022 INRIA
 //
-#ifndef PROXSUITE_LINALG_DENSE_LDLT_LDLT_HPP
-#define PROXSUITE_LINALG_DENSE_LDLT_LDLT_HPP
+#pragma once
 
 #include "proxsuite/linalg/dense/factorize.hpp"
 #include "proxsuite/linalg/dense/update.hpp"
@@ -737,5 +736,3 @@ public:
 } // namespace dense
 } // namespace linalg
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_LINALG_DENSE_LDLT_LDLT_HPP */

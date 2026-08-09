@@ -5,8 +5,7 @@
  * @file optional.hpp
  */
 
-#ifndef PROXSUITE_HELPERS_OPTIONAL_HPP
-#define PROXSUITE_HELPERS_OPTIONAL_HPP
+#pragma once
 
 #include <optional>
 
@@ -16,5 +15,3 @@ using optional = std::optional<T>;
 using nullopt_t = std::nullopt_t;
 inline constexpr nullopt_t nullopt = std::nullopt;
 } // namespace proxsuite
-
-#endif /* end of include guard PROXSUITE_HELPERS_OPTIONAL_HPP */

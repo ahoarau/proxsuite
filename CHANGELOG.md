@@ -16,11 +16,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Owning buffers (`Results::active_constraints`, workspace and model storage, `dense::Ldlt` storage) are now `std::vector`
 - `PROXSUITE_THROW_PRETTY` and `PROXSUITE_CHECK_ARGUMENT_SIZE` moved to `proxsuite/helpers/common.hpp`
 - `*_req` functions take their element type as an explicit template argument instead of a `Tag<T>` parameter, e.g. `StackReq::with_len<T>(n)` and `stack.make_new_for_overwrite<T>(n)`
+- Macros defined by installed headers are now prefixed and no longer leak: `LDLT_TEMP_{VEC,MAT}[_UNINIT]` become `PROXSUITE_LDLT_TEMP_{VEC,MAT}[_UNINIT]`, and `DENSE_LDLT_FP_PRAGMA`, `LDLT_FN_IMPL3`, `LDLT_LOAD_STORE`, `LDLT_ARITHMETIC_IMPL` are `#undef`'d after use
+- `__proxsuite_fwd_hpp__`, `__LDLT_TEMP_VEC_IMPL` and `__LDLT_TEMP_MAT_IMPL` are renamed: identifiers with a leading double underscore are reserved to the implementation
 
 ### Removed
 - CMake: remove unconditional `DOXYGEN_USE_MATHJAX`. You can turn it on if necessary with `cmake -DDOXYGEN_USE_MATHJAX=ON`. ([#467](https://github.com/Simple-Robotics/proxsuite/pull/467))
 - The bundled `proxsuite::linalg::veg` metaprogramming library (`proxsuite/linalg/veg/**`) and its macros (`VEG_*`, `LDLT_EXPLICIT_TPL_*`). Its C++11 emulations of concepts, tuples, tags and allocators are replaced by their standard C++17 equivalents.
 - `PROXSUITE_DEDUCE_RET`, replaced by C++14 return type deduction
+- `PROXSUITE_WITH_CPP_14`, `PROXSUITE_WITH_CPP_17` and `PROXSUITE_MAYBE_UNUSED`. C++17 is required, so `proxsuite::optional` is always `std::optional` and `[[maybe_unused]]` is always available
+- `PROX_QP_ALL_OF` / `PROX_QP_ANY_OF`, replaced by direct `StackReq::and_` / `StackReq::or_` calls
+- `PROXSUITE_CHECK_SIZE`, a macro that hid a `return false` at its call sites
 
 ## [0.7.3] - 2026-05-11
 

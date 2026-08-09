@@ -20,7 +20,8 @@ allocator the solvers use for their scratch space. It now lives in
 | A C++ user of `proxqp::dense::QP` / `proxqp::sparse::QP` only | **None,** unless you read the workspace or model buffers directly. |
 | A C++ user who names `proxsuite::linalg::veg::…` | See below; the namespace is gone. |
 | A C++ user of the `linalg` backends (`Ldlt`, sparse factorization) | See below; the `*_req` signatures changed. |
-| Anyone loading archives written by an older ProxSuite | **Archives are not compatible.** See "Serialized archives" below. |
+| A Python user unpickling `Results` / `QP` saved by an older ProxSuite | **The pickle will not load.** See "Serialized archives" below. |
+| Anyone reading JSON or XML archives written by an older ProxSuite | **Not compatible.** Binary archives are unaffected on 64-bit. See below. |
 
 ---
 
@@ -293,11 +294,29 @@ double underscore, which is reserved to the implementation.
 
 #### Serialized archives
 
-**Archives written by an older ProxSuite will not load.**
+Two serialized fields changed representation: `Results<T>::active_constraints`
+and `dense::Workspace<T>::alphas`. They used to be written by hand-rolled
+`save`/`load` overloads on `veg::Vec`; they now go through cereal's own
+`std::vector` support.
 
-`Results::active_constraints` and the workspace vectors used to be written by
-hand-rolled `save`/`load` overloads. They now go through cereal's own
-`std::vector` support, and the layout is different:
+**Binary archives are unaffected on 64-bit platforms.** The old code wrote the
+element count as an `isize` (`std::ptrdiff_t`), cereal writes it as a
+`cereal::size_type` (`std::uint64_t`); both are eight little-endian bytes for a
+non-negative count, and the elements follow unchanged. The two encodings are
+byte-for-byte identical:
+
+```text
+old: 02 00 00 00 00 00 00 00 01 00     // std::vector<bool>{ true, false }
+new: 02 00 00 00 00 00 00 00 01 00
+```
+
+On a 32-bit platform `std::ptrdiff_t` is four bytes, so binary archives written
+there would not be compatible either.
+
+**JSON and XML archives are not compatible.** The old code emitted a named
+`len` field followed by elements that cereal auto-named `value0`, `value1`, …,
+producing a JSON *object*. Cereal's vector support emits a JSON *array*, with
+the size implicit in the array length:
 
 ```json
 // before
@@ -307,10 +326,18 @@ hand-rolled `save`/`load` overloads. They now go through cereal's own
 "active_constraints": [ true, false ]
 ```
 
-There is no archive version tag, so an old archive will fail to parse rather
-than being detected and rejected. Note that the old `load` was itself broken —
-it reserved capacity and then wrote through `operator[]`, past `size()` — so
-old archives may never have round-tripped correctly.
+These are different node types, so an old archive will not round-trip. There is
+no version tag in the format, so nothing detects the mismatch and reports it
+cleanly.
+
+This reaches Python: `Results.__getstate__` and `__setstate__` go through
+`saveToString` / `loadFromString`, which use the JSON archive. **Pickles of
+`Results` — and of `QP`, which holds one — produced by an older ProxSuite will
+not load.** Re-generate them, or read them with the older version and convert.
+
+Incidentally, the old `load` was broken independently of any of this: it called
+`reserve(len)` and then wrote through `operator[]`, past `size()`. Round-tripping
+a non-empty vector was undefined behaviour.
 
 ---
 
@@ -323,4 +350,5 @@ old archives may never have round-tripped correctly.
 - Alignment of the dense factorization storage. The removed SIMD-aligned
   allocator never asked for more alignment than `operator new` already
   guarantees, so `std::vector`'s default allocator is equivalent.
-- The Python bindings, in both name and behaviour.
+- The Python bindings, in both name and behaviour — but see the note on
+  pickles above, which are data rather than API.

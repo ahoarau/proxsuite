@@ -5,8 +5,9 @@
 #ifndef PROXSUITE_PROXQP_DENSE_MODEL_HPP
 #define PROXSUITE_PROXQP_DENSE_MODEL_HPP
 
+#include <proxsuite/helpers/common.hpp>
 #include <Eigen/Core>
-#include "proxsuite/linalg/veg/type_traits/core.hpp"
+#include <type_traits>
 #include "proxsuite/proxqp/dense/fwd.hpp"
 #include "proxsuite/proxqp/sparse/model.hpp"
 #include "proxsuite/proxqp/dense/backward_data.hpp"

@@ -1,8 +1,21 @@
 #include <Eigen/SparseCore>
 #include <matio.h>
 #include <string>
-#include <proxsuite/linalg/veg/util/assert.hpp>
+#include <cassert>
 #include <iostream>
+#include <utility>
+
+/// Runs `fn` when it goes out of scope, whichever way the scope is left.
+template<typename Fn>
+struct ScopeGuard
+{
+  Fn fn;
+  ~ScopeGuard() { fn(); }
+  ScopeGuard(ScopeGuard const&) = delete;
+  auto operator=(ScopeGuard const&) -> ScopeGuard& = delete;
+};
+template<typename Fn>
+ScopeGuard(Fn) -> ScopeGuard<Fn>;
 
 struct MarosMeszarosQp
 {
@@ -27,24 +40,20 @@ load_qp(char const* filename, bool check_size = false) -> MarosMeszarosQp
   using Vec = MarosMeszarosQp::Vec;
 
   mat_t* mat_fp = Mat_Open(filename, MAT_ACC_RDONLY);
-  VEG_ASSERT(mat_fp != nullptr);
-  auto&& _mat_fp_cleanup =
-    proxsuite::linalg::veg::defer([&] { Mat_Close(mat_fp); });
-  proxsuite::linalg::veg::unused(_mat_fp_cleanup);
+  assert(mat_fp != nullptr);
+  ScopeGuard _mat_fp_cleanup{ [&] { Mat_Close(mat_fp); } };
 
   bool skip = false;
 
   auto load_mat = [&](char const* name) -> Mat {
     matvar_t* mat_var = Mat_VarRead(mat_fp, name);
-    VEG_ASSERT(mat_var != nullptr);
-    auto&& _mat_var_cleanup =
-      proxsuite::linalg::veg::defer([&] { Mat_VarFree(mat_var); });
-    proxsuite::linalg::veg::unused(_mat_var_cleanup);
+    assert(mat_var != nullptr);
+    ScopeGuard _mat_var_cleanup{ [&] { Mat_VarFree(mat_var); } };
 
-    VEG_ASSERT(int(mat_var->class_type) == int(matio_classes::MAT_C_SPARSE));
+    assert(int(mat_var->class_type) == int(matio_classes::MAT_C_SPARSE));
     auto const* ptr = static_cast<mat_sparse_t const*>(mat_var->data);
 
-    using proxsuite::linalg::veg::isize;
+    using proxsuite::isize;
 
     isize nrows = isize(mat_var->dims[0]);
     isize ncols = isize(mat_var->dims[1]);
@@ -77,12 +86,10 @@ load_qp(char const* filename, bool check_size = false) -> MarosMeszarosQp
 
   auto load_vec = [&](char const* name) -> Vec {
     matvar_t* mat_var = Mat_VarRead(mat_fp, name);
-    VEG_ASSERT(mat_var != nullptr);
-    auto&& _mat_var_cleanup =
-      proxsuite::linalg::veg::defer([&] { Mat_VarFree(mat_var); });
-    proxsuite::linalg::veg::unused(_mat_var_cleanup);
+    assert(mat_var != nullptr);
+    ScopeGuard _mat_var_cleanup{ [&] { Mat_VarFree(mat_var); } };
 
-    VEG_ASSERT(int(mat_var->data_type) == int(matio_types::MAT_T_DOUBLE));
+    assert(int(mat_var->data_type) == int(matio_types::MAT_T_DOUBLE));
     auto const* ptr = static_cast<double const*>(mat_var->data);
 
     auto view = Eigen::Map<Vec const>{
@@ -131,7 +138,7 @@ preprocess_qp(MarosMeszarosQp& qp) -> PreprocessedQp
 {
   using Mat = MarosMeszarosQp::Mat;
   using Vec = MarosMeszarosQp::Vec;
-  using proxsuite::linalg::veg::isize;
+  using proxsuite::isize;
 
   auto eq = qp.l.array().cwiseEqual(qp.u.array()).eval();
 
@@ -162,8 +169,8 @@ preprocess_qp(MarosMeszarosQp& qp) -> PreprocessedQp
   }
 
   return {
-    qp.P.toDense(), VEG_FWD(A), VEG_FWD(C), VEG_FWD(qp.q),
-    VEG_FWD(b),     VEG_FWD(u), VEG_FWD(l),
+    qp.P.toDense(), std::move(A), std::move(C), std::move(qp.q),
+    std::move(b),   std::move(u), std::move(l),
   };
 }
 
@@ -172,7 +179,7 @@ preprocess_qp_sparse(MarosMeszarosQp&& qp) -> PreprocessedQpSparse
 {
   using Mat = MarosMeszarosQp::Mat;
   using Vec = MarosMeszarosQp::Vec;
-  using proxsuite::linalg::veg::isize;
+  using proxsuite::isize;
 
   auto eq = qp.l.array().cwiseEqual(qp.u.array()).eval();
 
@@ -208,11 +215,11 @@ preprocess_qp_sparse(MarosMeszarosQp&& qp) -> PreprocessedQpSparse
 
   return {
     qp.P.triangularView<Eigen::Upper>(),
-    VEG_FWD(AT),
-    VEG_FWD(CT),
-    VEG_FWD(qp.q),
-    VEG_FWD(b),
-    VEG_FWD(u),
-    VEG_FWD(l),
+    std::move(AT),
+    std::move(CT),
+    std::move(qp.q),
+    std::move(b),
+    std::move(u),
+    std::move(l),
   };
 }

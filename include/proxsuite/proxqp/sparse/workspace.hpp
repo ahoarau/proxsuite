@@ -14,7 +14,7 @@
 #include <proxsuite/proxqp/timings.hpp>
 #include <proxsuite/proxqp/settings.hpp>
 #include <proxsuite/proxqp/dense/views.hpp>
-#include <proxsuite/linalg/veg/vec.hpp>
+#include <vector>
 #include "proxsuite/proxqp/sparse/views.hpp"
 #include "proxsuite/proxqp/sparse/model.hpp"
 #include "proxsuite/proxqp/results.hpp"
@@ -34,10 +34,9 @@ refactorize(Workspace<T, I>& work,
             Results<T> const& results,
             Settings<T> const& settings,
             proxsuite::linalg::sparse::MatMut<T, I> kkt_active,
-            proxsuite::linalg::veg::SliceMut<bool> active_constraints,
+            proxsuite::linalg::SliceMut<bool> active_constraints,
             Model<T, I> const& data,
-            proxsuite::linalg::veg::dynstack::DynStackMut stack,
-            proxsuite::linalg::veg::Tag<T>& xtag)
+            proxsuite::linalg::dynstack::DynStackMut stack)
 {
   isize n_tot = kkt_active.nrows();
   T mu_eq_neg = -results.info.mu_eq;
@@ -53,20 +52,20 @@ refactorize(Workspace<T, I>& work,
 
   if (work.internal.do_ldlt) {
     proxsuite::linalg::sparse::factorize_symbolic_non_zeros(
-      work.internal.ldl.nnz_counts.ptr_mut(),
-      work.internal.ldl.etree.ptr_mut(),
-      work.internal.ldl.perm_inv.ptr_mut(),
-      work.internal.ldl.perm.ptr_mut(),
+      work.internal.ldl.nnz_counts.data(),
+      work.internal.ldl.etree.data(),
+      work.internal.ldl.perm_inv.data(),
+      work.internal.ldl.perm.data(),
       kkt_active.symbolic(),
       stack);
 
     isize nnz = 0;
-    VEG_ONLY_USED_FOR_DEBUG(nnz);
+    (void)nnz;
     for (usize j = 0; j < usize(kkt_active.ncols()); ++j) {
       nnz += usize(kkt_active.col_end(j) - kkt_active.col_start(j));
     }
-    VEG_ASSERT(kkt_active.nnz() == nnz);
-    auto _diag = stack.make_new_for_overwrite(xtag, n_tot);
+    assert(kkt_active.nnz() == nnz);
+    auto _diag = stack.make_new_for_overwrite<T>(n_tot);
     T* diag = _diag.ptr_mut();
 
     for (isize i = 0; i < data.dim; ++i) {
@@ -81,13 +80,13 @@ refactorize(Workspace<T, I>& work,
     }
 
     proxsuite::linalg::sparse::factorize_numeric(
-      work.internal.ldl.values.ptr_mut(),
-      work.internal.ldl.row_indices.ptr_mut(),
+      work.internal.ldl.values.data(),
+      work.internal.ldl.row_indices.data(),
       diag,
-      work.internal.ldl.perm.ptr_mut(),
-      work.internal.ldl.col_ptrs.ptr(),
-      work.internal.ldl.etree.ptr_mut(),
-      work.internal.ldl.perm_inv.ptr_mut(),
+      work.internal.ldl.perm.data(),
+      work.internal.ldl.col_ptrs.data(),
+      work.internal.ldl.etree.data(),
+      work.internal.ldl.perm_inv.data(),
       kkt_active.as_const(),
       stack);
   } else {
@@ -106,13 +105,13 @@ refactorize(Workspace<T, I>& work,
 template<typename T, typename I>
 struct Ldlt
 {
-  proxsuite::linalg::veg::Vec<I> etree;
-  proxsuite::linalg::veg::Vec<I> perm;
-  proxsuite::linalg::veg::Vec<I> perm_inv;
-  proxsuite::linalg::veg::Vec<I> col_ptrs;
-  proxsuite::linalg::veg::Vec<I> nnz_counts;
-  proxsuite::linalg::veg::Vec<I> row_indices;
-  proxsuite::linalg::veg::Vec<T> values;
+  std::vector<I> etree;
+  std::vector<I> perm;
+  std::vector<I> perm_inv;
+  std::vector<I> col_ptrs;
+  std::vector<I> nnz_counts;
+  std::vector<I> row_indices;
+  std::vector<T> values;
 };
 
 template<typename T, typename I>
@@ -122,7 +121,7 @@ struct Workspace
   struct /* NOLINT */
   {
     // temporary allocations
-    proxsuite::linalg::veg::Vec<proxsuite::linalg::veg::mem::byte>
+    std::vector<unsigned char>
       storage; // memory of the stack with the requirements req which determines
                // its size.
     Ldlt<T, I> ldl;
@@ -134,7 +133,7 @@ struct Workspace
     Eigen::Matrix<T, Eigen::Dynamic, 1> b_scaled;
     Eigen::Matrix<T, Eigen::Dynamic, 1> l_scaled;
     Eigen::Matrix<T, Eigen::Dynamic, 1> u_scaled;
-    proxsuite::linalg::veg::Vec<I> kkt_nnz_counts;
+    std::vector<I> kkt_nnz_counts;
 
     // stored in unique_ptr because we need a stable address
     std::unique_ptr<detail::AugmentedKkt<T, I>>
@@ -146,11 +145,11 @@ struct Workspace
       matrix_free_solver; // eigen based method which takes in entry vector, and
                           // performs matrix vector products
 
-    auto stack_mut() -> proxsuite::linalg::veg::dynstack::DynStackMut
+    auto stack_mut() -> proxsuite::linalg::dynstack::DynStackMut
     {
       return {
-        proxsuite::linalg::veg::from_slice_mut,
-        storage.as_mut(),
+        storage.data(),
+        proxsuite::isize(storage.size()),
       };
     } // exploits all available memory in storage
 
@@ -162,7 +161,7 @@ struct Workspace
   } internal;
   VecBool active_set_up;
   VecBool active_set_low;
-  proxsuite::linalg::veg::Vec<bool> active_inequalities;
+  VecBool active_inequalities;
   isize lnnz;
   /*!
    * Constructor using the symbolic factorization.
@@ -196,9 +195,8 @@ struct Workspace
     data.A_nnz = AT.nnz();
     data.C_nnz = CT.nnz();
 
-    using namespace proxsuite::linalg::veg::dynstack;
+    using namespace proxsuite::linalg::dynstack;
     using namespace proxsuite::linalg::sparse::util;
-    proxsuite::linalg::veg::Tag<I> itag;
 
     isize n = H.nrows();
     isize n_eq = AT.ncols();
@@ -211,12 +209,12 @@ struct Workspace
     // assuming H, AT, CT are sorted
     // and H is upper triangular
     {
-      data.kkt_col_ptrs.resize_for_overwrite(n_tot + 1); //
-      data.kkt_row_indices.resize_for_overwrite(nnz_tot);
-      data.kkt_values.resize_for_overwrite(nnz_tot);
+      data.kkt_col_ptrs.resize(usize(n_tot + 1)); //
+      data.kkt_row_indices.resize(usize(nnz_tot));
+      data.kkt_values.resize(usize(nnz_tot));
 
-      I* kktp = data.kkt_col_ptrs.ptr_mut();
-      I* kkti = data.kkt_row_indices.ptr_mut();
+      I* kktp = data.kkt_col_ptrs.data();
+      I* kkti = data.kkt_row_indices.data();
 
       kktp[0] = 0;
       usize col = 0;
@@ -239,10 +237,10 @@ struct Workspace
           for (usize p = col_start; p < col_end; ++p) {
             usize i = zero_extend(mi[p]);
             if (assert_sym_hi) {
-              VEG_ASSERT(i <= j);
+              assert(i <= j);
             }
 
-            kkti[pos] = proxsuite::linalg::veg::nb::narrow<I>{}(i);
+            kkti[pos] = proxsuite::linalg::sparse::util::narrow<I>(i);
 
             ++pos;
           }
@@ -257,49 +255,45 @@ struct Workspace
     data.kkt_col_ptrs_unscaled = data.kkt_col_ptrs;
     data.kkt_row_indices_unscaled = data.kkt_row_indices;
 
-    storage.resize_for_overwrite( //
-      (StackReq::with_len(itag, n_tot) &
-       proxsuite::linalg::sparse::factorize_symbolic_req( //
-         itag,                                            //
-         n_tot,                                           //
-         nnz_tot,                                         //
-         proxsuite::linalg::sparse::Ordering::amd))       //
-        .alloc_req()                                      //
-    );
+    storage.resize(usize((StackReq::with_len<I>(n_tot) &
+                          proxsuite::linalg::sparse::factorize_symbolic_req<I>(
+                            n_tot,                                     //
+                            nnz_tot,                                   //
+                            proxsuite::linalg::sparse::Ordering::amd)) //
+                           .alloc_req()));
 
-    ldl.col_ptrs.resize_for_overwrite(n_tot + 1);
-    ldl.perm_inv.resize_for_overwrite(n_tot);
+    ldl.col_ptrs.resize(usize(n_tot + 1));
+    ldl.perm_inv.resize(usize(n_tot));
 
     DynStackMut stack = stack_mut();
 
     bool overflow = false;
     {
-      ldl.etree.resize_for_overwrite(n_tot);
-      auto etree_ptr = ldl.etree.ptr_mut();
+      ldl.etree.resize(usize(n_tot));
+      auto etree_ptr = ldl.etree.data();
 
-      using namespace proxsuite::linalg::veg::literals;
       auto kkt_sym = proxsuite::linalg::sparse::SymbolicMatRef<I>{
         proxsuite::linalg::sparse::from_raw_parts,
         n_tot,
         n_tot,
         nnz_tot,
-        data.kkt_col_ptrs.ptr(),
+        data.kkt_col_ptrs.data(),
         nullptr,
-        data.kkt_row_indices.ptr(),
+        data.kkt_row_indices.data(),
       };
       proxsuite::linalg::sparse::factorize_symbolic_non_zeros( //
-        ldl.col_ptrs.ptr_mut() +
+        ldl.col_ptrs.data() +
           1, // reimplements col counts to get the matrix free version as well
         etree_ptr,
-        ldl.perm_inv.ptr_mut(),
+        ldl.perm_inv.data(),
         static_cast<I const*>(nullptr),
         kkt_sym,
         stack);
 
-      auto pcol_ptrs = ldl.col_ptrs.ptr_mut();
+      auto pcol_ptrs = ldl.col_ptrs.data();
       pcol_ptrs[0] = I(0);
 
-      using proxsuite::linalg::veg::u64;
+      using u64 = std::uint64_t;
       u64 acc = 0;
 
       for (usize i = 0; i < usize(n_tot); ++i) {
@@ -311,7 +305,7 @@ struct Workspace
       }
     }
 
-    lnnz = isize(zero_extend(ldl.col_ptrs[n_tot]));
+    lnnz = isize(zero_extend(ldl.col_ptrs[usize(n_tot)]));
 
     // if ldlt is too sparse
     // do_ldlt = !overflow && lnnz < (10000000);
@@ -335,7 +329,7 @@ struct Workspace
                   const Settings<T>& settings,
                   bool execute_or_not,
                   P& precond,
-                  proxsuite::linalg::veg::dynstack::StackReq precond_req)
+                  proxsuite::linalg::dynstack::StackReq precond_req)
   {
 
     auto& ldl = internal.ldl;
@@ -366,12 +360,10 @@ struct Workspace
     data.l = qp.l.to_eigen();
     data.u = qp.u.to_eigen();
 
-    using namespace proxsuite::linalg::veg::dynstack;
+    using namespace proxsuite::linalg::dynstack;
     using namespace proxsuite::linalg::sparse::util;
 
     using SR = StackReq;
-    proxsuite::linalg::veg::Tag<I> itag;
-    proxsuite::linalg::veg::Tag<T> xtag;
 
     isize n = qp.H.nrows();
     isize n_eq = qp.AT.ncols();
@@ -386,13 +378,13 @@ struct Workspace
       // assuming H, AT, CT are sorted
       // and H is upper triangular
       {
-        data.kkt_col_ptrs.resize_for_overwrite(n_tot + 1);
-        data.kkt_row_indices.resize_for_overwrite(nnz_tot);
-        data.kkt_values.resize_for_overwrite(nnz_tot);
+        data.kkt_col_ptrs.resize(usize(n_tot + 1));
+        data.kkt_row_indices.resize(usize(nnz_tot));
+        data.kkt_values.resize(usize(nnz_tot));
 
-        I* kktp = data.kkt_col_ptrs.ptr_mut();
-        I* kkti = data.kkt_row_indices.ptr_mut();
-        T* kktx = data.kkt_values.ptr_mut();
+        I* kktp = data.kkt_col_ptrs.data();
+        I* kkti = data.kkt_row_indices.data();
+        T* kktx = data.kkt_values.data();
 
         kktp[0] = 0;
         usize col = 0;
@@ -415,10 +407,10 @@ struct Workspace
             for (usize p = col_start; p < col_end; ++p) {
               usize i = zero_extend(mi[p]);
               if (assert_sym_hi) {
-                VEG_ASSERT(i <= j);
+                assert(i <= j);
               }
 
-              kkti[pos] = proxsuite::linalg::veg::nb::narrow<I>{}(i);
+              kkti[pos] = proxsuite::linalg::sparse::util::narrow<I>(i);
               kktx[pos] = mx[p];
 
               ++pos;
@@ -435,51 +427,48 @@ struct Workspace
       data.kkt_row_indices_unscaled = data.kkt_row_indices;
       data.kkt_values_unscaled = data.kkt_values;
 
-      storage.resize_for_overwrite( //
-        (StackReq::with_len(itag, n_tot) &
-         proxsuite::linalg::sparse::factorize_symbolic_req( //
-           itag,                                            //
-           n_tot,                                           //
-           nnz_tot,                                         //
-           proxsuite::linalg::sparse::Ordering::amd))       //
-          .alloc_req()                                      //
-      );
+      storage.resize(
+        usize((StackReq::with_len<I>(n_tot) &
+               proxsuite::linalg::sparse::factorize_symbolic_req<I>(
+                 n_tot,                                     //
+                 nnz_tot,                                   //
+                 proxsuite::linalg::sparse::Ordering::amd)) //
+                .alloc_req()));
 
-      ldl.col_ptrs.resize_for_overwrite(n_tot + 1);
-      ldl.perm_inv.resize_for_overwrite(n_tot);
+      ldl.col_ptrs.resize(usize(n_tot + 1));
+      ldl.perm_inv.resize(usize(n_tot));
 
       DynStackMut stack = stack_mut();
 
       bool overflow = false;
       {
-        ldl.etree.resize_for_overwrite(n_tot);
-        auto etree_ptr = ldl.etree.ptr_mut();
+        ldl.etree.resize(usize(n_tot));
+        auto etree_ptr = ldl.etree.data();
 
-        using namespace proxsuite::linalg::veg::literals;
         auto kkt_sym = proxsuite::linalg::sparse::SymbolicMatRef<I>{
           proxsuite::linalg::sparse::from_raw_parts,
           n_tot,
           n_tot,
           nnz_tot,
-          data.kkt_col_ptrs.ptr(),
+          data.kkt_col_ptrs.data(),
           nullptr,
-          data.kkt_row_indices.ptr(),
+          data.kkt_row_indices.data(),
         };
         proxsuite::linalg::sparse::factorize_symbolic_non_zeros( //
-          ldl.col_ptrs.ptr_mut() + 1,
+          ldl.col_ptrs.data() + 1,
           etree_ptr,
-          ldl.perm_inv.ptr_mut(),
+          ldl.perm_inv.data(),
           static_cast<I const*>(nullptr),
           kkt_sym,
           stack);
 
-        auto pcol_ptrs = ldl.col_ptrs.ptr_mut();
+        auto pcol_ptrs = ldl.col_ptrs.data();
         pcol_ptrs[0] = I(0); // pcol_ptrs +1: pointor towards the nbr of non
                              // zero elts per column of the ldlt
         // we need to compute its cumulative sum below to determine if there
         // could be an overflow
 
-        using proxsuite::linalg::veg::u64;
+        using u64 = std::uint64_t;
         u64 acc = 0;
 
         for (usize i = 0; i < usize(n_tot); ++i) {
@@ -491,7 +480,7 @@ struct Workspace
         }
       }
 
-      const auto local_lnnz = isize(zero_extend(ldl.col_ptrs[n_tot]));
+      const auto local_lnnz = isize(zero_extend(ldl.col_ptrs[usize(n_tot)]));
 
       // if ldlt is too sparse
       // do_ldlt = !overflow && local_lnnz < (10000000);
@@ -504,7 +493,7 @@ struct Workspace
       }
 
     } else {
-      T* kktx = data.kkt_values.ptr_mut();
+      T* kktx = data.kkt_values.data();
       usize pos = 0;
       auto insert_submatrix =
         [&](proxsuite::linalg::sparse::MatRef<T, I> m) -> void {
@@ -529,39 +518,33 @@ struct Workspace
       data.kkt_values_unscaled = data.kkt_values;
     }
 #define PROX_QP_ALL_OF(...)                                                    \
-  ::proxsuite::linalg::veg::dynstack::StackReq::and_(                          \
-    ::proxsuite::linalg::veg::init_list(__VA_ARGS__))
+  ::proxsuite::linalg::dynstack::StackReq::and_(__VA_ARGS__)
 #define PROX_QP_ANY_OF(...)                                                    \
-  ::proxsuite::linalg::veg::dynstack::StackReq::or_(                           \
-    ::proxsuite::linalg::veg::init_list(__VA_ARGS__))
+  ::proxsuite::linalg::dynstack::StackReq::or_(__VA_ARGS__)
     //  ? --> if
     auto refactorize_req =
-      do_ldlt
-        ? PROX_QP_ANY_OF({
-            proxsuite::linalg::sparse::factorize_symbolic_req( // symbolic ldl
-              itag,
-              n_tot,
-              nnz_tot,
-              proxsuite::linalg::sparse::Ordering::user_provided),
-            PROX_QP_ALL_OF({
-              SR::with_len(xtag, n_tot),                        // diag
-              proxsuite::linalg::sparse::factorize_numeric_req( // numeric ldl
-                xtag,
-                itag,
-                n_tot,
-                nnz_tot,
-                proxsuite::linalg::sparse::Ordering::user_provided),
-            }),
-          })
-        : PROX_QP_ALL_OF({
-            SR::with_len(itag, 0), // compute necessary space for storing n elts
-                                   // of type I (n = 0 here)
-            SR::with_len(xtag, 0), // compute necessary space for storing n elts
-                                   // of type T (n = 0 here)
-          });
+      do_ldlt ? PROX_QP_ANY_OF({
+                  proxsuite::linalg::sparse::factorize_symbolic_req<I>(
+                    n_tot,
+                    nnz_tot,
+                    proxsuite::linalg::sparse::Ordering::user_provided),
+                  PROX_QP_ALL_OF({
+                    SR::with_len<T>(n_tot), // diag
+                    proxsuite::linalg::sparse::factorize_numeric_req<T, I>(
+                      n_tot,
+                      nnz_tot,
+                      proxsuite::linalg::sparse::Ordering::user_provided),
+                  }),
+                })
+              : PROX_QP_ALL_OF({
+                  SR::with_len<I>(0), // compute necessary space for storing n
+                                      // elts of type I (n = 0 here)
+                  SR::with_len<T>(0), // compute necessary space for storing n
+                                      // elts of type T (n = 0 here)
+                });
 
     auto x_vec = [&](isize n) noexcept -> StackReq {
-      return proxsuite::linalg::dense::temp_vec_req(xtag, n);
+      return proxsuite::linalg::dense::temp_vec_req<T>(n);
     };
 
     auto ldl_solve_in_place_req = PROX_QP_ALL_OF({
@@ -586,19 +569,16 @@ struct Workspace
       PROX_QP_ANY_OF({
         ldl_solve_in_place_req,
         PROX_QP_ALL_OF({
-          SR::with_len(proxsuite::linalg::veg::Tag<bool>{},
-                       n_in), // active_set_lo
-          SR::with_len(proxsuite::linalg::veg::Tag<bool>{},
-                       n_in), // active_set_up
-          SR::with_len(proxsuite::linalg::veg::Tag<bool>{},
-                       n_in), // new_active_constraints
-          (do_ldlt && n_in > 0) ? PROX_QP_ANY_OF({
-                                    proxsuite::linalg::sparse::add_row_req(
-                                      xtag, itag, n_tot, false, n, n_tot),
-                                    proxsuite::linalg::sparse::delete_row_req(
-                                      xtag, itag, n_tot, n_tot),
-                                  })
-                                : refactorize_req,
+          SR::with_len<bool>(n_in), // active_set_lo
+          SR::with_len<bool>(n_in), // active_set_up
+          SR::with_len<bool>(n_in), // new_active_constraints
+          (do_ldlt && n_in > 0)
+            ? PROX_QP_ANY_OF({
+                proxsuite::linalg::sparse::add_row_req<T, I>(
+                  n_tot, false, n, n_tot),
+                proxsuite::linalg::sparse::delete_row_req<T, I>(n_tot, n_tot),
+              })
+            : refactorize_req,
         }),
         PROX_QP_ALL_OF({
           x_vec(n),    // Hdx
@@ -631,42 +611,39 @@ struct Workspace
 
     auto req = //
       PROX_QP_ALL_OF({
-        x_vec(n),    // g_scaled
-        x_vec(n_eq), // b_scaled
-        x_vec(n_in), // l_scaled
-        x_vec(n_in), // u_scaled
-        SR::with_len(proxsuite::linalg::veg::Tag<bool>{},
-                     n_in),        // active constr
-        SR::with_len(itag, n_tot), // kkt nnz counts
+        x_vec(n),                 // g_scaled
+        x_vec(n_eq),              // b_scaled
+        x_vec(n_in),              // l_scaled
+        x_vec(n_in),              // u_scaled
+        SR::with_len<bool>(n_in), // active constr
+        SR::with_len<I>(n_tot),   // kkt nnz counts
         refactorize_req,
         PROX_QP_ANY_OF({
           precond_req,
           PROX_QP_ALL_OF({
             do_ldlt ? PROX_QP_ALL_OF({
-                        SR::with_len(itag, n_tot), // perm
-                        SR::with_len(itag, n_tot), // etree
-                        SR::with_len(itag, n_tot), // ldl nnz counts
-                        SR::with_len(itag, lnnz),  // ldl row indices
-                        SR::with_len(xtag, lnnz),  // ldl values
+                        SR::with_len<I>(n_tot), // perm
+                        SR::with_len<I>(n_tot), // etree
+                        SR::with_len<I>(n_tot), // ldl nnz counts
+                        SR::with_len<I>(lnnz),  // ldl row indices
+                        SR::with_len<T>(lnnz),  // ldl values
                       })
                     : PROX_QP_ALL_OF({
-                        SR::with_len(itag, 0),
-                        SR::with_len(xtag, 0),
+                        SR::with_len<I>(0),
+                        SR::with_len<T>(0),
                       }),
             iter_req,
           }),
         }),
       });
 
-    storage.resize_for_overwrite(
-      req.alloc_req()); // defines the maximal storage size
-    // storage.resize(n): if it is done twice in a row, the second times it does
-    // nothing, as the same resize has been asked
+    storage.resize(usize(req.alloc_req())); // defines the maximal storage size
+    // storage.resize(usize(n)): if it is done twice in a row, the second times
+    // it does nothing, as the same resize has been asked
 
     // preconditioner
     auto kkt = data.kkt_mut();
     auto kkt_top_n_rows = detail::top_rows_mut_unchecked(
-      proxsuite::linalg::veg::unsafe,
       kkt,
       n); //  top_rows_mut_unchecked: take a view of sparse matrix for n first
           //  lines ; the function assumes all others lines are zeros;
@@ -681,7 +658,7 @@ struct Workspace
             0 0 0
             0 0 0
 
-            proxsuite::linalg::veg::unsafe:  precises that the function has
+            unchecked: the function does
        undefined behavior if upper condition is not respected.
     */
 
@@ -724,7 +701,7 @@ struct Workspace
                               settings.preconditioner_max_iter,
                               settings.preconditioner_accuracy,
                               stack);
-    kkt_nnz_counts.resize_for_overwrite(n_tot);
+    kkt_nnz_counts.resize(usize(n_tot));
 
     proxsuite::linalg::sparse::MatMut<T, I> kkt_active = {
       proxsuite::linalg::sparse::from_raw_parts,
@@ -735,7 +712,7 @@ struct Workspace
                     // product in augmented KKT with Min res algorithm (to be
                     // exact, it should depend of the initial guess)
       kkt.col_ptrs_mut(),
-      kkt_nnz_counts.ptr_mut(),
+      kkt_nnz_counts.data(),
       kkt.row_indices_mut(),
       kkt.values_mut(),
     };
@@ -761,20 +738,22 @@ struct Workspace
       }
     };
 
-    auto zx = proxsuite::linalg::sparse::util::zero_extend; // ?
-    auto max_lnnz = isize(zx(ldl.col_ptrs[n_tot]));
+    auto zx = [](auto i) {
+      return proxsuite::linalg::sparse::util::zero_extend(i);
+    }; // ?
+    auto max_lnnz = isize(zx(ldl.col_ptrs[usize(n_tot)]));
     isize ldlt_ntot = do_ldlt ? n_tot : 0;
     isize ldlt_lnnz = do_ldlt ? max_lnnz : 0;
 
-    ldl.nnz_counts.resize_for_overwrite(ldlt_ntot);
-    ldl.row_indices.resize_for_overwrite(ldlt_lnnz);
-    ldl.values.resize_for_overwrite(ldlt_lnnz);
+    ldl.nnz_counts.resize(usize(ldlt_ntot));
+    ldl.row_indices.resize(usize(ldlt_lnnz));
+    ldl.values.resize(usize(ldlt_lnnz));
 
-    ldl.perm.resize_for_overwrite(ldlt_ntot);
+    ldl.perm.resize(usize(ldlt_ntot));
     if (do_ldlt) {
       // compute perm from perm_inv
       for (isize i = 0; i < n_tot; ++i) {
-        ldl.perm[isize(zx(ldl.perm_inv[i]))] = I(i);
+        ldl.perm[usize(isize(zx(ldl.perm_inv[usize(i)])))] = I(i);
       }
     }
 
@@ -783,9 +762,9 @@ struct Workspace
   Timer<T> timer;
   Workspace() = default;
 
-  auto ldl_col_ptrs() const -> I const* { return internal.ldl.col_ptrs.ptr(); }
-  auto ldl_col_ptrs_mut() -> I* { return internal.ldl.col_ptrs.ptr_mut(); }
-  auto stack_mut() -> proxsuite::linalg::veg::dynstack::DynStackMut
+  auto ldl_col_ptrs() const -> I const* { return internal.ldl.col_ptrs.data(); }
+  auto ldl_col_ptrs_mut() -> I* { return internal.ldl.col_ptrs.data(); }
+  auto stack_mut() -> proxsuite::linalg::dynstack::DynStackMut
   {
     return internal.stack_mut();
   }

@@ -9,6 +9,7 @@
 #define PROXSUITE_SERIALIZATION_RESULTS_HPP
 
 #include <cereal/cereal.hpp>
+#include <cereal/types/vector.hpp>
 #include <proxsuite/proxqp/results.hpp>
 
 namespace cereal {
@@ -50,27 +51,6 @@ serialize(Archive& archive, proxsuite::proxqp::Results<T>& results)
           CEREAL_NVP(results.si),
           CEREAL_NVP(results.active_constraints),
           CEREAL_NVP(results.info));
-}
-
-template<class Archive>
-void
-save(Archive& ar, proxsuite::linalg::veg::Vec<bool> const& vec_bool)
-{
-  proxsuite::linalg::veg::isize len = vec_bool.len();
-  ar(CEREAL_NVP(len));
-  for (proxsuite::linalg::veg::isize i = 0; i < len; i++)
-    ar(vec_bool[i]);
-}
-
-template<class Archive>
-void
-load(Archive& ar, proxsuite::linalg::veg::Vec<bool>& vec_bool)
-{
-  proxsuite::linalg::veg::isize len;
-  ar(len);
-  vec_bool.reserve(len);
-  for (proxsuite::linalg::veg::isize i = 0; i < len; i++)
-    ar(vec_bool[i]);
 }
 
 } // namespace cereal

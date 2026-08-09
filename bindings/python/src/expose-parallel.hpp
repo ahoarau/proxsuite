@@ -14,7 +14,7 @@ NB_MAKE_OPAQUE(std::vector<proxsuite::proxqp::dense::QP<double>>)
 NB_MAKE_OPAQUE(std::vector<proxsuite::proxqp::dense::Vec<double>>)
 namespace proxsuite {
 namespace proxqp {
-using proxsuite::linalg::veg::isize;
+using proxsuite::isize;
 
 namespace dense {
 namespace python {

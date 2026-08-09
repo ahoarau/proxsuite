@@ -33,7 +33,6 @@ struct PrimalDualDerivativeResult
   T a;
   T b;
   T grad;
-  VEG_REFLECT(PrimalDualDerivativeResult, a, b, grad);
 };
 /*!
  * Stores first derivative and coefficient of the univariate second order
@@ -381,27 +380,27 @@ primal_dual_ls(const Model<T>& qpmodel,
       alpha_ =
         -qpwork.primal_residual_in_scaled_up(i) / (qpwork.Cdx(i) + machine_eps);
       if (alpha_ > machine_eps) {
-        qpwork.alphas.push(alpha_);
+        qpwork.alphas.push_back(alpha_);
       }
       alpha_ = -qpresults.si(i) / (qpwork.Cdx(i) + machine_eps);
       if (alpha_ > machine_eps) {
-        qpwork.alphas.push(alpha_);
+        qpwork.alphas.push_back(alpha_);
       }
     }
   }
 
-  isize n_alpha = qpwork.alphas.len();
+  isize n_alpha = isize(qpwork.alphas.size());
 
   // 1.2 sort the alphas
 
-  std::sort(qpwork.alphas.ptr_mut(), qpwork.alphas.ptr_mut() + n_alpha);
+  std::sort(qpwork.alphas.data(), qpwork.alphas.data() + n_alpha);
   isize new_len = std::unique( //
-                    qpwork.alphas.ptr_mut(),
-                    qpwork.alphas.ptr_mut() + n_alpha) -
-                  qpwork.alphas.ptr_mut();
-  qpwork.alphas.resize(new_len);
+                    qpwork.alphas.data(),
+                    qpwork.alphas.data() + n_alpha) -
+                  qpwork.alphas.data();
+  qpwork.alphas.resize(usize(new_len));
 
-  n_alpha = qpwork.alphas.len();
+  n_alpha = isize(qpwork.alphas.size());
   if (n_alpha == 0) { //
     switch (qpsettings.merit_function_type) {
       case MeritFunctionType::GPDAL: {
@@ -425,7 +424,7 @@ primal_dual_ls(const Model<T>& qpmodel,
   T first_pos_grad = 0;
   T alpha_first_pos = infty;
   for (isize i = 0; i < n_alpha; ++i) {
-    alpha_ = qpwork.alphas[i];
+    alpha_ = qpwork.alphas[usize(i)];
 
     /*
      * 2.1
@@ -607,12 +606,12 @@ active_set_change(const Model<T>& qpmodel,
 
   // suppression pour le nouvel active set, ajout dans le nouvel unactive set
 
-  proxsuite::linalg::veg::dynstack::DynStackMut stack{
-    proxsuite::linalg::veg::from_slice_mut, qpwork.ldl_stack.as_mut()
+  proxsuite::linalg::dynstack::DynStackMut stack{
+    qpwork.ldl_stack.data(), proxsuite::isize(qpwork.ldl_stack.size())
   };
   {
-    auto _planned_to_delete = stack.make_new_for_overwrite(
-      proxsuite::linalg::veg::Tag<isize>{}, isize(n_constraints));
+    auto _planned_to_delete =
+      stack.make_new_for_overwrite<isize>(isize(n_constraints));
     isize* planned_to_delete = _planned_to_delete.ptr_mut();
     isize planned_to_delete_count = 0;
 
@@ -685,8 +684,7 @@ active_set_change(const Model<T>& qpmodel,
   // ajout au nouvel active set, suppression pour le nouvel unactive set
 
   {
-    auto _planned_to_add = stack.make_new_for_overwrite(
-      proxsuite::linalg::veg::Tag<isize>{}, n_constraints);
+    auto _planned_to_add = stack.make_new_for_overwrite<isize>(n_constraints);
     auto planned_to_add = _planned_to_add.ptr_mut();
 
     isize planned_to_add_count = 0;

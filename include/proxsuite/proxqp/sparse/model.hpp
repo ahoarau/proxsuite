@@ -5,6 +5,7 @@
 #ifndef PROXSUITE_PROXQP_SPARSE_MODEL_HPP
 #define PROXSUITE_PROXQP_SPARSE_MODEL_HPP
 
+#include <proxsuite/helpers/common.hpp>
 #include <Eigen/Sparse>
 #include "proxsuite/linalg/sparse/core.hpp"
 #include "proxsuite/proxqp/sparse/fwd.hpp"
@@ -32,13 +33,13 @@ struct Model
   isize A_nnz;
   isize C_nnz;
 
-  proxsuite::linalg::veg::Vec<I> kkt_col_ptrs;
-  proxsuite::linalg::veg::Vec<I> kkt_row_indices;
-  proxsuite::linalg::veg::Vec<T> kkt_values;
+  std::vector<I> kkt_col_ptrs;
+  std::vector<I> kkt_row_indices;
+  std::vector<T> kkt_values;
 
-  proxsuite::linalg::veg::Vec<I> kkt_col_ptrs_unscaled;
-  proxsuite::linalg::veg::Vec<I> kkt_row_indices_unscaled;
-  proxsuite::linalg::veg::Vec<T> kkt_values_unscaled;
+  std::vector<I> kkt_col_ptrs_unscaled;
+  std::vector<I> kkt_row_indices_unscaled;
+  std::vector<T> kkt_values_unscaled;
 
   VectorType g;
   VectorType b;
@@ -76,18 +77,18 @@ struct Model
    */
   auto kkt() const -> proxsuite::linalg::sparse::MatRef<T, I>
   {
-    auto n_tot = kkt_col_ptrs.len() - 1;
-    auto nnz =
-      isize(proxsuite::linalg::sparse::util::zero_extend(kkt_col_ptrs[n_tot]));
+    auto n_tot = isize(kkt_col_ptrs.size()) - 1;
+    auto nnz = isize(
+      proxsuite::linalg::sparse::util::zero_extend(kkt_col_ptrs[usize(n_tot)]));
     return {
       proxsuite::linalg::sparse::from_raw_parts,
       n_tot,
       n_tot,
       nnz,
-      kkt_col_ptrs.ptr(),
+      kkt_col_ptrs.data(),
       nullptr,
-      kkt_row_indices.ptr(),
-      kkt_values.ptr(),
+      kkt_row_indices.data(),
+      kkt_values.data(),
     };
   }
   /*!
@@ -95,18 +96,18 @@ struct Model
    */
   auto kkt_mut() -> proxsuite::linalg::sparse::MatMut<T, I>
   {
-    auto n_tot = kkt_col_ptrs.len() - 1;
-    auto nnz =
-      isize(proxsuite::linalg::sparse::util::zero_extend(kkt_col_ptrs[n_tot]));
+    auto n_tot = isize(kkt_col_ptrs.size()) - 1;
+    auto nnz = isize(
+      proxsuite::linalg::sparse::util::zero_extend(kkt_col_ptrs[usize(n_tot)]));
     return {
       proxsuite::linalg::sparse::from_raw_parts,
       n_tot,
       n_tot,
       nnz,
-      kkt_col_ptrs.ptr_mut(),
+      kkt_col_ptrs.data(),
       nullptr,
-      kkt_row_indices.ptr_mut(),
-      kkt_values.ptr_mut(),
+      kkt_row_indices.data(),
+      kkt_values.data(),
     };
   }
   /*!
@@ -114,18 +115,18 @@ struct Model
    */
   auto kkt_unscaled() const -> proxsuite::linalg::sparse::MatRef<T, I>
   {
-    auto n_tot = kkt_col_ptrs_unscaled.len() - 1;
+    auto n_tot = isize(kkt_col_ptrs_unscaled.size()) - 1;
     auto nnz = isize(proxsuite::linalg::sparse::util::zero_extend(
-      kkt_col_ptrs_unscaled[n_tot]));
+      kkt_col_ptrs_unscaled[usize(n_tot)]));
     return {
       proxsuite::linalg::sparse::from_raw_parts,
       n_tot,
       n_tot,
       nnz,
-      kkt_col_ptrs_unscaled.ptr(),
+      kkt_col_ptrs_unscaled.data(),
       nullptr,
-      kkt_row_indices_unscaled.ptr(),
-      kkt_values_unscaled.ptr(),
+      kkt_row_indices_unscaled.data(),
+      kkt_values_unscaled.data(),
     };
   }
   /*!
@@ -133,18 +134,18 @@ struct Model
    */
   auto kkt_mut_unscaled() -> proxsuite::linalg::sparse::MatMut<T, I>
   {
-    auto n_tot = kkt_col_ptrs_unscaled.len() - 1;
+    auto n_tot = isize(kkt_col_ptrs_unscaled.size()) - 1;
     auto nnz = isize(proxsuite::linalg::sparse::util::zero_extend(
-      kkt_col_ptrs_unscaled[n_tot]));
+      kkt_col_ptrs_unscaled[usize(n_tot)]));
     return {
       proxsuite::linalg::sparse::from_raw_parts,
       n_tot,
       n_tot,
       nnz,
-      kkt_col_ptrs_unscaled.ptr_mut(),
+      kkt_col_ptrs_unscaled.data(),
       nullptr,
-      kkt_row_indices_unscaled.ptr_mut(),
-      kkt_values_unscaled.ptr_mut(),
+      kkt_row_indices_unscaled.data(),
+      kkt_values_unscaled.data(),
     };
   }
 };

@@ -19,7 +19,7 @@
 #include <proxsuite/linalg/sparse/rowmod.hpp>
 #include <proxsuite/proxqp/dense/views.hpp>
 #include <proxsuite/proxqp/settings.hpp>
-#include <proxsuite/linalg/veg/vec.hpp>
+#include <vector>
 #include "proxsuite/proxqp/results.hpp"
 #include "proxsuite/proxqp/utils/prints.hpp"
 #include "proxsuite/proxqp/sparse/views.hpp"
@@ -104,7 +104,7 @@ print_setup_header(const Settings<T>& settings,
 namespace detail {
 
 template<typename T, typename I>
-VEG_NO_INLINE void
+PROXSUITE_NO_INLINE void
 noalias_gevmmv_add_impl( //
   VectorViewMut<T> out_l,
   VectorViewMut<T> out_r,
@@ -112,10 +112,10 @@ noalias_gevmmv_add_impl( //
   VectorView<T> in_l,
   VectorView<T> in_r)
 {
-  VEG_ASSERT_ALL_OF /* NOLINT */ (a.nrows() == out_r.dim,
-                                  a.ncols() == in_r.dim,
-                                  a.ncols() == out_l.dim,
-                                  a.nrows() == in_l.dim);
+  assert(a.nrows() == out_r.dim);
+  assert(a.ncols() == in_r.dim);
+  assert(a.ncols() == out_l.dim);
+  assert(a.nrows() == in_l.dim);
   // equivalent to
   // out_r.to_eigen().noalias() += a.to_eigen() * in_r.to_eigen();
   // out_l.to_eigen().noalias() += a.to_eigen().transpose() * in_l.to_eigen();
@@ -139,7 +139,9 @@ noalias_gevmmv_add_impl( //
 
     usize p = col_start;
 
-    auto zx = proxsuite::linalg::sparse::util::zero_extend;
+    auto zx = [](auto i) {
+      return proxsuite::linalg::sparse::util::zero_extend(i);
+    };
 
     for (; p < col_start + pcount / 4 * 4; p += 4) {
       auto i0 = isize(zx(ai[p + 0]));
@@ -177,16 +179,15 @@ noalias_gevmmv_add_impl( //
 }
 
 template<typename T, typename I>
-VEG_NO_INLINE void
+PROXSUITE_NO_INLINE void
 noalias_symhiv_add_impl( //
   VectorViewMut<T> out,
   proxsuite::linalg::sparse::MatRef<T, I> a,
   VectorView<T> in)
 {
-  VEG_ASSERT_ALL_OF /* NOLINT */ ( //
-    a.nrows() == a.ncols(),
-    a.nrows() == out.dim,
-    a.ncols() == in.dim);
+  assert(a.nrows() == a.ncols());
+  assert(a.nrows() == out.dim);
+  assert(a.ncols() == in.dim);
   // equivalent to
   // out.to_eigen().noalias() +=
   // 		a.to_eigen().template selfadjointView<Eigen::Upper>() *
@@ -213,7 +214,9 @@ noalias_symhiv_add_impl( //
 
     usize pcount = col_end - col_start;
 
-    auto zx = proxsuite::linalg::sparse::util::zero_extend;
+    auto zx = [](auto i) {
+      return proxsuite::linalg::sparse::util::zero_extend(i);
+    };
 
     if (zx(ai[col_end - 1]) == j) {
       T ajj = ax[col_end - 1];
@@ -290,7 +293,7 @@ struct AugmentedKkt : Eigen::EigenBase<AugmentedKkt<T, I>>
   struct Raw /* NOLINT */
   {
     proxsuite::linalg::sparse::MatRef<T, I> kkt_active;
-    proxsuite::linalg::veg::Slice<bool> active_constraints;
+    proxsuite::linalg::Slice<bool> active_constraints;
     isize n;
     isize n_eq;
     isize n_in;
@@ -357,11 +360,10 @@ vec(V const& v) -> VecMap<typename V::Scalar>
 
 template<typename V>
 auto
-vec_mut(V&& v)
-  -> VecMapMut<typename proxsuite::linalg::veg::uncvref_t<V>::Scalar>
+vec_mut(V&& v) -> VecMapMut<typename proxsuite::remove_cvref_t<V>::Scalar>
 {
-  static_assert(
-    proxsuite::linalg::veg::uncvref_t<V>::InnerStrideAtCompileTime == 1, ".");
+  static_assert(proxsuite::remove_cvref_t<V>::InnerStrideAtCompileTime == 1,
+                ".");
   return {
     v.data(),
     v.rows(),
@@ -380,8 +382,8 @@ middle_cols(proxsuite::linalg::sparse::MatRef<T, I> mat,
             isize ncols,
             isize nnz) -> proxsuite::linalg::sparse::MatRef<T, I>
 {
-  VEG_ASSERT(start <= mat.ncols());
-  VEG_ASSERT(ncols <= mat.ncols() - start);
+  assert(start <= mat.ncols());
+  assert(ncols <= mat.ncols() - start);
 
   return {
     proxsuite::linalg::sparse::from_raw_parts,
@@ -402,8 +404,8 @@ middle_cols_mut(proxsuite::linalg::sparse::MatMut<T, I> mat,
                 isize ncols,
                 isize nnz) -> proxsuite::linalg::sparse::MatMut<T, I>
 {
-  VEG_ASSERT(start <= mat.ncols());
-  VEG_ASSERT(ncols <= mat.ncols() - start);
+  assert(start <= mat.ncols());
+  assert(ncols <= mat.ncols() - start);
   return {
     proxsuite::linalg::sparse::from_raw_parts,
     mat.nrows(),
@@ -418,11 +420,10 @@ middle_cols_mut(proxsuite::linalg::sparse::MatMut<T, I> mat,
 
 template<typename T, typename I>
 auto
-top_rows_unchecked(proxsuite::linalg::veg::Unsafe /*unsafe*/,
-                   proxsuite::linalg::sparse::MatRef<T, I> mat,
-                   isize nrows) -> proxsuite::linalg::sparse::MatRef<T, I>
+top_rows_unchecked(proxsuite::linalg::sparse::MatRef<T, I> mat, isize nrows)
+  -> proxsuite::linalg::sparse::MatRef<T, I>
 {
-  VEG_ASSERT(nrows <= mat.nrows());
+  assert(nrows <= mat.nrows());
   return {
     proxsuite::linalg::sparse::from_raw_parts,
     nrows,
@@ -437,11 +438,10 @@ top_rows_unchecked(proxsuite::linalg::veg::Unsafe /*unsafe*/,
 
 template<typename T, typename I>
 auto
-top_rows_mut_unchecked(proxsuite::linalg::veg::Unsafe /*unsafe*/,
-                       proxsuite::linalg::sparse::MatMut<T, I> mat,
-                       isize nrows) -> proxsuite::linalg::sparse::MatMut<T, I>
+top_rows_mut_unchecked(proxsuite::linalg::sparse::MatMut<T, I> mat, isize nrows)
+  -> proxsuite::linalg::sparse::MatMut<T, I>
 {
-  VEG_ASSERT(nrows <= mat.nrows());
+  assert(nrows <= mat.nrows());
   return {
     proxsuite::linalg::sparse::from_raw_parts,
     nrows,
@@ -613,28 +613,27 @@ global_dual_residual_infeasibility(VectorViewMut<T> Adx,
  */
 template<typename T, typename I, typename P>
 auto
-unscaled_primal_dual_residual(
-  Workspace<T, I>& work,
-  Results<T>& results,
-  const Settings<T>& settings,
-  VecMapMut<T> primal_residual_eq_scaled,
-  VecMapMut<T> primal_residual_in_scaled_lo,
-  VecMapMut<T> primal_residual_in_scaled_up,
-  VecMapMut<T> dual_residual_scaled,
-  T& primal_feasibility_eq_rhs_0,
-  T& primal_feasibility_in_rhs_0,
-  T& dual_feasibility_rhs_0,
-  T& dual_feasibility_rhs_1,
-  T& dual_feasibility_rhs_3,
-  T& rhs_duality_gap,
-  const P& precond,
-  Model<T, I> const& data,
-  const QpView<T, I> qp_scaled,
-  VecMapMut<T> x_e,
-  VecMapMut<T> y_e,
-  VecMapMut<T> z_e,
-  proxsuite::linalg::veg::dynstack::DynStackMut stack)
-  -> proxsuite::linalg::veg::Tuple<T, T>
+unscaled_primal_dual_residual(Workspace<T, I>& work,
+                              Results<T>& results,
+                              const Settings<T>& settings,
+                              VecMapMut<T> primal_residual_eq_scaled,
+                              VecMapMut<T> primal_residual_in_scaled_lo,
+                              VecMapMut<T> primal_residual_in_scaled_up,
+                              VecMapMut<T> dual_residual_scaled,
+                              T& primal_feasibility_eq_rhs_0,
+                              T& primal_feasibility_in_rhs_0,
+                              T& dual_feasibility_rhs_0,
+                              T& dual_feasibility_rhs_1,
+                              T& dual_feasibility_rhs_3,
+                              T& rhs_duality_gap,
+                              const P& precond,
+                              Model<T, I> const& data,
+                              const QpView<T, I> qp_scaled,
+                              VecMapMut<T> x_e,
+                              VecMapMut<T> y_e,
+                              VecMapMut<T> z_e,
+                              proxsuite::linalg::dynstack::DynStackMut stack)
+  -> std::tuple<T, T>
 {
   isize n = x_e.rows();
 
@@ -767,8 +766,7 @@ unscaled_primal_dual_residual(
   precond.scale_dual_residual_in_place(
     { proxqp::from_eigen, dual_residual_scaled });
 
-  return proxsuite::linalg::veg::tuplify(primal_feasibility_lhs,
-                                         dual_feasibility_lhs);
+  return { primal_feasibility_lhs, dual_feasibility_lhs };
 }
 
 } // namespace detail
@@ -807,9 +805,9 @@ struct generic_product_impl<
                             Rhs const& rhs,
                             PROXSUITE_MAYBE_UNUSED Scalar const& alpha)
   {
-    using proxsuite::linalg::veg::isize;
+    using proxsuite::isize;
 
-    VEG_ASSERT(alpha == Scalar(1));
+    assert(alpha == Scalar(1));
     proxsuite::proxqp::sparse::detail::noalias_symhiv_add(
       dst, lhs._.kkt_active.to_eigen(), rhs);
 

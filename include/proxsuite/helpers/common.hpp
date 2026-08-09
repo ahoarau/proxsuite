@@ -10,6 +10,36 @@
 
 #include "proxsuite/config.hpp"
 #include <limits>
+#include <sstream>
+#include <stdexcept>
+
+#if defined(_MSC_VER)
+#define PROXSUITE_PRETTY_FUNCTION __FUNCSIG__
+#else
+#define PROXSUITE_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#endif
+
+/// Throws `exception`, built from `message` plus the source location, when
+/// `condition` holds.
+#define PROXSUITE_THROW_PRETTY(condition, exception, message)                  \
+  if (condition) {                                                             \
+    std::ostringstream ss;                                                     \
+    ss << "From file: " << __FILE__ << "\n";                                   \
+    ss << "in function: " << PROXSUITE_PRETTY_FUNCTION << "\n";                \
+    ss << "at line: " << __LINE__ << "\n";                                     \
+    ss << message << "\n";                                                     \
+    throw exception(ss.str());                                                 \
+  }
+
+/// Throws `std::invalid_argument` when `size` differs from `expected_size`.
+#define PROXSUITE_CHECK_ARGUMENT_SIZE(size, expected_size, message)            \
+  if (size != expected_size) {                                                 \
+    std::ostringstream oss;                                                    \
+    oss << "wrong argument size: expected " << expected_size << ", got "       \
+        << size << "\n";                                                       \
+    oss << "hint: " << message << std::endl;                                   \
+    PROXSUITE_THROW_PRETTY(true, std::invalid_argument, oss.str());            \
+  }
 
 namespace proxsuite {
 namespace helpers {

@@ -6,7 +6,8 @@
 #include <proxsuite/proxqp/dense/preconditioner/ruiz.hpp>
 #include <proxsuite/proxqp/utils/random_qp_problems.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <proxsuite/linalg/veg/util/dynstack_alloc.hpp>
+#include <proxsuite/linalg/dynstack.hpp>
+#include <vector>
 
 using namespace proxsuite;
 using namespace proxsuite::proxqp;
@@ -51,9 +52,11 @@ TEST_CASE("upper part")
   proxqp::dense::preconditioner::RuizEquilibration<T> ruiz_dense{
     n, n_eq, n_in, box_constraints, 1e-3, 10, Symmetry::upper,
   };
-  VEG_MAKE_STACK(stack,
-                 ruiz.scale_qp_in_place_req(
-                   proxsuite::linalg::veg::Tag<T>{}, n, n_eq, n_in));
+  std::vector<unsigned char> stack_storage(
+    std::size_t(ruiz.scale_qp_in_place_req(n, n_eq, n_in).alloc_req()));
+  proxsuite::linalg::dynstack::DynStackMut stack{
+    stack_storage.data(), proxsuite::isize(stack_storage.size())
+  };
 
   bool execute_preconditioner = true;
   proxsuite::proxqp::Settings<T> settings;
@@ -145,9 +148,11 @@ TEST_CASE("lower part")
   proxqp::dense::preconditioner::RuizEquilibration<T> ruiz_dense{
     n, n_eq, n_in, box_constraints, 1e-3, 10, Symmetry::lower,
   };
-  VEG_MAKE_STACK(stack,
-                 ruiz.scale_qp_in_place_req(
-                   proxsuite::linalg::veg::Tag<T>{}, n, n_eq, n_in));
+  std::vector<unsigned char> stack_storage(
+    std::size_t(ruiz.scale_qp_in_place_req(n, n_eq, n_in).alloc_req()));
+  proxsuite::linalg::dynstack::DynStackMut stack{
+    stack_storage.data(), proxsuite::isize(stack_storage.size())
+  };
   bool execute_preconditioner = true;
   proxsuite::proxqp::Settings<T> settings;
   ruiz.scale_qp_in_place(

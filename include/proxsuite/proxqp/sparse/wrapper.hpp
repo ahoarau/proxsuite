@@ -7,6 +7,7 @@
 
 #ifndef PROXSUITE_PROXQP_SPARSE_WRAPPER_HPP
 #define PROXSUITE_PROXQP_SPARSE_WRAPPER_HPP
+#include <proxsuite/helpers/common.hpp>
 #include <proxsuite/proxqp/results.hpp>
 #include <proxsuite/proxqp/settings.hpp>
 #include <proxsuite/proxqp/sparse/solver.hpp>
@@ -27,7 +28,7 @@ namespace sparse {
 #include <Eigen/Core>
 #include <Eigen/Cholesky>
 #include <proxsuite/proxqp/dense/dense.hpp>
-#include <proxsuite/linalg/veg/util/dbg.hpp>
+#include <cassert>
 #include <util.hpp>
 
 using T = double;
@@ -73,8 +74,8 @@ qp.u) + helpers::negative_part(qp.C * Qp.results.x - qp.l))
                                         .lpNorm<Eigen::Infinity>());
         T dua_res = (qp.H * Qp.results.x + qp.g + qp.A.transpose() *
 Qp.results.y + qp.C.transpose() * Qp.results.z) .lpNorm<Eigen::Infinity>();
-        VEG_ASSERT(pri_res <= eps_abs);
-        VEG_ASSERT(dua_res <= eps_abs);
+        assert(pri_res <= eps_abs);
+        assert(dua_res <= eps_abs);
 
         // Some solver statistics
         std::cout << "------solving qp with dim: " << dim
@@ -389,8 +390,7 @@ struct QP
     proxsuite::linalg::sparse::MatMut<T, I> kkt_unscaled =
       model.kkt_mut_unscaled();
 
-    auto kkt_top_n_rows = detail::top_rows_mut_unchecked(
-      proxsuite::linalg::veg::unsafe, kkt_unscaled, n);
+    auto kkt_top_n_rows = detail::top_rows_mut_unchecked(kkt_unscaled, n);
 
     proxsuite::linalg::sparse::MatMut<T, I> H_unscaled =
       detail::middle_cols_mut(kkt_top_n_rows, 0, n, model.H_nnz);

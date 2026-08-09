@@ -38,7 +38,7 @@ ruiz_scale_qp_in_place( //
   Symmetry sym,
   HessianType HessianType,
   const bool box_constraints,
-  proxsuite::linalg::veg::dynstack::DynStackMut stack) -> T
+  proxsuite::linalg::dynstack::DynStackMut stack) -> T
 {
   T c(1);
   auto S = delta_.to_eigen();
@@ -372,17 +372,16 @@ struct RuizEquilibration
    * @param n_eq number of equality constraints.
    * @param n_in number of inequality constraints.
    */
-  static auto scale_qp_in_place_req(proxsuite::linalg::veg::Tag<T> tag,
-                                    isize n,
+  static auto scale_qp_in_place_req(isize n,
                                     isize n_eq,
                                     isize n_in,
                                     bool box_constraints)
-    -> proxsuite::linalg::veg::dynstack::StackReq
+    -> proxsuite::linalg::dynstack::StackReq
   {
     if (box_constraints) {
-      return proxsuite::linalg::dense::temp_vec_req(tag, 2 * n + n_eq + n_in);
+      return proxsuite::linalg::dense::temp_vec_req<T>(2 * n + n_eq + n_in);
     } else {
-      return proxsuite::linalg::dense::temp_vec_req(tag, n + n_eq + n_in);
+      return proxsuite::linalg::dense::temp_vec_req<T>(n + n_eq + n_in);
     }
   }
 
@@ -407,7 +406,7 @@ struct RuizEquilibration
                          const T epsilon,
                          const HessianType& HessianType,
                          const bool box_constraints,
-                         proxsuite::linalg::veg::dynstack::DynStackMut stack)
+                         proxsuite::linalg::dynstack::DynStackMut stack)
   {
     if (execute_preconditioner) {
       delta.setOnes();

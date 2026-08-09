@@ -5,9 +5,12 @@
 #ifndef PROXSUITE_LINALG_DENSE_LDLT_CORE_HPP
 #define PROXSUITE_LINALG_DENSE_LDLT_CORE_HPP
 
-#include <proxsuite/linalg/veg/util/dbg.hpp>
-#include <proxsuite/linalg/veg/util/assert.hpp>
-#include <proxsuite/linalg/veg/memory/dynamic_stack.hpp>
+#include <proxsuite/fwd.hpp>
+#include <proxsuite/linalg/dynstack.hpp>
+
+#include <cassert>
+#include <cstdint>
+#include <type_traits>
 
 #if !(defined(__aarch64__) || defined(__PPC64__) || defined(__ppc64__) ||      \
       defined(_ARCH_PPC64))
@@ -22,53 +25,49 @@
 
 #include <Eigen/Core>
 
-#define LDLT_ID(id) __VEG_PP_CAT(id, __LINE__)
+// Pastes the current line number onto `id`, so that a macro can declare a
+// uniquely named variable in the caller's scope.
+#define LDLT_CONCAT_IMPL(a, b) a##b
+#define LDLT_CONCAT(a, b) LDLT_CONCAT_IMPL(a, b)
+#define LDLT_ID(id) LDLT_CONCAT(id, __LINE__)
 
 #define __LDLT_TEMP_VEC_IMPL(Type, Name, Rows, Stack, Make)                    \
-  auto LDLT_ID(vec_storage) = (Stack).Make(                                    \
-    ::proxsuite::linalg::veg::Tag<__VEG_PP_REMOVE_PAREN(Type)>{},              \
-    (Rows),                                                                    \
-    ::proxsuite::linalg::dense::_detail::align<__VEG_PP_REMOVE_PAREN(          \
-      Type)>());                                                               \
-  auto Name /* NOLINT */ = ::Eigen::Map<                                       \
-    ::Eigen::Matrix<__VEG_PP_REMOVE_PAREN(Type), ::Eigen::Dynamic, 1>,         \
-    ::Eigen::Unaligned,                                                        \
-    ::Eigen::Stride<::Eigen::Dynamic, 1>>{                                     \
-    LDLT_ID(vec_storage).ptr_mut(),                                            \
-    LDLT_ID(vec_storage).len(),                                                \
-    ::Eigen::Stride<::Eigen::Dynamic, 1>{                                      \
-      LDLT_ID(vec_storage).len(),                                              \
-      1,                                                                       \
-    },                                                                         \
-  };                                                                           \
-  static_assert(true, ".")
-
-#define __LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, Make)              \
-  ::proxsuite::linalg::veg::isize LDLT_ID(rows) = (Rows);                      \
-  ::proxsuite::linalg::veg::isize LDLT_ID(cols) = (Cols);                      \
-  ::proxsuite::linalg::veg::isize LDLT_ID(stride) =                            \
-    ::proxsuite::linalg::dense::_detail::adjusted_stride<                      \
-      __VEG_PP_REMOVE_PAREN(Type)>(LDLT_ID(rows));                             \
-  auto LDLT_ID(vec_storage) = (Stack).Make(                                    \
-    ::proxsuite::linalg::veg::Tag<__VEG_PP_REMOVE_PAREN(Type)>{},              \
-    LDLT_ID(stride) * LDLT_ID(cols),                                           \
-    ::proxsuite::linalg::dense::_detail::align<__VEG_PP_REMOVE_PAREN(          \
-      Type)>());                                                               \
+  auto LDLT_ID(vec_storage) = (Stack).template Make<Type>(                     \
+    (Rows), ::proxsuite::linalg::dense::_detail::align<Type>());               \
   auto Name /* NOLINT */ =                                                     \
-    ::Eigen::Map<::Eigen::Matrix<__VEG_PP_REMOVE_PAREN(Type),                  \
-                                 ::Eigen::Dynamic,                             \
-                                 ::Eigen::Dynamic,                             \
-                                 ::Eigen::ColMajor>,                           \
+    ::Eigen::Map<::Eigen::Matrix<Type, ::Eigen::Dynamic, 1>,                   \
                  ::Eigen::Unaligned,                                           \
                  ::Eigen::Stride<::Eigen::Dynamic, 1>>{                        \
       LDLT_ID(vec_storage).ptr_mut(),                                          \
-      LDLT_ID(rows),                                                           \
-      LDLT_ID(cols),                                                           \
+      LDLT_ID(vec_storage).len(),                                              \
       ::Eigen::Stride<::Eigen::Dynamic, 1>{                                    \
-        LDLT_ID(stride),                                                       \
+        LDLT_ID(vec_storage).len(),                                            \
         1,                                                                     \
       },                                                                       \
     };                                                                         \
+  static_assert(true, ".")
+
+#define __LDLT_TEMP_MAT_IMPL(Type, Name, Rows, Cols, Stack, Make)              \
+  ::proxsuite::isize LDLT_ID(rows) = (Rows);                                   \
+  ::proxsuite::isize LDLT_ID(cols) = (Cols);                                   \
+  ::proxsuite::isize LDLT_ID(stride) =                                         \
+    ::proxsuite::linalg::dense::_detail::adjusted_stride<Type>(LDLT_ID(rows)); \
+  auto LDLT_ID(vec_storage) = (Stack).template Make<Type>(                     \
+    LDLT_ID(stride) * LDLT_ID(cols),                                           \
+    ::proxsuite::linalg::dense::_detail::align<Type>());                       \
+  auto Name /* NOLINT */ = ::Eigen::Map<                                       \
+    ::Eigen::                                                                  \
+      Matrix<Type, ::Eigen::Dynamic, ::Eigen::Dynamic, ::Eigen::ColMajor>,     \
+    ::Eigen::Unaligned,                                                        \
+    ::Eigen::Stride<::Eigen::Dynamic, 1>>{                                     \
+    LDLT_ID(vec_storage).ptr_mut(),                                            \
+    LDLT_ID(rows),                                                             \
+    LDLT_ID(cols),                                                             \
+    ::Eigen::Stride<::Eigen::Dynamic, 1>{                                      \
+      LDLT_ID(stride),                                                         \
+      1,                                                                       \
+    },                                                                         \
+  };                                                                           \
   static_assert(true, ".")
 
 #define LDLT_TEMP_VEC(Type, Name, Rows, Stack)                                 \
@@ -84,10 +83,10 @@
 namespace proxsuite {
 namespace linalg {
 namespace dense {
-using proxsuite::linalg::veg::i32;
-using proxsuite::linalg::veg::isize;
-using proxsuite::linalg::veg::u32;
-using proxsuite::linalg::veg::usize;
+using proxsuite::isize;
+using proxsuite::usize;
+using i32 = std::int32_t;
+using u32 = std::uint32_t;
 using f32 = float;
 using f64 = double;
 
@@ -105,32 +104,32 @@ static_assert(sizeof(f32) == 4, "f32 should be 32 bits");
 static_assert(sizeof(f64) == 8, "f64 should be 64 bits");
 
 #define LDLT_FN_IMPL3(Fn, Prefix, Suffix)                                      \
-  VEG_INLINE static auto Fn(Pack a, Pack b, Pack c) noexcept -> Pack           \
+  PROXSUITE_INLINE static auto Fn(Pack a, Pack b, Pack c) noexcept -> Pack     \
   {                                                                            \
     return Pack{ simde_mm##Prefix##_##Fn##_##Suffix(                           \
       a.inner, b.inner, c.inner) };                                            \
   }                                                                            \
-  VEG_NOM_SEMICOLON
+  static_assert(true, ".")
 
 #define LDLT_ARITHMETIC_IMPL(Prefix, Suffix)                                   \
   LDLT_FN_IMPL3(fmadd, Prefix, Suffix);  /* (a * b + c) */                     \
   LDLT_FN_IMPL3(fnmadd, Prefix, Suffix); /* (-a * b + c) */
 
 #define LDLT_LOAD_STORE(Prefix, Suffix)                                        \
-  VEG_INLINE static auto load_unaligned(ScalarType const* ptr) noexcept        \
+  PROXSUITE_INLINE static auto load_unaligned(ScalarType const* ptr) noexcept  \
     -> Pack                                                                    \
   {                                                                            \
     return Pack{ simde_mm##Prefix##_loadu_##Suffix(ptr) };                     \
   }                                                                            \
-  VEG_INLINE static auto broadcast(ScalarType value) noexcept -> Pack          \
+  PROXSUITE_INLINE static auto broadcast(ScalarType value) noexcept -> Pack    \
   {                                                                            \
     return Pack{ simde_mm##Prefix##_set1_##Suffix(value) };                    \
   }                                                                            \
-  VEG_INLINE void store_unaligned(ScalarType* ptr) const noexcept              \
+  PROXSUITE_INLINE void store_unaligned(ScalarType* ptr) const noexcept        \
   {                                                                            \
     simde_mm##Prefix##_storeu_##Suffix(ptr, inner);                            \
   }                                                                            \
-  VEG_NOM_SEMICOLON
+  static_assert(true, ".")
 
 template<typename T, usize N>
 struct Pack;
@@ -142,24 +141,25 @@ struct Pack<T, 1>
 
   T inner;
 
-  VEG_INLINE static auto fmadd(Pack a, Pack b, Pack c) noexcept -> Pack
+  PROXSUITE_INLINE static auto fmadd(Pack a, Pack b, Pack c) noexcept -> Pack
   {
     DENSE_LDLT_FP_PRAGMA
     return { a.inner * b.inner + c.inner };
   }
-  VEG_INLINE static auto fnmadd(Pack a, Pack b, Pack c) noexcept -> Pack
+  PROXSUITE_INLINE static auto fnmadd(Pack a, Pack b, Pack c) noexcept -> Pack
   {
     return fmadd({ -a.inner }, b, c);
   }
-  VEG_INLINE static auto load_unaligned(ScalarType const* ptr) noexcept -> Pack
+  PROXSUITE_INLINE static auto load_unaligned(ScalarType const* ptr) noexcept
+    -> Pack
   {
     return { *ptr };
   }
-  VEG_INLINE static auto broadcast(ScalarType value) noexcept -> Pack
+  PROXSUITE_INLINE static auto broadcast(ScalarType value) noexcept -> Pack
   {
     return { value };
   }
-  VEG_INLINE void store_unaligned(ScalarType* ptr) const noexcept
+  PROXSUITE_INLINE void store_unaligned(ScalarType* ptr) const noexcept
   {
     *ptr = inner;
   }
@@ -193,24 +193,25 @@ struct Pack<f32, 16>
   using ScalarType = f32;
 
   __m512 inner;
-  VEG_INLINE static auto fmadd(Pack a, Pack b, Pack c) noexcept -> Pack
+  PROXSUITE_INLINE static auto fmadd(Pack a, Pack b, Pack c) noexcept -> Pack
   {
     DENSE_LDLT_FP_PRAGMA
     return { _mm512_fmadd_ps(a.inner, b.inner, c.inner) };
   }
-  VEG_INLINE static auto fnmadd(Pack a, Pack b, Pack c) noexcept -> Pack
+  PROXSUITE_INLINE static auto fnmadd(Pack a, Pack b, Pack c) noexcept -> Pack
   {
     return { _mm512_fnmadd_ps(a.inner, b.inner, c.inner) };
   }
-  VEG_INLINE static auto load_unaligned(ScalarType const* ptr) noexcept -> Pack
+  PROXSUITE_INLINE static auto load_unaligned(ScalarType const* ptr) noexcept
+    -> Pack
   {
     return { _mm512_loadu_ps(ptr) };
   }
-  VEG_INLINE static auto broadcast(ScalarType value) noexcept -> Pack
+  PROXSUITE_INLINE static auto broadcast(ScalarType value) noexcept -> Pack
   {
     return { _mm512_set1_ps(value) };
   }
-  VEG_INLINE void store_unaligned(ScalarType* ptr) const noexcept
+  PROXSUITE_INLINE void store_unaligned(ScalarType* ptr) const noexcept
   {
     _mm512_storeu_ps(ptr, inner);
   }
@@ -243,24 +244,25 @@ struct Pack<f64, 8>
   using ScalarType = f64;
 
   __m512d inner;
-  VEG_INLINE static auto fmadd(Pack a, Pack b, Pack c) noexcept -> Pack
+  PROXSUITE_INLINE static auto fmadd(Pack a, Pack b, Pack c) noexcept -> Pack
   {
     DENSE_LDLT_FP_PRAGMA
     return { _mm512_fmadd_pd(a.inner, b.inner, c.inner) };
   }
-  VEG_INLINE static auto fnmadd(Pack a, Pack b, Pack c) noexcept -> Pack
+  PROXSUITE_INLINE static auto fnmadd(Pack a, Pack b, Pack c) noexcept -> Pack
   {
     return { _mm512_fnmadd_pd(a.inner, b.inner, c.inner) };
   }
-  VEG_INLINE static auto load_unaligned(ScalarType const* ptr) noexcept -> Pack
+  PROXSUITE_INLINE static auto load_unaligned(ScalarType const* ptr) noexcept
+    -> Pack
   {
     return { _mm512_loadu_pd(ptr) };
   }
-  VEG_INLINE static auto broadcast(ScalarType value) noexcept -> Pack
+  PROXSUITE_INLINE static auto broadcast(ScalarType value) noexcept -> Pack
   {
     return { _mm512_set1_pd(value) };
   }
-  VEG_INLINE void store_unaligned(ScalarType* ptr) const noexcept
+  PROXSUITE_INLINE void store_unaligned(ScalarType* ptr) const noexcept
   {
     _mm512_storeu_pd(ptr, inner);
   }
@@ -297,13 +299,13 @@ using NativePack = typename NativePackInfo<T>::Type;
 } // namespace _detail
 
 namespace _detail {
-using proxsuite::linalg::veg::uncvref_t;
+using proxsuite::remove_cvref_t;
 template<bool COND, typename T>
-using const_if = proxsuite::linalg::veg::meta::if_t<COND, T const, T>;
+using const_if = std::conditional_t<COND, T const, T>;
 
 template<typename T>
-using ptr_is_const = proxsuite::linalg::veg::meta::bool_constant<VEG_CONCEPT(
-  const_type<proxsuite::linalg::veg::meta::unptr_t<T>>)>;
+using ptr_is_const =
+  std::bool_constant<std::is_const<std::remove_pointer_t<T>>::value>;
 
 template<typename T>
 constexpr auto
@@ -314,12 +316,11 @@ round_up(T a, T b) noexcept -> T
 
 #ifdef PROXSUITE_VECTORIZE
 template<typename T>
-using should_vectorize =
-  proxsuite::linalg::veg::meta::bool_constant<VEG_CONCEPT(same<T, f32>) ||
-                                              VEG_CONCEPT(same<T, f64>)>;
+using should_vectorize = std::bool_constant<std::is_same<T, f32>::value ||
+                                            std::is_same<T, f64>::value>;
 #else
 template<typename T>
-using should_vectorize = proxsuite::linalg::veg::meta::bool_constant<false>;
+using should_vectorize = std::bool_constant<false>;
 #endif
 
 template<typename T>
@@ -353,26 +354,18 @@ struct NoCopy
   auto operator=(NoCopy&&) -> NoCopy& = delete;
 };
 
-namespace nb {
-struct max2
+template<typename T>
+PROXSUITE_INLINE constexpr auto
+max2(T const& a, T const& b) -> T const&
 {
-  template<typename T>
-  VEG_INLINE constexpr auto operator()(T const& a, T const& b) const -> T const&
-  {
-    return a > b ? a : b;
-  }
-};
-struct min2
+  return a > b ? a : b;
+}
+template<typename T>
+PROXSUITE_INLINE constexpr auto
+min2(T a, T b) -> T
 {
-  template<typename T>
-  VEG_INLINE constexpr auto operator()(T a, T b) const -> T
-  {
-    return (a < b) ? a : b;
-  }
-};
-} // namespace nb
-VEG_NIEBLOID(min2);
-VEG_NIEBLOID(max2);
+  return (a < b) ? a : b;
+}
 
 template<typename T>
 void
@@ -461,17 +454,17 @@ template<>
 struct RowColAccessImpl<true>
 {
   template<typename T>
-  using Col =
-    Eigen::Map<const_if<ptr_is_const<decltype(VEG_DECLVAL(T&&).data())>::value,
-                        OwnedColVector<uncvref_t<T>>>,
-               Eigen::Unaligned,
-               Eigen::InnerStride<uncvref_t<T>::InnerStrideAtCompileTime>>;
+  using Col = Eigen::Map<
+    const_if<ptr_is_const<decltype(std::declval<T&&>().data())>::value,
+             OwnedColVector<remove_cvref_t<T>>>,
+    Eigen::Unaligned,
+    Eigen::InnerStride<remove_cvref_t<T>::InnerStrideAtCompileTime>>;
   template<typename T>
-  using Row =
-    Eigen::Map<const_if<ptr_is_const<decltype(VEG_DECLVAL(T&&).data())>::value,
-                        OwnedRowVector<uncvref_t<T>>>,
-               Eigen::Unaligned,
-               Eigen::InnerStride<uncvref_t<T>::OuterStrideAtCompileTime>>;
+  using Row = Eigen::Map<
+    const_if<ptr_is_const<decltype(std::declval<T&&>().data())>::value,
+             OwnedRowVector<remove_cvref_t<T>>>,
+    Eigen::Unaligned,
+    Eigen::InnerStride<remove_cvref_t<T>::OuterStrideAtCompileTime>>;
 
   template<typename T>
   static auto col(T&& mat, isize col_idx) noexcept -> Col<T>
@@ -480,7 +473,7 @@ struct RowColAccessImpl<true>
       mat.data() + col_idx * mat.outerStride(),
       mat.rows(),
       1,
-      Eigen::InnerStride<uncvref_t<T>::InnerStrideAtCompileTime>{
+      Eigen::InnerStride<remove_cvref_t<T>::InnerStrideAtCompileTime>{
         mat.innerStride(),
       },
     };
@@ -492,7 +485,7 @@ struct RowColAccessImpl<true>
       mat.data() + row_idx * mat.innerStride(),
       1,
       mat.cols(),
-      Eigen::InnerStride<uncvref_t<T>::OuterStrideAtCompileTime>{
+      Eigen::InnerStride<remove_cvref_t<T>::OuterStrideAtCompileTime>{
         mat.outerStride(),
       },
     };
@@ -502,17 +495,17 @@ template<>
 struct RowColAccessImpl<false>
 {
   template<typename T>
-  using Col =
-    Eigen::Map<const_if<ptr_is_const<decltype(VEG_DECLVAL(T&&).data())>::value,
-                        OwnedColVector<uncvref_t<T>>>,
-               Eigen::Unaligned,
-               Eigen::InnerStride<uncvref_t<T>::OuterStrideAtCompileTime>>;
+  using Col = Eigen::Map<
+    const_if<ptr_is_const<decltype(std::declval<T&&>().data())>::value,
+             OwnedColVector<remove_cvref_t<T>>>,
+    Eigen::Unaligned,
+    Eigen::InnerStride<remove_cvref_t<T>::OuterStrideAtCompileTime>>;
   template<typename T>
-  using Row =
-    Eigen::Map<const_if<ptr_is_const<decltype(VEG_DECLVAL(T&&).data())>::value,
-                        OwnedRowVector<uncvref_t<T>>>,
-               Eigen::Unaligned,
-               Eigen::InnerStride<uncvref_t<T>::InnerStrideAtCompileTime>>;
+  using Row = Eigen::Map<
+    const_if<ptr_is_const<decltype(std::declval<T&&>().data())>::value,
+             OwnedRowVector<remove_cvref_t<T>>>,
+    Eigen::Unaligned,
+    Eigen::InnerStride<remove_cvref_t<T>::InnerStrideAtCompileTime>>;
 
   template<typename T>
   static auto col(T&& mat, isize col_idx) noexcept -> Col<T>
@@ -521,7 +514,7 @@ struct RowColAccessImpl<false>
       mat.data() + col_idx * mat.innerStride(),
       mat.rows(),
       1,
-      Eigen::InnerStride<uncvref_t<T>::OuterStrideAtCompileTime>{
+      Eigen::InnerStride<remove_cvref_t<T>::OuterStrideAtCompileTime>{
         mat.outerStride(),
       },
     };
@@ -533,7 +526,7 @@ struct RowColAccessImpl<false>
       mat.data() + row_idx * mat.outerStride(),
       1,
       mat.cols(),
-      Eigen::InnerStride<uncvref_t<T>::InnerStrideAtCompileTime>{
+      Eigen::InnerStride<remove_cvref_t<T>::InnerStrideAtCompileTime>{
         mat.innerStride(),
       },
     };
@@ -563,8 +556,7 @@ auto
 matrix_elem_addr(Mat&& mat, isize row, isize col) noexcept
   -> decltype(mat.data())
 {
-  return util::elem_addr<!bool(
-    proxsuite::linalg::veg::uncvref_t<Mat>::IsRowMajor)>( //
+  return util::elem_addr<!bool(proxsuite::remove_cvref_t<Mat>::IsRowMajor)>( //
     mat.data(),
     row,
     col,
@@ -575,39 +567,39 @@ matrix_elem_addr(Mat&& mat, isize row, isize col) noexcept
 template<typename T>
 auto
 col(T&& mat, isize col_idx) noexcept -> typename _detail::RowColAccessImpl<
-  !bool(proxsuite::linalg::veg::uncvref_t<T>::IsRowMajor)>::template Col<T>
+  !bool(proxsuite::remove_cvref_t<T>::IsRowMajor)>::template Col<T>
 {
   return _detail::RowColAccessImpl<!bool(
-    proxsuite::linalg::veg::uncvref_t<T>::IsRowMajor)>::col(mat, col_idx);
+    proxsuite::remove_cvref_t<T>::IsRowMajor)>::col(mat, col_idx);
 }
 template<typename T>
 auto
 row(T&& mat, isize row_idx) noexcept -> typename _detail::RowColAccessImpl<
-  !bool(proxsuite::linalg::veg::uncvref_t<T>::IsRowMajor)>::template Row<T>
+  !bool(proxsuite::remove_cvref_t<T>::IsRowMajor)>::template Row<T>
 {
   return _detail::RowColAccessImpl<!bool(
-    proxsuite::linalg::veg::uncvref_t<T>::IsRowMajor)>::row(mat, row_idx);
+    proxsuite::remove_cvref_t<T>::IsRowMajor)>::row(mat, row_idx);
 }
 
 template<typename Mat>
 auto
 trans(Mat&& mat) noexcept -> Eigen::Map< //
-  _detail::const_if<_detail::ptr_is_const<decltype(mat.data())>::value,
-                    Eigen::Matrix< //
-                      typename proxsuite::linalg::veg::uncvref_t<Mat>::Scalar,
-                      proxsuite::linalg::veg::uncvref_t<Mat>::ColsAtCompileTime,
-                      proxsuite::linalg::veg::uncvref_t<Mat>::RowsAtCompileTime,
-                      bool(proxsuite::linalg::veg::uncvref_t<Mat>::IsRowMajor)
-                        ? Eigen::ColMajor
-                        : Eigen::RowMajor>>,
+  _detail::const_if<
+    _detail::ptr_is_const<decltype(mat.data())>::value,
+    Eigen::Matrix< //
+      typename proxsuite::remove_cvref_t<Mat>::Scalar,
+      proxsuite::remove_cvref_t<Mat>::ColsAtCompileTime,
+      proxsuite::remove_cvref_t<Mat>::RowsAtCompileTime,
+      bool(proxsuite::remove_cvref_t<Mat>::IsRowMajor) ? Eigen::ColMajor
+                                                       : Eigen::RowMajor>>,
   Eigen::Unaligned,
-  _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>>
+  _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>>
 {
   return {
     mat.data(),
     mat.cols(),
     mat.rows(),
-    _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>{
+    _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>{
       mat.outerStride(),
       mat.innerStride(),
     },
@@ -619,15 +611,14 @@ auto
 diagonal(Mat&& mat) noexcept -> Eigen::Map< //
   _detail::const_if<_detail::ptr_is_const<decltype(mat.data())>::value,
                     Eigen::Matrix< //
-                      typename proxsuite::linalg::veg::uncvref_t<Mat>::Scalar,
+                      typename proxsuite::remove_cvref_t<Mat>::Scalar,
                       Eigen::Dynamic,
                       1,
                       Eigen::ColMajor>>,
   Eigen::Unaligned,
   Eigen::InnerStride<Eigen::Dynamic>>
 {
-  VEG_DEBUG_ASSERT( //
-    mat.rows() == mat.cols());
+  assert(mat.rows() == mat.cols());
   return { mat.data(),
            mat.rows(),
            1,
@@ -641,18 +632,18 @@ submatrix(Mat&& mat,
           isize col_start,
           isize nrows,
           isize ncols) noexcept
-  -> Eigen::Map<_detail::const_if<
-                  _detail::ptr_is_const<decltype(mat.data())>::value,
-                  _detail::OwnedMatrix<proxsuite::linalg::veg::uncvref_t<Mat>>>,
-                Eigen::Unaligned,
-                _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>>
+  -> Eigen::Map<
+    _detail::const_if<_detail::ptr_is_const<decltype(mat.data())>::value,
+                      _detail::OwnedMatrix<proxsuite::remove_cvref_t<Mat>>>,
+    Eigen::Unaligned,
+    _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>>
 {
   return {
-    util::elem_addr<!bool(proxsuite::linalg::veg::uncvref_t<Mat>::IsRowMajor)>(
+    util::elem_addr<!bool(proxsuite::remove_cvref_t<Mat>::IsRowMajor)>(
       mat.data(), row_start, col_start, mat.outerStride(), mat.innerStride()),
     nrows,
     ncols,
-    _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>{
+    _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>{
       mat.outerStride(),
       mat.innerStride(),
     },
@@ -663,15 +654,15 @@ template<typename Mat>
 auto
 to_view(Mat&& mat) noexcept -> Eigen::Map<
   _detail::const_if<_detail::ptr_is_const<decltype(mat.data())>::value,
-                    _detail::OwnedAll<proxsuite::linalg::veg::uncvref_t<Mat>>>,
+                    _detail::OwnedAll<proxsuite::remove_cvref_t<Mat>>>,
   Eigen::Unaligned,
-  _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>>
+  _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>>
 {
   return {
     mat.data(),
     mat.rows(),
     mat.cols(),
-    _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>{
+    _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>{
       mat.outerStride(),
       mat.innerStride(),
     },
@@ -682,15 +673,15 @@ template<typename Mat>
 auto
 to_view_dyn_rows(Mat&& mat) noexcept -> Eigen::Map<
   _detail::const_if<_detail::ptr_is_const<decltype(mat.data())>::value,
-                    _detail::OwnedRows<proxsuite::linalg::veg::uncvref_t<Mat>>>,
+                    _detail::OwnedRows<proxsuite::remove_cvref_t<Mat>>>,
   Eigen::Unaligned,
-  _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>>
+  _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>>
 {
   return {
     mat.data(),
     mat.rows(),
     mat.cols(),
-    _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>{
+    _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>{
       mat.outerStride(),
       mat.innerStride(),
     },
@@ -701,15 +692,15 @@ template<typename Mat>
 auto
 to_view_dyn_cols(Mat&& mat) noexcept -> Eigen::Map<
   _detail::const_if<_detail::ptr_is_const<decltype(mat.data())>::value,
-                    _detail::OwnedCols<proxsuite::linalg::veg::uncvref_t<Mat>>>,
+                    _detail::OwnedCols<proxsuite::remove_cvref_t<Mat>>>,
   Eigen::Unaligned,
-  _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>>
+  _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>>
 {
   return {
     mat.data(),
     mat.rows(),
     mat.cols(),
-    _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>{
+    _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>{
       mat.outerStride(),
       mat.innerStride(),
     },
@@ -718,18 +709,17 @@ to_view_dyn_cols(Mat&& mat) noexcept -> Eigen::Map<
 
 template<typename Mat>
 auto
-to_view_dyn(Mat&& mat) noexcept
-  -> Eigen::Map<_detail::const_if<
-                  _detail::ptr_is_const<decltype(mat.data())>::value,
-                  _detail::OwnedMatrix<proxsuite::linalg::veg::uncvref_t<Mat>>>,
-                Eigen::Unaligned,
-                _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>>
+to_view_dyn(Mat&& mat) noexcept -> Eigen::Map<
+  _detail::const_if<_detail::ptr_is_const<decltype(mat.data())>::value,
+                    _detail::OwnedMatrix<proxsuite::remove_cvref_t<Mat>>>,
+  Eigen::Unaligned,
+  _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>>
 {
   return {
     mat.data(),
     mat.rows(),
     mat.cols(),
-    _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>{
+    _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>{
       mat.outerStride(),
       mat.innerStride(),
     },
@@ -740,16 +730,16 @@ template<typename Mat>
 auto
 subrows(Mat&& mat, isize row_start, isize nrows) noexcept -> Eigen::Map<
   _detail::const_if<_detail::ptr_is_const<decltype(mat.data())>::value,
-                    _detail::OwnedRows<proxsuite::linalg::veg::uncvref_t<Mat>>>,
+                    _detail::OwnedRows<proxsuite::remove_cvref_t<Mat>>>,
   Eigen::Unaligned,
-  _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>>
+  _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>>
 {
   return {
-    util::elem_addr<!bool(proxsuite::linalg::veg::uncvref_t<Mat>::IsRowMajor)>(
+    util::elem_addr<!bool(proxsuite::remove_cvref_t<Mat>::IsRowMajor)>(
       mat.data(), row_start, 0, mat.outerStride(), mat.innerStride()),
     nrows,
     mat.cols(),
-    _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>{
+    _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>{
       mat.outerStride(),
       mat.innerStride(),
     },
@@ -760,16 +750,16 @@ template<typename Mat>
 auto
 subcols(Mat&& mat, isize col_start, isize ncols) noexcept -> Eigen::Map<
   _detail::const_if<_detail::ptr_is_const<decltype(mat.data())>::value,
-                    _detail::OwnedCols<proxsuite::linalg::veg::uncvref_t<Mat>>>,
+                    _detail::OwnedCols<proxsuite::remove_cvref_t<Mat>>>,
   Eigen::Unaligned,
-  _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>>
+  _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>>
 {
   return {
-    util::elem_addr<!bool(proxsuite::linalg::veg::uncvref_t<Mat>::IsRowMajor)>(
+    util::elem_addr<!bool(proxsuite::remove_cvref_t<Mat>::IsRowMajor)>(
       mat.data(), 0, col_start, mat.outerStride(), mat.innerStride()),
     mat.rows(),
     ncols,
-    _detail::StrideOf<proxsuite::linalg::veg::uncvref_t<Mat>>{
+    _detail::StrideOf<proxsuite::remove_cvref_t<Mat>>{
       mat.outerStride(),
       mat.innerStride(),
     },
@@ -782,9 +772,9 @@ template<typename Dst, typename Lhs, typename Rhs, typename T>
 void
 noalias_mul_add_impl(Dst dst, Lhs lhs, Rhs rhs, T factor)
 {
-  VEG_ASSERT_ALL_OF(dst.rows() == lhs.rows(),
-                    dst.cols() == rhs.cols(),
-                    lhs.cols() == rhs.rows());
+  assert(dst.rows() == lhs.rows());
+  assert(dst.cols() == rhs.cols());
+  assert(lhs.cols() == rhs.rows());
 
   isize nrows = dst.rows();
   isize ncols = dst.cols();
@@ -836,9 +826,8 @@ noalias_mul_add(Dst&& dst, Lhs const& lhs, Rhs const& rhs, T factor)
 } // namespace util
 template<typename T>
 auto
-temp_mat_req(proxsuite::linalg::veg::Tag<T> /*tag*/,
-             isize rows,
-             isize cols) noexcept -> proxsuite::linalg::veg::dynstack::StackReq
+temp_mat_req(isize rows, isize cols) noexcept
+  -> proxsuite::linalg::dynstack::StackReq
 {
   return {
     _detail::adjusted_stride<T>(rows) * cols * isize{ sizeof(T) },
@@ -848,8 +837,7 @@ temp_mat_req(proxsuite::linalg::veg::Tag<T> /*tag*/,
 
 template<typename T>
 auto
-temp_vec_req(proxsuite::linalg::veg::Tag<T> /*tag*/, isize rows) noexcept
-  -> proxsuite::linalg::veg::dynstack::StackReq
+temp_vec_req(isize rows) noexcept -> proxsuite::linalg::dynstack::StackReq
 {
   return {
     rows * isize{ sizeof(T) },

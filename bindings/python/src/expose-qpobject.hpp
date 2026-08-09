@@ -15,7 +15,7 @@
 
 namespace proxsuite {
 namespace proxqp {
-using proxsuite::linalg::veg::isize;
+using proxsuite::isize;
 
 namespace dense {
 

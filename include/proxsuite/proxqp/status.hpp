@@ -7,7 +7,7 @@
 #ifndef PROXSUITE_PROXQP_CONSTANTS_HPP
 #define PROXSUITE_PROXQP_CONSTANTS_HPP
 
-#include <proxsuite/linalg/veg/type_traits/core.hpp>
+#include <type_traits>
 #include "proxsuite/proxqp/sparse/fwd.hpp"
 
 namespace proxsuite {

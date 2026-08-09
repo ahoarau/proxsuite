@@ -6,7 +6,7 @@
 #include <Eigen/Core>
 #include <Eigen/Cholesky>
 #include <proxsuite/proxqp/dense/dense.hpp>
-#include <proxsuite/linalg/veg/util/dbg.hpp>
+#include <cassert>
 #include <proxsuite/proxqp/utils/random_qp_problems.hpp>
 using namespace proxsuite;
 

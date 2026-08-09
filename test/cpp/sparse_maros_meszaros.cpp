@@ -129,7 +129,7 @@ TEST_CASE("sparse maros meszaros using the API")
 
     if (!qp_raw.skip) {
 
-      auto preprocessed = preprocess_qp_sparse(VEG_FWD(qp_raw));
+      auto preprocessed = preprocess_qp_sparse(std::move(qp_raw));
       auto& H = preprocessed.H;
       auto& AT = preprocessed.AT;
       auto& CT = preprocessed.CT;

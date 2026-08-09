@@ -7,6 +7,7 @@
 
 #ifndef PROXSUITE_PROXQP_DENSE_WRAPPER_HPP
 #define PROXSUITE_PROXQP_DENSE_WRAPPER_HPP
+#include <proxsuite/helpers/common.hpp>
 #include <proxsuite/proxqp/sparse/wrapper.hpp>
 #include <proxsuite/proxqp/dense/solver.hpp>
 #include <proxsuite/proxqp/dense/helpers.hpp>
@@ -28,7 +29,7 @@ namespace dense {
 #include <Eigen/Core>
 #include <Eigen/Cholesky>
 #include <proxsuite/proxqp/dense/dense.hpp>
-#include <proxsuite/linalg/veg/util/dbg.hpp>
+#include <cassert>
 #include <util.hpp>
 
 using T = double;
@@ -64,8 +65,8 @@ qp.u) + helpers::negative_part(qp.C * Qp.results.x - qp.l))
                                         .lpNorm<Eigen::Infinity>());
         T dua_res = (qp.H * Qp.results.x + qp.g + qp.A.transpose() *
 Qp.results.y + qp.C.transpose() * Qp.results.z) .lpNorm<Eigen::Infinity>();
-        VEG_ASSERT(pri_res <= eps_abs);
-        VEG_ASSERT(dua_res <= eps_abs);
+        assert(pri_res <= eps_abs);
+        assert(dua_res <= eps_abs);
 
         // Some solver statistics
         std::cout << "------solving qp with dim: " << dim

@@ -5,7 +5,8 @@
 #include <catch2/catch_test_macros.hpp>
 #include <proxsuite/proxqp/sparse/sparse.hpp>
 #include <proxsuite/proxqp/utils/random_qp_problems.hpp>
-#include <proxsuite/linalg/veg/util/dynstack_alloc.hpp>
+#include <proxsuite/linalg/dynstack.hpp>
+#include <vector>
 
 using namespace proxsuite;
 using namespace proxsuite::proxqp;
@@ -21,13 +22,13 @@ TEST_CASE("sparse random strongly convex qp with equality and "
   std::cout << "---testing sparse random strongly convex qp with equality and "
                "inequality constraints: test solve function---"
             << std::endl;
-  for (auto const& dims : { // proxsuite::linalg::veg::tuplify(50, 0, 0),
-                            // proxsuite::linalg::veg::tuplify(50, 25, 0),
-                            // proxsuite::linalg::veg::tuplify(10, 0, 10),
-                            // proxsuite::linalg::veg::tuplify(50, 0, 25),
-                            // proxsuite::linalg::veg::tuplify(50, 10, 25),
-                            proxsuite::linalg::veg::tuplify(10, 3, 2) }) {
-    VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+  for (auto const& dims : { // std::make_tuple(50, 0, 0),
+                            // std::make_tuple(50, 25, 0),
+                            // std::make_tuple(10, 0, 10),
+                            // std::make_tuple(50, 0, 25),
+                            // std::make_tuple(50, 10, 25),
+                            std::make_tuple(10, 3, 2) }) {
+    auto const& [n, n_eq, n_in] = dims;
 
     T eps_abs = 1.e-9;
     T sparsity_factor = 0.15;
@@ -103,13 +104,13 @@ TEST_CASE("sparse random strongly convex qp with equality and "
   std::cout << "---testing sparse random strongly convex qp with equality and "
                "inequality constraints: test solve with different rho value---"
             << std::endl;
-  for (auto const& dims : { // proxsuite::linalg::veg::tuplify(50, 0, 0),
-                            // proxsuite::linalg::veg::tuplify(50, 25, 0),
-                            // proxsuite::linalg::veg::tuplify(10, 0, 10),
-                            // proxsuite::linalg::veg::tuplify(50, 0, 25),
-                            // proxsuite::linalg::veg::tuplify(50, 10, 25),
-                            proxsuite::linalg::veg::tuplify(10, 3, 2) }) {
-    VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+  for (auto const& dims : { // std::make_tuple(50, 0, 0),
+                            // std::make_tuple(50, 25, 0),
+                            // std::make_tuple(10, 0, 10),
+                            // std::make_tuple(50, 0, 25),
+                            // std::make_tuple(50, 10, 25),
+                            std::make_tuple(10, 3, 2) }) {
+    auto const& [n, n_eq, n_in] = dims;
 
     double eps_abs = 1.e-9;
     T sparsity_factor = 0.15;
@@ -162,13 +163,13 @@ TEST_CASE(
                "inequality constraints: test solve with different mu_eq and "
                "mu_in values---"
             << std::endl;
-  for (auto const& dims : { // proxsuite::linalg::veg::tuplify(50, 0, 0),
-                            // proxsuite::linalg::veg::tuplify(50, 25, 0),
-                            // proxsuite::linalg::veg::tuplify(10, 0, 10),
-                            // proxsuite::linalg::veg::tuplify(50, 0, 25),
-                            // proxsuite::linalg::veg::tuplify(50, 10, 25),
-                            proxsuite::linalg::veg::tuplify(10, 3, 2) }) {
-    VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+  for (auto const& dims : { // std::make_tuple(50, 0, 0),
+                            // std::make_tuple(50, 25, 0),
+                            // std::make_tuple(10, 0, 10),
+                            // std::make_tuple(50, 0, 25),
+                            // std::make_tuple(50, 10, 25),
+                            std::make_tuple(10, 3, 2) }) {
+    auto const& [n, n_eq, n_in] = dims;
 
     double eps_abs = 1.e-9;
     T sparsity_factor = 0.15;
@@ -221,13 +222,13 @@ TEST_CASE("sparse random strongly convex qp with equality and "
     << "---testing sparse random strongly convex qp with equality and "
        "inequality constraints: test setting specific sparse backend ---"
     << std::endl;
-  for (auto const& dims : { // proxsuite::linalg::veg::tuplify(50, 0, 0),
-                            // proxsuite::linalg::veg::tuplify(50, 25, 0),
-                            // proxsuite::linalg::veg::tuplify(10, 0, 10),
-                            // proxsuite::linalg::veg::tuplify(50, 0, 25),
-                            // proxsuite::linalg::veg::tuplify(50, 10, 25),
-                            proxsuite::linalg::veg::tuplify(10, 3, 2) }) {
-    VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+  for (auto const& dims : { // std::make_tuple(50, 0, 0),
+                            // std::make_tuple(50, 25, 0),
+                            // std::make_tuple(10, 0, 10),
+                            // std::make_tuple(50, 0, 25),
+                            // std::make_tuple(50, 10, 25),
+                            std::make_tuple(10, 3, 2) }) {
+    auto const& [n, n_eq, n_in] = dims;
 
     double eps_abs = 1.e-9;
     T sparsity_factor = 0.15;
@@ -290,13 +291,13 @@ TEST_CASE("sparse random strongly convex qp with equality and "
   std::cout << "---testing sparse random strongly convex qp with equality and "
                "inequality constraints: test warm starting---"
             << std::endl;
-  for (auto const& dims : { // proxsuite::linalg::veg::tuplify(50, 0, 0),
-                            // proxsuite::linalg::veg::tuplify(50, 25, 0),
-                            // proxsuite::linalg::veg::tuplify(10, 0, 10),
-                            // proxsuite::linalg::veg::tuplify(50, 0, 25),
-                            // proxsuite::linalg::veg::tuplify(50, 10, 25),
-                            proxsuite::linalg::veg::tuplify(10, 3, 2) }) {
-    VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+  for (auto const& dims : { // std::make_tuple(50, 0, 0),
+                            // std::make_tuple(50, 25, 0),
+                            // std::make_tuple(10, 0, 10),
+                            // std::make_tuple(50, 0, 25),
+                            // std::make_tuple(50, 10, 25),
+                            std::make_tuple(10, 3, 2) }) {
+    auto const& [n, n_eq, n_in] = dims;
 
     double eps_abs = 1.e-9;
     T sparsity_factor = 0.15;
@@ -338,13 +339,13 @@ TEST_CASE("sparse random strongly convex qp with equality and "
   std::cout << "---testing sparse random strongly convex qp with equality and "
                "inequality constraints: test verbose = true ---"
             << std::endl;
-  for (auto const& dims : { // proxsuite::linalg::veg::tuplify(50, 0, 0),
-                            // proxsuite::linalg::veg::tuplify(50, 25, 0),
-                            // proxsuite::linalg::veg::tuplify(10, 0, 10),
-                            // proxsuite::linalg::veg::tuplify(50, 0, 25),
-                            // proxsuite::linalg::veg::tuplify(50, 10, 25),
-                            proxsuite::linalg::veg::tuplify(10, 3, 2) }) {
-    VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+  for (auto const& dims : { // std::make_tuple(50, 0, 0),
+                            // std::make_tuple(50, 25, 0),
+                            // std::make_tuple(10, 0, 10),
+                            // std::make_tuple(50, 0, 25),
+                            // std::make_tuple(50, 10, 25),
+                            std::make_tuple(10, 3, 2) }) {
+    auto const& [n, n_eq, n_in] = dims;
 
     double eps_abs = 1.e-9;
     T sparsity_factor = 0.15;
@@ -398,13 +399,13 @@ TEST_CASE("sparse random strongly convex qp with equality and "
   std::cout << "---testing sparse random strongly convex qp with equality and "
                "inequality constraints: test no initial guess ---"
             << std::endl;
-  for (auto const& dims : { // proxsuite::linalg::veg::tuplify(50, 0, 0),
-                            // proxsuite::linalg::veg::tuplify(50, 25, 0),
-                            // proxsuite::linalg::veg::tuplify(10, 0, 10),
-                            // proxsuite::linalg::veg::tuplify(50, 0, 25),
-                            // proxsuite::linalg::veg::tuplify(50, 10, 25),
-                            proxsuite::linalg::veg::tuplify(10, 3, 2) }) {
-    VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+  for (auto const& dims : { // std::make_tuple(50, 0, 0),
+                            // std::make_tuple(50, 25, 0),
+                            // std::make_tuple(10, 0, 10),
+                            // std::make_tuple(50, 0, 25),
+                            // std::make_tuple(50, 10, 25),
+                            std::make_tuple(10, 3, 2) }) {
+    auto const& [n, n_eq, n_in] = dims;
 
     double eps_abs = 1.e-9;
     T sparsity_factor = 0.15;

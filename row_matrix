@@ -1,0 +1,11 @@
+{
+    "value0": {
+        "rows": 2,
+        "cols": 2,
+        "is_row_major": true,
+        "value0": 1.0,
+        "value1": 2.0,
+        "value2": 3.0,
+        "value3": 4.0
+    }
+}

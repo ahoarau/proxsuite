@@ -9,6 +9,7 @@
 #define PROXSUITE_SERIALIZATION_WORKSPACE_HPP
 
 #include <cereal/cereal.hpp>
+#include <cereal/types/vector.hpp>
 #include <proxsuite/proxqp/dense/workspace.hpp>
 
 namespace cereal {
@@ -61,27 +62,6 @@ serialize(Archive& archive, proxsuite::proxqp::dense::Workspace<T>& work)
     CEREAL_NVP(work.proximal_parameter_update),
     CEREAL_NVP(work.is_initialized),
     CEREAL_NVP(work.n_c));
-}
-
-template<typename T, class Archive>
-void
-save(Archive& ar, proxsuite::linalg::veg::Vec<T> const& vec_T)
-{
-  proxsuite::linalg::veg::isize len = vec_T.len();
-  ar(CEREAL_NVP(len));
-  for (proxsuite::linalg::veg::isize i = 0; i < len; i++)
-    ar(vec_T[i]);
-}
-
-template<typename T, class Archive>
-void
-load(Archive& ar, proxsuite::linalg::veg::Vec<T>& vec_T)
-{
-  proxsuite::linalg::veg::isize len;
-  ar(len);
-  vec_T.reserve(len);
-  for (proxsuite::linalg::veg::isize i = 0; i < len; i++)
-    ar(vec_T[i]);
 }
 
 } // namespace cereal

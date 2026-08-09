@@ -8,6 +8,7 @@
 #ifndef PROXSUITE_PROXQP_DENSE_SOLVER_HPP
 #define PROXSUITE_PROXQP_DENSE_SOLVER_HPP
 
+#include <proxsuite/helpers/common.hpp>
 #include "proxsuite/fwd.hpp"
 #include "proxsuite/proxqp/dense/views.hpp"
 #include "proxsuite/proxqp/dense/linesearch.hpp"
@@ -17,7 +18,8 @@
 #include <Eigen/Sparse>
 #include <iostream>
 #include <fstream>
-#include <proxsuite/linalg/veg/util/dynstack_alloc.hpp>
+#include <proxsuite/linalg/dynstack.hpp>
+#include <vector>
 #include <proxsuite/linalg/dense/ldlt.hpp>
 #include <chrono>
 #include <iomanip>
@@ -49,8 +51,8 @@ refactorize(const Model<T>& qpmodel,
     return;
   }
 
-  proxsuite::linalg::veg::dynstack::DynStackMut stack{
-    proxsuite::linalg::veg::from_slice_mut, qpwork.ldl_stack.as_mut()
+  proxsuite::linalg::dynstack::DynStackMut stack{
+    qpwork.ldl_stack.data(), proxsuite::isize(qpwork.ldl_stack.size())
   };
   switch (dense_backend) {
     case DenseBackend::PrimalDualLDLT: {
@@ -135,8 +137,8 @@ mu_update(const Model<T>& qpmodel,
           T mu_eq_new,
           T mu_in_new)
 {
-  proxsuite::linalg::veg::dynstack::DynStackMut stack{
-    proxsuite::linalg::veg::from_slice_mut, qpwork.ldl_stack.as_mut()
+  proxsuite::linalg::dynstack::DynStackMut stack{
+    qpwork.ldl_stack.data(), proxsuite::isize(qpwork.ldl_stack.size())
   };
 
   isize n = qpmodel.dim;
@@ -155,8 +157,7 @@ mu_update(const Model<T>& qpmodel,
       rank_update_alpha.tail(n_c).setConstant(qpresults.info.mu_in - mu_in_new);
 
       {
-        auto _indices = stack.make_new_for_overwrite(
-          proxsuite::linalg::veg::Tag<isize>{}, n_eq + n_c);
+        auto _indices = stack.make_new_for_overwrite<isize>(n_eq + n_c);
         isize* indices = _indices.ptr_mut();
         for (isize k = 0; k < n_eq; ++k) {
           indices[k] = n + k;
@@ -170,9 +171,9 @@ mu_update(const Model<T>& qpmodel,
     } break;
     case DenseBackend::PrimalLDLT: {
       // we refactorize there for the moment
-      proxsuite::linalg::veg::dynstack::DynStackMut stack{
-        proxsuite::linalg::veg::from_slice_mut,
-        qpwork.ldl_stack.as_mut(),
+      proxsuite::linalg::dynstack::DynStackMut stack{
+        qpwork.ldl_stack.data(),
+        proxsuite::isize(qpwork.ldl_stack.size()),
       };
       // qpwork.kkt.noalias() = qpwork.H_scaled + (qpwork.A_scaled.transpose() *
       // qpwork.A_scaled) / mu_eq_new; qpwork.kkt.diagonal().array() +=
@@ -326,7 +327,7 @@ solve_linear_system(proxsuite::proxqp::dense::Vec<T>& dw,
                     const isize n_constraints,
                     const DenseBackend& dense_backend,
                     isize inner_pb_dim,
-                    proxsuite::linalg::veg::dynstack::DynStackMut& stack)
+                    proxsuite::linalg::dynstack::DynStackMut& stack)
 {
 
   switch (dense_backend) {
@@ -421,8 +422,8 @@ iterative_solve_with_permut_fact( //
   i32 it = 0;
   i32 it_stability = 0;
 
-  proxsuite::linalg::veg::dynstack::DynStackMut stack{
-    proxsuite::linalg::veg::from_slice_mut, qpwork.ldl_stack.as_mut()
+  proxsuite::linalg::dynstack::DynStackMut stack{
+    qpwork.ldl_stack.data(), proxsuite::isize(qpwork.ldl_stack.size())
   };
   qpwork.dw_aug.head(inner_pb_dim) = qpwork.rhs.head(inner_pb_dim);
   solve_linear_system(qpwork.dw_aug,
@@ -913,8 +914,8 @@ primal_dual_newton_semi_smooth(const Settings<T>& qpsettings,
       qpresults.info.iter += qpsettings.max_iter_in + 1;
       break;
     }
-    proxsuite::linalg::veg::dynstack::DynStackMut stack{
-      proxsuite::linalg::veg::from_slice_mut, qpwork.ldl_stack.as_mut()
+    proxsuite::linalg::dynstack::DynStackMut stack{
+      qpwork.ldl_stack.data(), proxsuite::isize(qpwork.ldl_stack.size())
     };
     primal_dual_semi_smooth_newton_step<T>(qpsettings,
                                            qpmodel,

@@ -9,8 +9,9 @@
 
 #include <Eigen/Core>
 #include <proxsuite/linalg/dense/ldlt.hpp>
+#include <proxsuite/proxqp/dense/fwd.hpp>
 #include <proxsuite/proxqp/timings.hpp>
-#include <proxsuite/linalg/veg/vec.hpp>
+#include <vector>
 #include <proxsuite/proxqp/settings.hpp>
 namespace proxsuite {
 namespace proxqp {
@@ -27,7 +28,7 @@ struct Workspace
 
   ///// Cholesky Factorization
   proxsuite::linalg::dense::Ldlt<T> ldl{};
-  proxsuite::linalg::veg::Vec<unsigned char> ldl_stack;
+  std::vector<unsigned char> ldl_stack;
   Timer<T> timer;
 
   ///// QP STORAGE
@@ -67,7 +68,7 @@ struct Workspace
   Vec<T> Adx;
 
   Vec<T> active_part_z;
-  proxsuite::linalg::veg::Vec<T> alphas;
+  std::vector<T> alphas;
 
   ///// Newton variables
   Vec<T> dw_aug;
@@ -141,58 +142,52 @@ struct Workspace
         case DenseBackend::PrimalDualLDLT:
           kkt.resize(dim + n_eq, dim + n_eq);
           ldl.reserve_uninit(dim + n_eq + n_in + dim);
-          ldl_stack.resize_for_overwrite(
-            proxsuite::linalg::veg::dynstack::StackReq(
+          ldl_stack.resize(usize(
+            proxsuite::linalg::dynstack::StackReq(
               // optimize here
               proxsuite::linalg::dense::Ldlt<T>::factorize_req(dim + n_eq +
                                                                n_in + dim) |
 
-              (proxsuite::linalg::dense::temp_vec_req(
-                 proxsuite::linalg::veg::Tag<T>{}, n_eq + n_in + dim) &
-               proxsuite::linalg::veg::dynstack::StackReq{
-                 isize{ sizeof(isize) } * (n_eq + n_in + dim),
-                 alignof(isize) } &
+              (proxsuite::linalg::dense::temp_vec_req<T>(n_eq + n_in + dim) &
+               proxsuite::linalg::dynstack::StackReq{ isize{ sizeof(isize) } *
+                                                        (n_eq + n_in + dim),
+                                                      alignof(isize) } &
                proxsuite::linalg::dense::Ldlt<T>::diagonal_update_req(
                  dim + n_eq + n_in + dim, n_eq + n_in + dim)) |
 
-              (proxsuite::linalg::dense::temp_mat_req(
-                 proxsuite::linalg::veg::Tag<T>{},
-                 dim + n_eq + n_in + dim,
-                 n_in + dim) &
+              (proxsuite::linalg::dense::temp_mat_req<T>(
+                 dim + n_eq + n_in + dim, n_in + dim) &
                proxsuite::linalg::dense::Ldlt<T>::insert_block_at_req(
                  dim + n_eq + n_in + dim, n_in + dim)) |
 
               proxsuite::linalg::dense::Ldlt<T>::solve_in_place_req(dim + n_eq +
                                                                     n_in + dim))
               // TODO optimize here
-              .alloc_req());
+              .alloc_req()));
           break;
         case DenseBackend::PrimalLDLT:
           kkt.resize(dim, dim);
           ldl.reserve_uninit(dim);
-          ldl_stack.resize_for_overwrite(
-            proxsuite::linalg::veg::dynstack::StackReq(
+          ldl_stack.resize(usize(
+            proxsuite::linalg::dynstack::StackReq(
 
               proxsuite::linalg::dense::Ldlt<T>::factorize_req(dim) |
               // check simplification possible
-              (proxsuite::linalg::dense::temp_vec_req(
-                 proxsuite::linalg::veg::Tag<T>{}, n_eq + n_in + dim) &
-               proxsuite::linalg::veg::dynstack::StackReq{
-                 isize{ sizeof(isize) } * (n_eq + n_in + dim),
-                 alignof(isize) } &
+              (proxsuite::linalg::dense::temp_vec_req<T>(n_eq + n_in + dim) &
+               proxsuite::linalg::dynstack::StackReq{ isize{ sizeof(isize) } *
+                                                        (n_eq + n_in + dim),
+                                                      alignof(isize) } &
                proxsuite::linalg::dense::Ldlt<T>::diagonal_update_req(
                  dim + n_eq + n_in + dim, n_eq + n_in + dim)) |
 
-              (proxsuite::linalg::dense::temp_mat_req(
-                 proxsuite::linalg::veg::Tag<T>{},
-                 dim + n_eq + n_in + dim,
-                 n_in + dim) &
+              (proxsuite::linalg::dense::temp_mat_req<T>(
+                 dim + n_eq + n_in + dim, n_in + dim) &
                proxsuite::linalg::dense::Ldlt<T>::insert_block_at_req(
                  dim + n_eq + n_in + dim, n_in + dim)) |
               // end check
               proxsuite::linalg::dense::Ldlt<T>::solve_in_place_req(dim))
 
-              .alloc_req());
+              .alloc_req()));
           break;
         case DenseBackend::Automatic:
           break;
@@ -214,7 +209,7 @@ struct Workspace
       primal_residual_in_scaled_up_plus_alphaCdx.resize(dim + n_in);
       primal_residual_in_scaled_low_plus_alphaCdx.resize(dim + n_in);
       Cdx.resize(n_in + dim);
-      alphas.reserve(2 * n_in + 2 * dim);
+      alphas.reserve(usize(2 * n_in + 2 * dim));
     } else {
       z_prev.resize(n_in);
 
@@ -222,51 +217,49 @@ struct Workspace
         case DenseBackend::PrimalDualLDLT:
           kkt.resize(dim + n_eq, dim + n_eq);
           ldl.reserve_uninit(dim + n_eq + n_in);
-          ldl_stack.resize_for_overwrite(
-            proxsuite::linalg::veg::dynstack::StackReq(
+          ldl_stack.resize(usize(
+            proxsuite::linalg::dynstack::StackReq(
               // todo optimize here
               proxsuite::linalg::dense::Ldlt<T>::factorize_req(dim + n_eq +
                                                                n_in) |
 
-              (proxsuite::linalg::dense::temp_vec_req(
-                 proxsuite::linalg::veg::Tag<T>{}, n_eq + n_in) &
-               proxsuite::linalg::veg::dynstack::StackReq{
+              (proxsuite::linalg::dense::temp_vec_req<T>(n_eq + n_in) &
+               proxsuite::linalg::dynstack::StackReq{
                  isize{ sizeof(isize) } * (n_eq + n_in), alignof(isize) } &
                proxsuite::linalg::dense::Ldlt<T>::diagonal_update_req(
                  dim + n_eq + n_in, n_eq + n_in)) |
 
-              (proxsuite::linalg::dense::temp_mat_req(
-                 proxsuite::linalg::veg::Tag<T>{}, dim + n_eq + n_in, n_in) &
+              (proxsuite::linalg::dense::temp_mat_req<T>(dim + n_eq + n_in,
+                                                         n_in) &
                proxsuite::linalg::dense::Ldlt<T>::insert_block_at_req(
                  dim + n_eq + n_in, n_in)) |
 
               proxsuite::linalg::dense::Ldlt<T>::solve_in_place_req(dim + n_eq +
                                                                     n_in))
               // end todo optimize here
-              .alloc_req());
+              .alloc_req()));
           break;
         case DenseBackend::PrimalLDLT:
           kkt.resize(dim, dim);
           ldl.reserve_uninit(dim);
-          ldl_stack.resize_for_overwrite(
-            proxsuite::linalg::veg::dynstack::StackReq(
+          ldl_stack.resize(usize(
+            proxsuite::linalg::dynstack::StackReq(
 
               proxsuite::linalg::dense::Ldlt<T>::factorize_req(dim) |
               // check if it can be more simplified
-              (proxsuite::linalg::dense::temp_vec_req(
-                 proxsuite::linalg::veg::Tag<T>{}, n_eq + n_in) &
-               proxsuite::linalg::veg::dynstack::StackReq{
+              (proxsuite::linalg::dense::temp_vec_req<T>(n_eq + n_in) &
+               proxsuite::linalg::dynstack::StackReq{
                  isize{ sizeof(isize) } * (n_eq + n_in), alignof(isize) } &
                proxsuite::linalg::dense::Ldlt<T>::diagonal_update_req(
                  dim + n_eq + n_in, n_eq + n_in)) |
-              (proxsuite::linalg::dense::temp_mat_req(
-                 proxsuite::linalg::veg::Tag<T>{}, dim + n_eq + n_in, n_in) &
+              (proxsuite::linalg::dense::temp_mat_req<T>(dim + n_eq + n_in,
+                                                         n_in) &
                proxsuite::linalg::dense::Ldlt<T>::insert_block_at_req(
                  dim + n_eq + n_in, n_in)) |
               // end check
               proxsuite::linalg::dense::Ldlt<T>::solve_in_place_req(dim))
 
-              .alloc_req());
+              .alloc_req()));
           break;
         case DenseBackend::Automatic:
           break;
@@ -289,7 +282,7 @@ struct Workspace
       primal_residual_in_scaled_up_plus_alphaCdx.resize(n_in);
       primal_residual_in_scaled_low_plus_alphaCdx.resize(n_in);
       Cdx.resize(n_in);
-      alphas.reserve(2 * n_in);
+      alphas.reserve(usize(2 * n_in));
     }
 
     H_scaled.setZero();

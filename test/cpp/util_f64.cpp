@@ -5,22 +5,33 @@ namespace proxqp {
 namespace utils {
 
 namespace eigen {
-LDLT_EXPLICIT_TPL_DEF(2, llt_compute<Mat<f64, colmajor>>);
-LDLT_EXPLICIT_TPL_DEF(2, ldlt_compute<Mat<f64, colmajor>>);
-LDLT_EXPLICIT_TPL_DEF(2, llt_compute<Mat<f64, rowmajor>>);
-LDLT_EXPLICIT_TPL_DEF(2, ldlt_compute<Mat<f64, rowmajor>>);
+template auto
+llt_compute<Mat<f64, colmajor>>(Eigen::LLT<Mat<f64, colmajor>>&,
+                                Mat<f64, colmajor> const&) -> void;
+template auto
+ldlt_compute<Mat<f64, colmajor>>(Eigen::LDLT<Mat<f64, colmajor>>&,
+                                 Mat<f64, colmajor> const&) -> void;
+template auto
+llt_compute<Mat<f64, rowmajor>>(Eigen::LLT<Mat<f64, rowmajor>>&,
+                                Mat<f64, rowmajor> const&) -> void;
+template auto
+ldlt_compute<Mat<f64, rowmajor>>(Eigen::LDLT<Mat<f64, rowmajor>>&,
+                                 Mat<f64, rowmajor> const&) -> void;
 } // namespace eigen
 
 namespace rand {
-LDLT_EXPLICIT_TPL_DEF(2, matrix_rand<f64>);
-LDLT_EXPLICIT_TPL_DEF(1, vector_rand<f64>);
-LDLT_EXPLICIT_TPL_DEF(2, positive_definite_rand<f64>);
-LDLT_EXPLICIT_TPL_DEF(1, orthonormal_rand<f64>);
-LDLT_EXPLICIT_TPL_DEF(3, sparse_matrix_rand<f64>);
-LDLT_EXPLICIT_TPL_DEF(3, sparse_positive_definite_rand<f64>);
+template auto matrix_rand<f64>(isize, isize) -> Mat<f64, colmajor>;
+template auto vector_rand<f64>(isize) -> Vec<f64>;
+template auto positive_definite_rand<f64>(isize, f64) -> Mat<f64, colmajor>;
+template auto orthonormal_rand<f64>(isize) -> Mat<f64, colmajor> const&;
+template auto sparse_matrix_rand<f64>(isize, isize, f64) -> SparseMat<f64>;
+template auto sparse_positive_definite_rand<f64>(isize, f64, f64)
+  -> SparseMat<f64>;
 } // namespace rand
 
-LDLT_EXPLICIT_TPL_DEF(1, mat_cast<f64, long double>);
+template auto
+mat_cast<proxqp::f64, long double>(Mat<long double, proxqp::colmajor> const&)
+  -> Mat<proxqp::f64, proxqp::colmajor>;
 
 } // namespace utils
 } // namespace proxqp

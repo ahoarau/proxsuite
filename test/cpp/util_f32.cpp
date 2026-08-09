@@ -5,22 +5,37 @@ namespace proxqp {
 namespace utils {
 
 namespace eigen {
-LDLT_EXPLICIT_TPL_DEF(2, llt_compute<Mat<f32, colmajor>>);
-LDLT_EXPLICIT_TPL_DEF(2, ldlt_compute<Mat<f32, colmajor>>);
-LDLT_EXPLICIT_TPL_DEF(2, llt_compute<Mat<f32, rowmajor>>);
-LDLT_EXPLICIT_TPL_DEF(2, ldlt_compute<Mat<f32, rowmajor>>);
+template auto
+llt_compute<Mat<f32, colmajor>>(Eigen::LLT<Mat<f32, colmajor>>&,
+                                Mat<f32, colmajor> const&) -> void;
+template auto
+ldlt_compute<Mat<f32, colmajor>>(Eigen::LDLT<Mat<f32, colmajor>>&,
+                                 Mat<f32, colmajor> const&) -> void;
+template auto
+llt_compute<Mat<f32, rowmajor>>(Eigen::LLT<Mat<f32, rowmajor>>&,
+                                Mat<f32, rowmajor> const&) -> void;
+template auto
+ldlt_compute<Mat<f32, rowmajor>>(Eigen::LDLT<Mat<f32, rowmajor>>&,
+                                 Mat<f32, rowmajor> const&) -> void;
 } // namespace eigen
+
 namespace rand {
-LDLT_EXPLICIT_TPL_DEF(2, matrix_rand<f32>);
-LDLT_EXPLICIT_TPL_DEF(1, vector_rand<f32>);
-LDLT_EXPLICIT_TPL_DEF(2, positive_definite_rand<f32>);
-LDLT_EXPLICIT_TPL_DEF(1, orthonormal_rand<f32>);
-LDLT_EXPLICIT_TPL_DEF(3, sparse_matrix_rand<f32>);
-LDLT_EXPLICIT_TPL_DEF(3, sparse_positive_definite_rand<f32>);
+template auto matrix_rand<f32>(isize, isize) -> Mat<f32, colmajor>;
+template auto vector_rand<f32>(isize) -> Vec<f32>;
+template auto positive_definite_rand<f32>(isize, f32) -> Mat<f32, colmajor>;
+template auto orthonormal_rand<f32>(isize) -> Mat<f32, colmajor> const&;
+template auto sparse_matrix_rand<f32>(isize, isize, f32) -> SparseMat<f32>;
+template auto sparse_positive_definite_rand<f32>(isize, f32, f32)
+  -> SparseMat<f32>;
 } // namespace rand
 
-LDLT_EXPLICIT_TPL_DEF(2, matmul_impl<long double>);
-LDLT_EXPLICIT_TPL_DEF(1, mat_cast<proxqp::f32, long double>);
+template auto
+matmul_impl<long double>(Mat<long double, proxqp::colmajor> const&,
+                         Mat<long double, proxqp::colmajor> const&)
+  -> Mat<long double, proxqp::colmajor>;
+template auto
+mat_cast<proxqp::f32, long double>(Mat<long double, proxqp::colmajor> const&)
+  -> Mat<proxqp::f32, proxqp::colmajor>;
 
 } // namespace utils
 } // namespace proxqp

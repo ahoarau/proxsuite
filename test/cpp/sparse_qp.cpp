@@ -5,7 +5,8 @@
 #include <proxsuite/proxqp/sparse/wrapper.hpp>
 #include <proxsuite/proxqp/utils/random_qp_problems.hpp>
 #include <catch2/catch_test_macros.hpp>
-#include <proxsuite/linalg/veg/util/dynstack_alloc.hpp>
+#include <proxsuite/linalg/dynstack.hpp>
+#include <vector>
 
 using namespace proxsuite;
 using T = double;
@@ -15,14 +16,14 @@ using namespace linalg::sparse::tags;
 TEST_CASE("random ruiz") {
 
         for (auto const& dims : {
-                                         linalg::veg::tuplify(2, 0,
-2), linalg::veg::tuplify(50, 0, 0),
-                                         linalg::veg::tuplify(50, 25,
-0), linalg::veg::tuplify(50, 0, 25),
-                                         linalg::veg::tuplify(50, 10,
+                                         std::make_tuple(2, 0,
+2), std::make_tuple(50, 0, 0),
+                                         std::make_tuple(50, 25,
+0), std::make_tuple(50, 0, 25),
+                                         std::make_tuple(50, 10,
 25),
                          }) {
-                VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+                auto const& [n, n_eq, n_in] = dims;
 
                 double p = 1.0;
 
@@ -81,14 +82,14 @@ ruiz{ n, n_eq + n_in, 1e-3, 10, proxqp::sparse::preconditioner::Symmetry::UPPER,
 TEST_CASE("random ruiz using the API") {
 
         for (auto const& dims : {
-                                         linalg::veg::tuplify(2, 0,
-2), linalg::veg::tuplify(50, 0, 0),
-                                         linalg::veg::tuplify(50, 25,
-0), linalg::veg::tuplify(50, 0, 25),
-                                         linalg::veg::tuplify(50, 10,
+                                         std::make_tuple(2, 0,
+2), std::make_tuple(50, 0, 0),
+                                         std::make_tuple(50, 25,
+0), std::make_tuple(50, 0, 25),
+                                         std::make_tuple(50, 10,
 25),
                          }) {
-                VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+                auto const& [n, n_eq, n_in] = dims;
 
                 double p = 1.0;
 
@@ -121,14 +122,14 @@ qp.results.z) <= 1e-9); CHECK(proxqp::dense::infty_norm(A * qp.results.x - b) <=
 TEST_CASE("random id") {
 
         for (auto const& dims : {
-                                         linalg::veg::tuplify(50, 0,
-0), linalg::veg::tuplify(50, 25, 0),
-                                         linalg::veg::tuplify(10, 0,
-10), linalg::veg::tuplify(50, 0, 25),
-                                         linalg::veg::tuplify(50, 10,
+                                         std::make_tuple(50, 0,
+0), std::make_tuple(50, 25, 0),
+                                         std::make_tuple(10, 0,
+10), std::make_tuple(50, 0, 25),
+                                         std::make_tuple(50, 10,
 25),
                          }) {
-                VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+                auto const& [n, n_eq, n_in] = dims;
 
                 double p = 1.0;
 
@@ -186,13 +187,13 @@ TEST_CASE("random id using the API")
 {
 
   for (auto const& dims : {
-         linalg::veg::tuplify(50, 0, 0),
-         linalg::veg::tuplify(50, 25, 0),
-         linalg::veg::tuplify(10, 0, 10),
-         linalg::veg::tuplify(50, 0, 25),
-         linalg::veg::tuplify(50, 10, 25),
+         std::make_tuple(50, 0, 0),
+         std::make_tuple(50, 25, 0),
+         std::make_tuple(10, 0, 10),
+         std::make_tuple(50, 0, 25),
+         std::make_tuple(50, 10, 25),
        }) {
-    VEG_BIND(auto const&, (n, n_eq, n_in), dims);
+    auto const& [n, n_eq, n_in] = dims;
 
     double p = 1.0;
 

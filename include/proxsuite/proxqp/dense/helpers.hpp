@@ -8,6 +8,7 @@
 #ifndef PROXSUITE_PROXQP_DENSE_HELPERS_HPP
 #define PROXSUITE_PROXQP_DENSE_HELPERS_HPP
 
+#include <proxsuite/helpers/common.hpp>
 #include <proxsuite/proxqp/results.hpp>
 #include <proxsuite/proxqp/settings.hpp>
 #include <proxsuite/proxqp/status.hpp>
@@ -245,9 +246,9 @@ setup_factorization(Workspace<T>& qpwork,
                     const HessianType& hessian_type)
 {
 
-  proxsuite::linalg::veg::dynstack::DynStackMut stack{
-    proxsuite::linalg::veg::from_slice_mut,
-    qpwork.ldl_stack.as_mut(),
+  proxsuite::linalg::dynstack::DynStackMut stack{
+    qpwork.ldl_stack.data(),
+    proxsuite::isize(qpwork.ldl_stack.size()),
   };
   switch (hessian_type) {
     case HessianType::Dense:
@@ -313,9 +314,9 @@ setup_equilibration(Workspace<T>& qpwork,
     { from_eigen, qpwork.l_box_scaled }, { from_eigen, qpwork.u_box_scaled },
   };
 
-  proxsuite::linalg::veg::dynstack::DynStackMut stack{
-    proxsuite::linalg::veg::from_slice_mut,
-    qpwork.ldl_stack.as_mut(),
+  proxsuite::linalg::dynstack::DynStackMut stack{
+    qpwork.ldl_stack.data(),
+    proxsuite::isize(qpwork.ldl_stack.size()),
   };
   ruiz.scale_qp_in_place(qp_scaled,
                          execute_preconditioner,

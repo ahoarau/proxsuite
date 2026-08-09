@@ -32,7 +32,7 @@ using Mat = Eigen::Matrix<T, DYN, DYN, l>;
 template<typename T, int l = layout>
 using MatRef = Eigen::Ref<Mat<T, l> const>;
 
-using proxsuite::linalg::veg::isize;
+using proxsuite::isize;
 
 template<typename T>
 using VecMap = Eigen::Map<Vec<T> const>;

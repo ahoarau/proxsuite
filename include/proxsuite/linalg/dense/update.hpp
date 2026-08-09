@@ -33,19 +33,17 @@ bytes_to_next_aligned(void* ptr, usize align) noexcept -> isize
 }
 
 template<usize... Is, typename Fn>
-VEG_INLINE void
-unroll_impl(proxsuite::linalg::veg::meta::index_sequence<Is...> /*unused*/,
-            Fn fn)
+PROXSUITE_INLINE void
+unroll_impl(std::index_sequence<Is...> /*unused*/, Fn fn)
 {
-  VEG_EVAL_ALL(fn(Is));
+  (fn(Is), ...);
 }
 
 template<usize N, typename Fn>
-VEG_INLINE void
+PROXSUITE_INLINE void
 unroll(Fn fn)
 {
-  _detail::unroll_impl(proxsuite::linalg::veg::meta::make_index_sequence<N>{},
-                       VEG_FWD(fn));
+  _detail::unroll_impl(std::make_index_sequence<N>{}, fn);
 }
 
 template<typename T, usize N>
@@ -55,7 +53,7 @@ struct RankUpdateLoadW
   T const* pw;
   isize w_stride;
 
-  VEG_INLINE void operator()(usize i) const
+  PROXSUITE_INLINE void operator()(usize i) const
   {
     p_wr[i] = _simd::Pack<T, N>::load_unaligned(pw + w_stride * isize(i));
   }
@@ -69,7 +67,7 @@ struct RankUpdateUpdateWAndL
   _simd::Pack<T, N> const* p_p;
   _simd::Pack<T, N> const* p_mu;
 
-  VEG_INLINE void operator()(usize i) const
+  PROXSUITE_INLINE void operator()(usize i) const
   {
     p_wr[i] = _simd::Pack<T, N>::fnmadd(p_p[i], p_in_l, p_wr[i]);
     p_in_l = _simd::Pack<T, N>::fmadd(p_mu[i], p_wr[i], p_in_l);
@@ -83,14 +81,14 @@ struct RankUpdateStoreW
   T* pw;
   isize w_stride;
 
-  VEG_INLINE void operator()(usize i) const
+  PROXSUITE_INLINE void operator()(usize i) const
   {
     p_wr[i].store_unaligned(pw + w_stride * isize(i));
   }
 };
 
 template<usize R, typename T, usize N>
-VEG_INLINE void
+PROXSUITE_INLINE void
 rank_r_update_inner_loop_iter( //
   _simd::Pack<T, N> const* p_p,
   _simd::Pack<T, N> const* p_mu,
@@ -118,7 +116,7 @@ struct RankUpdateLoadPMu
   _simd::Pack<T, N>* p_mu;
   T const* p;
   T const* mu;
-  VEG_INLINE void operator()(usize i) const
+  PROXSUITE_INLINE void operator()(usize i) const
   {
     p_p[i] = _simd::Pack<T, N>::broadcast(p[i]);
     p_mu[i] = _simd::Pack<T, N>::broadcast(mu[i]);
@@ -129,12 +127,12 @@ template<>
 struct RankRUpdateLoopImpl<false>
 {
   template<usize R, typename T>
-  VEG_INLINE static void fn(isize n,
-                            T* inout_l,
-                            T* pw,
-                            isize w_stride,
-                            T const* p,
-                            T const* mu) noexcept
+  PROXSUITE_INLINE static void fn(isize n,
+                                  T* inout_l,
+                                  T* pw,
+                                  isize w_stride,
+                                  T const* p,
+                                  T const* mu) noexcept
   {
     using Pack_ = _simd::Pack<T, 1>;
     Pack_ p_p[R];
@@ -156,12 +154,12 @@ template<>
 struct RankRUpdateLoopImpl<true>
 {
   template<usize R, typename T>
-  VEG_INLINE static void fn(isize n,
-                            T* inout_l,
-                            T* pw,
-                            isize w_stride,
-                            T const* p,
-                            T const* mu) noexcept
+  PROXSUITE_INLINE static void fn(isize n,
+                                  T* inout_l,
+                                  T* pw,
+                                  isize w_stride,
+                                  T const* p,
+                                  T const* mu) noexcept
   {
 
     // best perf if beginning of each pw is aligned
@@ -204,7 +202,7 @@ struct RankRUpdateLoopImpl<true>
 };
 
 template<usize R, typename T>
-VEG_INLINE void
+PROXSUITE_INLINE void
 rank_r_update_inner_loop(isize n,
                          T* inout_l,
                          T* pw,
@@ -288,30 +286,28 @@ rank_r_update_clobber_w_impl( //
 struct ConstantR
 {
   isize r;
-  VEG_INLINE auto operator()() const noexcept -> isize { return r; }
+  PROXSUITE_INLINE auto operator()() const noexcept -> isize { return r; }
 };
 } // namespace _detail
 
 template<typename LD,
          typename W,
-         typename T = typename proxsuite::linalg::veg::uncvref_t<LD>::Scalar>
+         typename T = typename proxsuite::remove_cvref_t<LD>::Scalar>
 void
-rank_1_update_clobber_w(LD&& ld,
-                        W&& w,
-                        proxsuite::linalg::veg::DoNotDeduce<T> alpha)
+rank_1_update_clobber_w(LD&& ld, W&& w, proxsuite::DoNotDeduce<T> alpha)
 {
   _detail::rank_r_update_clobber_w_impl( //
     util::to_view_dyn(ld),
     w.data(),
     0,
-    proxsuite::linalg::veg::mem::addressof(alpha),
+    std::addressof(alpha),
     _detail::ConstantR{ 1 });
 }
 
 template<typename LD,
          typename W,
          typename A,
-         typename T = typename proxsuite::linalg::veg::uncvref_t<LD>::Scalar>
+         typename T = typename proxsuite::remove_cvref_t<LD>::Scalar>
 void
 rank_r_update_clobber_inputs(LD&& ld, W&& w, A&& alpha)
 {

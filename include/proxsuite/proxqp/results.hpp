@@ -10,8 +10,8 @@
 #include <algorithm>
 #include <proxsuite/helpers/optional.hpp>
 #include <Eigen/Core>
-#include <proxsuite/linalg/veg/type_traits/core.hpp>
-#include <proxsuite/linalg/veg/vec.hpp>
+#include <type_traits>
+#include <vector>
 #include <proxsuite/proxqp/settings.hpp>
 #include "proxsuite/proxqp/status.hpp"
 #include "proxsuite/proxqp/sparse/fwd.hpp"
@@ -77,7 +77,7 @@ struct Results
                      // equality constraints
   sparse::Vec<T> si; // optimal shift to the closest feasible problem wrt
                      // inequality constraints
-  proxsuite::linalg::veg::Vec<bool> active_constraints;
+  std::vector<bool> active_constraints;
 
   Info<T> info;
 
@@ -242,8 +242,7 @@ operator==(const Results<T>& results1, const Results<T>& results2)
   if (value) {
     auto const& ac1 = results1.active_constraints;
     auto const& ac2 = results2.active_constraints;
-    value = ac1.len() == ac2.len() &&
-            std::equal(ac1.ptr(), ac1.ptr() + ac1.len(), ac2.ptr());
+    value = ac1 == ac2;
   }
   return value;
 }

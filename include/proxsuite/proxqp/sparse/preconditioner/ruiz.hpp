@@ -117,7 +117,7 @@ ruiz_scale_qp_in_place( //
   isize max_iter,
   bool preconditioning_for_infeasible_problems,
   Symmetry sym,
-  proxsuite::linalg::veg::dynstack::DynStackMut stack) -> T
+  proxsuite::linalg::dynstack::DynStackMut stack) -> T
 {
 
   T c = 1;
@@ -153,9 +153,9 @@ ruiz_scale_qp_in_place( //
     // norm_infty of each column of A (resp. C), i.e.,
     // each row of AT (resp. CT)
     {
-      auto _a_infty_norm = stack.make_new(proxsuite::linalg::veg::Tag<T>{}, n);
-      auto _c_infty_norm = stack.make_new(proxsuite::linalg::veg::Tag<T>{}, n);
-      auto _h_infty_norm = stack.make_new(proxsuite::linalg::veg::Tag<T>{}, n);
+      auto _a_infty_norm = stack.make_new<T>(n);
+      auto _c_infty_norm = stack.make_new<T>(n);
+      auto _h_infty_norm = stack.make_new<T>(n);
       T* a_infty_norm = _a_infty_norm.ptr_mut();
       T* c_infty_norm = _c_infty_norm.ptr_mut();
       T* h_infty_norm = _h_infty_norm.ptr_mut();
@@ -299,7 +299,7 @@ ruiz_scale_qp_in_place( //
     qp.u.to_eigen().array() *= delta.tail(n_in).array();
 
     // additional normalization
-    auto _h_infty_norm = stack.make_new(proxsuite::linalg::veg::Tag<T>{}, n);
+    auto _h_infty_norm = stack.make_new<T>(n);
     T* h_infty_norm = _h_infty_norm.ptr_mut();
 
     switch (sym) {
@@ -360,14 +360,11 @@ struct RuizEquilibration
     delta.setOnes();
   }
 
-  static auto scale_qp_in_place_req(proxsuite::linalg::veg::Tag<T> tag,
-                                    isize n,
-                                    isize n_eq,
-                                    isize n_in)
-    -> proxsuite::linalg::veg::dynstack::StackReq
+  static auto scale_qp_in_place_req(isize n, isize n_eq, isize n_in)
+    -> proxsuite::linalg::dynstack::StackReq
   {
-    return proxsuite::linalg::dense::temp_vec_req(tag, n + n_eq + n_in) &
-           proxsuite::linalg::veg::dynstack::StackReq::with_len(tag, 3 * n);
+    return proxsuite::linalg::dense::temp_vec_req<T>(n + n_eq + n_in) &
+           proxsuite::linalg::dynstack::StackReq::with_len<T>(3 * n);
   }
 
   void scale_qp_in_place(QpViewMut<T, I> qp,
@@ -375,7 +372,7 @@ struct RuizEquilibration
                          bool preconditioning_for_infeasible_problems,
                          const isize max_iter,
                          const T epsilon,
-                         proxsuite::linalg::veg::dynstack::DynStackMut stack)
+                         proxsuite::linalg::dynstack::DynStackMut stack)
   {
     if (execute_preconditioner) {
       delta.setOnes();

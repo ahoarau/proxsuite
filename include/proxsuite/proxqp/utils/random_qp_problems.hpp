@@ -56,15 +56,32 @@ ldlt_compute( //
 {
   out.compute(mat);
 }
-LDLT_EXPLICIT_TPL_DECL(2, llt_compute<Mat<f32, colmajor>>);
-LDLT_EXPLICIT_TPL_DECL(2, ldlt_compute<Mat<f32, colmajor>>);
-LDLT_EXPLICIT_TPL_DECL(2, llt_compute<Mat<f32, rowmajor>>);
-LDLT_EXPLICIT_TPL_DECL(2, ldlt_compute<Mat<f32, rowmajor>>);
+// Instantiated in the test utility library, see test/cpp/util_f{32,64}.cpp.
+extern template auto
+llt_compute<Mat<f32, colmajor>>(Eigen::LLT<Mat<f32, colmajor>>&,
+                                Mat<f32, colmajor> const&) -> void;
+extern template auto
+ldlt_compute<Mat<f32, colmajor>>(Eigen::LDLT<Mat<f32, colmajor>>&,
+                                 Mat<f32, colmajor> const&) -> void;
+extern template auto
+llt_compute<Mat<f32, rowmajor>>(Eigen::LLT<Mat<f32, rowmajor>>&,
+                                Mat<f32, rowmajor> const&) -> void;
+extern template auto
+ldlt_compute<Mat<f32, rowmajor>>(Eigen::LDLT<Mat<f32, rowmajor>>&,
+                                 Mat<f32, rowmajor> const&) -> void;
 
-LDLT_EXPLICIT_TPL_DECL(2, llt_compute<Mat<f64, colmajor>>);
-LDLT_EXPLICIT_TPL_DECL(2, ldlt_compute<Mat<f64, colmajor>>);
-LDLT_EXPLICIT_TPL_DECL(2, llt_compute<Mat<f64, rowmajor>>);
-LDLT_EXPLICIT_TPL_DECL(2, ldlt_compute<Mat<f64, rowmajor>>);
+extern template auto
+llt_compute<Mat<f64, colmajor>>(Eigen::LLT<Mat<f64, colmajor>>&,
+                                Mat<f64, colmajor> const&) -> void;
+extern template auto
+ldlt_compute<Mat<f64, colmajor>>(Eigen::LDLT<Mat<f64, colmajor>>&,
+                                 Mat<f64, colmajor> const&) -> void;
+extern template auto
+llt_compute<Mat<f64, rowmajor>>(Eigen::LLT<Mat<f64, rowmajor>>&,
+                                Mat<f64, rowmajor> const&) -> void;
+extern template auto
+ldlt_compute<Mat<f64, rowmajor>>(Eigen::LDLT<Mat<f64, rowmajor>>&,
+                                 Mat<f64, rowmajor> const&) -> void;
 } // namespace eigen
 namespace rand {
 
@@ -364,9 +381,16 @@ mat_cast(Mat<From, proxqp::colmajor> const& from) -> Mat<To, proxqp::colmajor>
 {
   return from.template cast<To>();
 }
-LDLT_EXPLICIT_TPL_DECL(2, matmul_impl<long double>);
-LDLT_EXPLICIT_TPL_DECL(1, mat_cast<proxqp::f64, long double>);
-LDLT_EXPLICIT_TPL_DECL(1, mat_cast<proxqp::f32, long double>);
+extern template auto
+matmul_impl<long double>(Mat<long double, proxqp::colmajor> const&,
+                         Mat<long double, proxqp::colmajor> const&)
+  -> Mat<long double, proxqp::colmajor>;
+extern template auto
+mat_cast<proxqp::f64, long double>(Mat<long double, proxqp::colmajor> const&)
+  -> Mat<proxqp::f64, proxqp::colmajor>;
+extern template auto
+mat_cast<proxqp::f32, long double>(Mat<long double, proxqp::colmajor> const&)
+  -> Mat<proxqp::f32, proxqp::colmajor>;
 
 template<typename MatLhs, typename MatRhs, typename T = typename MatLhs::Scalar>
 auto
@@ -391,7 +415,9 @@ matmul3(MatLhs const& a, MatMid const& b, MatRhs const& c)
   return matmul(matmul(a, b), c);
 }
 
-VEG_TAG(from_data, FromData);
+struct FromData
+{};
+inline constexpr FromData from_data{};
 
 struct EigenNoAlloc
 {

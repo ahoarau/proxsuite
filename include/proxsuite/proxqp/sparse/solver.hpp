@@ -16,7 +16,8 @@
 #include <proxsuite/linalg/sparse/rowmod.hpp>
 #include <proxsuite/proxqp/dense/views.hpp>
 #include <proxsuite/proxqp/settings.hpp>
-#include <proxsuite/linalg/veg/vec.hpp>
+#include <tuple>
+#include <vector>
 #include "proxsuite/proxqp/results.hpp"
 #include "proxsuite/proxqp/sparse/fwd.hpp"
 #include "proxsuite/proxqp/sparse/views.hpp"
@@ -45,7 +46,7 @@ ldl_solve(VectorViewMut<T> sol,
                         Eigen::Upper | Eigen::Lower,
                         Eigen::IdentityPreconditioner>& iterative_solver,
           bool do_ldlt,
-          proxsuite::linalg::veg::dynstack::DynStackMut stack,
+          proxsuite::linalg::dynstack::DynStackMut stack,
           T* ldl_values,
           I* perm,
           I* ldl_col_ptrs,
@@ -54,7 +55,9 @@ ldl_solve(VectorViewMut<T> sol,
   LDLT_TEMP_VEC_UNINIT(T, work_, n_tot, stack);
   auto rhs_e = rhs.to_eigen();
   auto sol_e = sol.to_eigen();
-  auto zx = proxsuite::linalg::sparse::util::zero_extend;
+  auto zx = [](auto i) {
+    return proxsuite::linalg::sparse::util::zero_extend(i);
+  };
 
   if (do_ldlt) {
 
@@ -97,14 +100,14 @@ ldl_iter_solve_noalias(
                 Eigen::Upper | Eigen::Lower,
                 Eigen::IdentityPreconditioner>& iterative_solver,
   bool do_ldlt,
-  proxsuite::linalg::veg::dynstack::DynStackMut stack,
+  proxsuite::linalg::dynstack::DynStackMut stack,
   T* ldl_values,
   I* perm,
   I* ldl_col_ptrs,
   I const* perm_inv,
   Settings<T> const& settings,
   proxsuite::linalg::sparse::MatMut<T, I> kkt_active,
-  proxsuite::linalg::veg::SliceMut<bool> active_constraints)
+  proxsuite::linalg::SliceMut<bool> active_constraints)
 {
   auto rhs_e = rhs.to_eigen();
   auto sol_e = sol.to_eigen();
@@ -209,14 +212,14 @@ ldl_solve_in_place(
                 Eigen::Upper | Eigen::Lower,
                 Eigen::IdentityPreconditioner>& iterative_solver,
   bool do_ldlt,
-  proxsuite::linalg::veg::dynstack::DynStackMut stack,
+  proxsuite::linalg::dynstack::DynStackMut stack,
   T* ldl_values,
   I* perm,
   I* ldl_col_ptrs,
   I const* perm_inv,
   Settings<T> const& settings,
   proxsuite::linalg::sparse::MatMut<T, I> kkt_active,
-  proxsuite::linalg::veg::SliceMut<bool> active_constraints)
+  proxsuite::linalg::SliceMut<bool> active_constraints)
 {
   LDLT_TEMP_VEC_UNINIT(T, tmp, n_tot, stack);
   ldl_iter_solve_noalias({ proxqp::from_eigen, tmp },
@@ -302,7 +305,7 @@ reconstruction_error(proxsuite::linalg::sparse::MatMut<T, I> ldl,
                      Model<T, I> const& data,
                      isize n_tot,
                      proxsuite::linalg::sparse::MatMut<T, I> kkt_active,
-                     proxsuite::linalg::veg::SliceMut<bool> active_constraints)
+                     proxsuite::linalg::SliceMut<bool> active_constraints)
   -> DMat<T>
 {
   T mu_eq_neg = -results.info.mu_eq;
@@ -326,7 +329,6 @@ struct PrimalDualGradResult
   T a;
   T b;
   T grad;
-  VEG_REFLECT(PrimalDualGradResult, a, b, grad);
 };
 
 /*!
@@ -359,8 +361,8 @@ qp_solve(Results<T>& results,
     proxsuite::linalg::sparse::MatMut<T, I> kkt_unscaled =
       data.kkt_mut_unscaled();
 
-    auto kkt_top_n_rows = detail::top_rows_mut_unchecked(
-      proxsuite::linalg::veg::unsafe, kkt_unscaled, data.dim);
+    auto kkt_top_n_rows =
+      detail::top_rows_mut_unchecked(kkt_unscaled, data.dim);
 
     proxsuite::linalg::sparse::MatMut<T, I> H_unscaled =
       detail::middle_cols_mut(kkt_top_n_rows, 0, data.dim, data.H_nnz);
@@ -429,14 +431,12 @@ qp_solve(Results<T>& results,
         break;
       }
     }
-    work.setup_impl(
-      qp,
-      data,
-      settings,
-      false,
-      precond,
-      P::scale_qp_in_place_req(
-        proxsuite::linalg::veg::Tag<T>{}, data.dim, data.n_eq, data.n_in));
+    work.setup_impl(qp,
+                    data,
+                    settings,
+                    false,
+                    precond,
+                    P::scale_qp_in_place_req(data.dim, data.n_eq, data.n_in));
 
   } else {
     // the following is used for a first solve after initializing or updating
@@ -485,11 +485,10 @@ qp_solve(Results<T>& results,
   if (settings.verbose) {
     sparse::print_setup_header(settings, results, data);
   }
-  using namespace proxsuite::linalg::veg::literals;
   namespace util = proxsuite::linalg::sparse::util;
-  auto zx = util::zero_extend;
+  auto zx = [](auto i) { return util::zero_extend(i); };
 
-  proxsuite::linalg::veg::dynstack::DynStackMut stack = work.stack_mut();
+  proxsuite::linalg::dynstack::DynStackMut stack = work.stack_mut();
 
   isize n = data.dim;
   isize n_eq = data.n_eq;
@@ -502,8 +501,7 @@ qp_solve(Results<T>& results,
 
   proxsuite::linalg::sparse::MatMut<T, I> kkt = data.kkt_mut();
 
-  auto kkt_top_n_rows =
-    detail::top_rows_mut_unchecked(proxsuite::linalg::veg::unsafe, kkt, n);
+  auto kkt_top_n_rows = detail::top_rows_mut_unchecked(kkt, n);
 
   proxsuite::linalg::sparse::MatMut<T, I> H_scaled =
     detail::middle_cols_mut(kkt_top_n_rows, 0, n, data.H_nnz);
@@ -532,17 +530,15 @@ qp_solve(Results<T>& results,
   T const dual_feasibility_rhs_2 = infty_norm(data.g);
 
   // auto ldl_col_ptrs = work.ldl_col_ptrs_mut();
-  auto ldl_col_ptrs = work.internal.ldl.col_ptrs.ptr_mut();
-  proxsuite::linalg::veg::Tag<I> itag;
-  proxsuite::linalg::veg::Tag<T> xtag;
+  auto ldl_col_ptrs = work.internal.ldl.col_ptrs.data();
 
   bool do_ldlt = work.internal.do_ldlt;
 
   isize ldlt_ntot = do_ldlt ? n_tot : 0;
 
-  auto _perm = stack.make_new_for_overwrite(itag, ldlt_ntot);
+  auto _perm = stack.make_new_for_overwrite<I>(ldlt_ntot);
 
-  I* perm_inv = work.internal.ldl.perm_inv.ptr_mut();
+  I* perm_inv = work.internal.ldl.perm_inv.data();
   I* perm = _perm.ptr_mut();
 
   if (do_ldlt) {
@@ -552,7 +548,7 @@ qp_solve(Results<T>& results,
     }
   }
 
-  I* kkt_nnz_counts = work.internal.kkt_nnz_counts.ptr_mut();
+  I* kkt_nnz_counts = work.internal.kkt_nnz_counts.data();
 
   auto& iterative_solver = *work.internal.matrix_free_solver.get();
   isize C_active_nnz = 0;
@@ -659,12 +655,13 @@ qp_solve(Results<T>& results,
     kkt.values_mut(),
   };
 
-  I* etree = work.internal.ldl.etree.ptr_mut();
-  I* ldl_nnz_counts = work.internal.ldl.nnz_counts.ptr_mut();
-  I* ldl_row_indices = work.internal.ldl.row_indices.ptr_mut();
-  T* ldl_values = work.internal.ldl.values.ptr_mut();
-  proxsuite::linalg::veg::SliceMut<bool> active_constraints =
-    work.active_inequalities.as_mut();
+  I* etree = work.internal.ldl.etree.data();
+  I* ldl_nnz_counts = work.internal.ldl.nnz_counts.data();
+  I* ldl_row_indices = work.internal.ldl.row_indices.data();
+  T* ldl_values = work.internal.ldl.values.data();
+  proxsuite::linalg::SliceMut<bool> active_constraints{
+    work.active_inequalities.data(), work.active_inequalities.rows()
+  };
 
   proxsuite::linalg::sparse::MatMut<T, I> ldl = {
     proxsuite::linalg::sparse::from_raw_parts,
@@ -686,7 +683,7 @@ qp_solve(Results<T>& results,
   auto y_e = y.to_eigen();
   auto z_e = z.to_eigen();
   sparse::refactorize<T, I>(
-    work, results, settings, kkt_active, active_constraints, data, stack, xtag);
+    work, results, settings, kkt_active, active_constraints, data, stack);
   switch (settings.initial_guess) {
     case InitialGuessStatus::EQUALITY_CONSTRAINED_INITIAL_GUESS: {
       LDLT_TEMP_VEC_UNINIT(T, rhs, n_tot, stack);
@@ -787,9 +784,7 @@ qp_solve(Results<T>& results,
       };
       // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-      VEG_BIND( // ?
-        auto,
-        (primal_feasibility_lhs, dual_feasibility_lhs),
+      auto [primal_feasibility_lhs, dual_feasibility_lhs] =
         detail::unscaled_primal_dual_residual(work,
                                               results,
                                               settings,
@@ -809,7 +804,7 @@ qp_solve(Results<T>& results,
                                               detail::vec_mut(x_e),
                                               detail::vec_mut(y_e),
                                               detail::vec_mut(z_e),
-                                              stack));
+                                              stack);
       /*put in debug mode
       if (settings.verbose) {
               std::cout << "-------- outer iteration: " << iter << " primal
@@ -991,8 +986,7 @@ qp_solve(Results<T>& results,
                               kkt_active,
                               active_constraints,
                               data,
-                              stack,
-                              xtag);
+                              stack);
                 }
               }
             }
@@ -1417,12 +1411,9 @@ qp_solve(Results<T>& results,
           AT_scaled.to_eigen() * rhs_n_eq + CT_scaled.to_eigen() * rhs_n_in;
         scaled_eps = infty_norm(rhs_dim) * settings.eps_abs;
       }
-      // VEG bind : met le résultat tuple de unscaled_primal_dual_residual dans
-      // (primal_feasibility_lhs_new, dual_feasibility_lhs_new) en guessant leur
-      // type via auto
-      VEG_BIND(
-        auto,
-        (primal_feasibility_lhs_new, dual_feasibility_lhs_new),
+      T primal_feasibility_lhs_new{};
+      T dual_feasibility_lhs_new{};
+      std::tie(primal_feasibility_lhs_new, dual_feasibility_lhs_new) =
         detail::unscaled_primal_dual_residual(work,
                                               results,
                                               settings,
@@ -1442,7 +1433,7 @@ qp_solve(Results<T>& results,
                                               detail::vec_mut(x_e),
                                               detail::vec_mut(y_e),
                                               detail::vec_mut(z_e),
-                                              stack));
+                                              stack);
 
       if (is_primal_feasible(primal_feasibility_lhs_new) &&
           is_dual_feasible(dual_feasibility_lhs_new)) {
@@ -1505,9 +1496,7 @@ qp_solve(Results<T>& results,
       // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
       bcl_update();
 
-      VEG_BIND(
-        auto,
-        (_, dual_feasibility_lhs_new_2),
+      auto [_, dual_feasibility_lhs_new_2] =
         detail::unscaled_primal_dual_residual(work,
                                               results,
                                               settings,
@@ -1527,8 +1516,8 @@ qp_solve(Results<T>& results,
                                               detail::vec_mut(x_e),
                                               detail::vec_mut(y_e),
                                               detail::vec_mut(z_e),
-                                              stack));
-      proxsuite::linalg::veg::unused(_);
+                                              stack);
+      (void)_;
 
       if (primal_feasibility_lhs_new >= primal_feasibility_lhs && //
           dual_feasibility_lhs_new_2 >= dual_feasibility_lhs &&   //
@@ -1551,8 +1540,7 @@ qp_solve(Results<T>& results,
                       kkt_active,
                       active_constraints,
                       data,
-                      stack,
-                      xtag);
+                      stack);
       */
       if (work.internal.do_ldlt) {
         isize w_values = 1; // un seul elt non nul
@@ -1579,7 +1567,7 @@ qp_solve(Results<T>& results,
           }
           T value = 1;
           proxsuite::linalg::sparse::VecRef<T, I> w{
-            proxsuite::linalg::veg::from_raw_parts,
+            proxsuite::linalg::sparse::from_raw_parts,
             n + n_eq + n_in,
             w_values,
             &row_index, // &: adresse de row index
@@ -1588,14 +1576,8 @@ qp_solve(Results<T>& results,
           ldl = rank1_update(ldl, etree, perm_inv, w, alpha, stack);
         }
       } else {
-        refactorize(work,
-                    results,
-                    settings,
-                    kkt_active,
-                    active_constraints,
-                    data,
-                    stack,
-                    xtag);
+        refactorize(
+          work, results, settings, kkt_active, active_constraints, data, stack);
       }
     }
 

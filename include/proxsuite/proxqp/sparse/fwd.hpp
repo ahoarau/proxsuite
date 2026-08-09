@@ -6,7 +6,7 @@
 #define PROXSUITE_PROXQP_SPARSE_FWD_HPP
 
 #include <Eigen/Sparse>
-#include "proxsuite/linalg/veg/vec.hpp"
+#include <vector>
 #include "proxsuite/proxqp/dense/views.hpp"
 #include "proxsuite/helpers/common.hpp"
 
@@ -15,9 +15,9 @@ namespace proxqp {
 namespace sparse {
 
 using dense::infty_norm;
-using proxsuite::linalg::veg::i64;
-using proxsuite::linalg::veg::isize;
-using proxsuite::linalg::veg::usize;
+using proxsuite::isize;
+using proxsuite::usize;
+using i64 = std::int64_t;
 
 template<typename T>
 using DMat = Eigen::Matrix<T, -1, -1>;

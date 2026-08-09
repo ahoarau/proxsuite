@@ -13,7 +13,7 @@
 #include <proxsuite/linalg/sparse/rowmod.hpp>
 #include <proxsuite/proxqp/dense/views.hpp>
 #include <proxsuite/proxqp/settings.hpp>
-#include <proxsuite/linalg/veg/vec.hpp>
+#include <vector>
 #include "proxsuite/proxqp/sparse/model.hpp"
 #include "proxsuite/proxqp/results.hpp"
 

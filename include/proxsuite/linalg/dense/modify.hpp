@@ -9,7 +9,7 @@
 #include "proxsuite/linalg/dense/update.hpp"
 #include "proxsuite/linalg/dense/factorize.hpp"
 #include <algorithm>
-#include <proxsuite/linalg/veg/memory/dynamic_stack.hpp>
+#include <proxsuite/linalg/dynstack.hpp>
 
 namespace proxsuite {
 namespace linalg {
@@ -61,7 +61,7 @@ struct IndicesR
   isize current_r;
   isize r;
   isize const* indices;
-  VEG_INLINE auto operator()() noexcept -> isize
+  PROXSUITE_INLINE auto operator()() noexcept -> isize
   {
     if (current_r == r) {
       return current_r;
@@ -83,7 +83,7 @@ ldlt_delete_rows_and_cols_impl( //
   Mat ld,
   isize* indices,
   isize r,
-  proxsuite::linalg::veg::dynstack::DynStackMut stack)
+  proxsuite::linalg::dynstack::DynStackMut stack)
 {
   std::sort(indices, indices + r);
 
@@ -94,10 +94,8 @@ ldlt_delete_rows_and_cols_impl( //
 
   auto w_stride = _detail::adjusted_stride<T>(n - first - r);
 
-  proxsuite::linalg::veg::Tag<T> tag;
-
-  auto _w = stack.make_new(tag, r * w_stride, _detail::align<T>());
-  auto _alpha = stack.make_new_for_overwrite(tag, r);
+  auto _w = stack.make_new<T>(r * w_stride, _detail::align<T>());
+  auto _alpha = stack.make_new_for_overwrite<T>(r);
 
   auto pw = _w.ptr_mut();
   auto palpha = _alpha.ptr_mut();
@@ -128,15 +126,12 @@ ldlt_delete_rows_and_cols_impl( //
 
 template<typename Mat, typename A_1>
 void
-ldlt_insert_rows_and_cols_impl(
-  Mat ld,
-  isize pos,
-  A_1 a_1,
-  proxsuite::linalg::veg::dynstack::DynStackMut stack)
+ldlt_insert_rows_and_cols_impl(Mat ld,
+                               isize pos,
+                               A_1 a_1,
+                               proxsuite::linalg::dynstack::DynStackMut stack)
 {
   using T = typename Mat::Scalar;
-
-  proxsuite::linalg::veg::Tag<T> tag;
 
   isize const new_n = ld.rows();
   isize const r = a_1.cols();
@@ -206,10 +201,8 @@ ldlt_insert_rows_and_cols_impl(
 
   {
     isize tmp_stride = _detail::adjusted_stride<T>(pos);
-    auto _tmp = stack.make_new_for_overwrite( //
-      tag,
-      tmp_stride,
-      _detail::align<T>());
+    auto _tmp =
+      stack.make_new_for_overwrite<T>(tmp_stride, _detail::align<T>());
     auto d0xl10T = Eigen::Map<Eigen::Matrix< //
                                 T,
                                 Eigen::Dynamic,
@@ -243,8 +236,8 @@ ldlt_insert_rows_and_cols_impl(
   l21 = l21 * d1.inverse();
 
   auto w_stride = _detail::adjusted_stride<T>(rem);
-  auto _w = stack.make_new(tag, r * w_stride, _detail::align<T>());
-  auto _alpha = stack.make_new_for_overwrite(tag, r);
+  auto _w = stack.make_new<T>(r * w_stride, _detail::align<T>());
+  auto _alpha = stack.make_new_for_overwrite<T>(r);
 
   auto pw = _w.ptr_mut();
   auto palpha = _alpha.ptr_mut();
@@ -266,17 +259,15 @@ ldlt_insert_rows_and_cols_impl(
 
 template<typename T>
 auto
-ldlt_delete_rows_and_cols_req(proxsuite::linalg::veg::Tag<T> /*tag*/,
-                              isize n,
-                              isize r) noexcept
-  -> proxsuite::linalg::veg::dynstack::StackReq
+ldlt_delete_rows_and_cols_req(isize n, isize r) noexcept
+  -> proxsuite::linalg::dynstack::StackReq
 {
 
-  auto w_req = proxsuite::linalg::veg::dynstack::StackReq{
+  auto w_req = proxsuite::linalg::dynstack::StackReq{
     _detail::adjusted_stride<T>(n - r) * r * isize{ sizeof(T) },
     _detail::align<T>(),
   };
-  auto alpha_req = proxsuite::linalg::veg::dynstack::StackReq{
+  auto alpha_req = proxsuite::linalg::dynstack::StackReq{
     r * isize{ sizeof(T) },
     alignof(T),
   };
@@ -289,7 +280,7 @@ ldlt_delete_rows_and_cols_sort_indices( //
   Mat&& ld,
   isize* indices,
   isize r,
-  proxsuite::linalg::veg::dynstack::DynStackMut stack)
+  proxsuite::linalg::dynstack::DynStackMut stack)
 {
   _detail::ldlt_delete_rows_and_cols_impl(
     util::to_view_dyn(ld), indices, r, stack);
@@ -297,18 +288,16 @@ ldlt_delete_rows_and_cols_sort_indices( //
 
 template<typename T>
 auto
-ldlt_insert_rows_and_cols_req(proxsuite::linalg::veg::Tag<T> tag,
-                              isize n,
-                              isize r) noexcept
-  -> proxsuite::linalg::veg::dynstack::StackReq
+ldlt_insert_rows_and_cols_req(isize n, isize r) noexcept
+  -> proxsuite::linalg::dynstack::StackReq
 {
-  auto factorize_req = proxsuite::linalg::dense::factorize_req(tag, r);
+  auto factorize_req = proxsuite::linalg::dense::factorize_req<T>(r);
 
-  auto w_req = proxsuite::linalg::veg::dynstack::StackReq{
+  auto w_req = proxsuite::linalg::dynstack::StackReq{
     _detail::adjusted_stride<T>(n) * r * isize{ sizeof(T) },
     _detail::align<T>(),
   };
-  auto alpha_req = proxsuite::linalg::veg::dynstack::StackReq{
+  auto alpha_req = proxsuite::linalg::dynstack::StackReq{
     r * isize{ sizeof(T) },
     alignof(T),
   };
@@ -321,7 +310,7 @@ void
 ldlt_insert_rows_and_cols(Mat&& ld,
                           isize pos,
                           A_1 const& a_1,
-                          proxsuite::linalg::veg::dynstack::DynStackMut stack)
+                          proxsuite::linalg::dynstack::DynStackMut stack)
 {
   _detail::ldlt_insert_rows_and_cols_impl(
     util::to_view_dyn(ld), pos, util::to_view_dyn_rows(a_1), stack);

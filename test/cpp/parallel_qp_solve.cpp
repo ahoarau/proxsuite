@@ -7,7 +7,8 @@
 #include <proxsuite/proxqp/sparse/wrapper.hpp>
 #include <proxsuite/proxqp/parallel/qp_solve.hpp>
 #include <proxsuite/proxqp/utils/random_qp_problems.hpp>
-#include <proxsuite/linalg/veg/util/dynstack_alloc.hpp>
+#include <proxsuite/linalg/dynstack.hpp>
+#include <vector>
 
 using namespace proxsuite;
 using namespace proxsuite::proxqp;

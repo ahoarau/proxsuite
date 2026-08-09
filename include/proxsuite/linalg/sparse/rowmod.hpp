@@ -23,16 +23,10 @@ namespace sparse {
 template<typename T, typename I>
 auto
 delete_row_req( //
-  proxsuite::linalg::veg::Tag<T> /*tag*/,
-  proxsuite::linalg::veg::Tag<I> /*tag*/,
   isize n,
-  isize max_nnz) noexcept -> proxsuite::linalg::veg::dynstack::StackReq
+  isize max_nnz) noexcept -> proxsuite::linalg::dynstack::StackReq
 {
-  return sparse::rank1_update_req(proxsuite::linalg::veg::Tag<T>{},
-                                  proxsuite::linalg::veg::Tag<I>{},
-                                  n,
-                                  true,
-                                  max_nnz);
+  return sparse::rank1_update_req<T, I>(n, true, max_nnz);
 }
 
 /*!
@@ -56,7 +50,7 @@ delete_row(MatMut<T, I> ld,
            DynStackMut stack) noexcept(false) -> MatMut<T, I>
 {
   // step 1: delete row k from each column
-  VEG_ASSERT(!ld.is_compressed());
+  assert(!ld.is_compressed());
 
   // we're actually deleting perm_inv[k], so that k is deleted in the permuted
   // matrix
@@ -84,7 +78,7 @@ delete_row(MatMut<T, I> ld,
       std::memmove(it, it + 1, count * sizeof(I));
       T* itx = pldx + col_start + it_pos;
 
-      VEG_CHECK_CONCEPT(trivially_copyable<T>);
+      static_assert(std::is_trivially_copyable<T>::value, ".");
       // shift all the values back by one position
       std::memmove(itx, itx + 1, count * sizeof(T));
 
@@ -94,7 +88,7 @@ delete_row(MatMut<T, I> ld,
 
       // adjust the parent of j in the elimination tree if necessary
       if (petree[j] == I(permuted_pos)) {
-        VEG_ASSERT(it_pos == 0);
+        assert(it_pos == 0);
         if (pldnz[j] > 1) {
           petree[j] = *it;
         } else {
@@ -141,25 +135,18 @@ delete_row(MatMut<T, I> ld,
 template<typename T, typename I>
 auto
 add_row_req( //
-  proxsuite::linalg::veg::Tag<T> /*tag*/,
-  proxsuite::linalg::veg::Tag<I> /*tag*/,
   isize n,
   bool id_perm,
   isize nnz,
-  isize max_nnz) noexcept -> proxsuite::linalg::veg::dynstack::StackReq
+  isize max_nnz) noexcept -> proxsuite::linalg::dynstack::StackReq
 {
-  using proxsuite::linalg::veg::dynstack::StackReq;
+  using proxsuite::linalg::dynstack::StackReq;
   auto numerical_work = StackReq{ n * isize{ sizeof(T) }, isize{ alignof(T) } };
   auto permuted_indices =
     StackReq{ (id_perm ? 0 : nnz) * isize{ sizeof(I) }, isize{ alignof(I) } };
   auto pattern_diff = StackReq{ n * isize{ sizeof(I) }, isize{ alignof(I) } };
-  auto merge =
-    merge_second_col_into_first_req(proxsuite::linalg::veg::Tag<I>{}, n);
-  auto update = sparse::rank1_update_req(proxsuite::linalg::veg::Tag<T>{},
-                                         proxsuite::linalg::veg::Tag<I>{},
-                                         n,
-                                         true,
-                                         max_nnz);
+  auto merge = merge_second_col_into_first_req<I>(n);
+  auto update = sparse::rank1_update_req<T, I>(n, true, max_nnz);
 
   auto req = numerical_work;
   req = req & permuted_indices;
@@ -192,12 +179,12 @@ add_row(MatMut<T, I> ld,
         I const* perm_inv,
         isize pos,
         VecRef<T, I> new_col,
-        proxsuite::linalg::veg::DoNotDeduce<T> diag_element,
+        proxsuite::DoNotDeduce<T> diag_element,
         DynStackMut stack) noexcept(false) -> MatMut<T, I>
 {
-  VEG_ASSERT(!ld.is_compressed());
+  assert(!ld.is_compressed());
   bool id_perm = perm_inv == nullptr;
-  auto zx = util::zero_extend;
+  auto zx = [](auto i) { return util::zero_extend(i); };
 
   I* pldp = ld.col_ptrs_mut();
   I* pldnz = ld.nnz_per_col_mut();
@@ -207,19 +194,18 @@ add_row(MatMut<T, I> ld,
   // actually inserting in the position perm_inv[k] so that row k is added in
   // the permuted matrix
   usize permuted_pos = id_perm ? usize(pos) : zx(perm_inv[pos]);
-  VEG_ASSERT(pldnz[permuted_pos] == 1);
+  assert(pldnz[permuted_pos] == 1);
 
   {
     // allocate workspace for numerical step, storage for the k-th row and k-th
     // column of the new matrix
-    auto _lx2_storage = stack.make_new_for_overwrite(
-      proxsuite::linalg::veg::Tag<T>{}, ld.nrows());
+    auto _lx2_storage = stack.make_new_for_overwrite<T>(ld.nrows());
     auto plx2_storage = _lx2_storage.ptr_mut();
 
     // allocate workspace for permuted row indices of the new column if
     // necessary
-    auto _new_col_permuted_indices = stack.make_new_for_overwrite(
-      proxsuite::linalg::veg::Tag<I>{}, id_perm ? isize(0) : new_col.nnz());
+    auto _new_col_permuted_indices =
+      stack.make_new_for_overwrite<I>(id_perm ? isize(0) : new_col.nnz());
 
     auto new_col_permuted_indices =
       id_perm ? new_col.row_indices() : _new_col_permuted_indices.ptr();
@@ -236,10 +222,10 @@ add_row(MatMut<T, I> ld,
     }
 
     // allocate workspace for non-zero pattern of k-th row
-    auto _l12_nnz_pattern = stack.make_new_for_overwrite(
-      proxsuite::linalg::veg::Tag<I>{}, isize(permuted_pos));
-    auto _difference = stack.make_new_for_overwrite(
-      proxsuite::linalg::veg::Tag<I>{}, ld.nrows() - isize(permuted_pos));
+    auto _l12_nnz_pattern =
+      stack.make_new_for_overwrite<I>(isize(permuted_pos));
+    auto _difference =
+      stack.make_new_for_overwrite<I>(ld.nrows() - isize(permuted_pos));
     auto pdifference = _difference.ptr_mut();
 
     auto pl12_nnz_pattern = _l12_nnz_pattern.ptr_mut();
@@ -252,8 +238,7 @@ add_row(MatMut<T, I> ld,
 
     // for each row in the added column
     {
-      auto _visited = stack.make_new(proxsuite::linalg::veg::Tag<bool>{},
-                                     isize(permuted_pos));
+      auto _visited = stack.make_new<bool>(isize(permuted_pos));
       bool* visited = _visited.ptr_mut();
       for (usize p = 0; p < usize(new_col.nnz()); ++p) {
         auto j = zx(new_col_permuted_indices[p]);
@@ -298,7 +283,7 @@ add_row(MatMut<T, I> ld,
       // k-th column of L
       if (permuted_j > permuted_pos) {
         usize nz = zx(pldnz[permuted_pos]);
-        VEG_ASSERT(nz < (zx(pldp[permuted_pos + 1]) - zx(pldp[permuted_pos])));
+        assert(nz < (zx(pldp[permuted_pos + 1]) - zx(pldp[permuted_pos])));
         pldi[zx(pldp[permuted_pos]) + nz] = I(permuted_j);
         ++pldnz[permuted_pos];
         ld._set_nnz(ld.nnz() + 1);
@@ -318,23 +303,20 @@ add_row(MatMut<T, I> ld,
       // update the pattern of the k-th column of L, with that of the bottom
       // part of the j-th column of L, ignoring the elements less than or equal
       // to k
-      VEG_BIND(auto,
-               (_, new_current_col, computed_difference),
-               sparse::merge_second_col_into_first(
-                 pdifference,
-                 static_cast<T*>(nullptr),
-                 pldi + (zx(pldp[permuted_pos]) + 1),
-                 isize(zx(pldp[permuted_pos + 1]) - zx(pldp[permuted_pos])) - 1,
-                 pldnz[permuted_pos] - 1,
-                 {
-                   unsafe,
-                   from_raw_parts,
-                   pldi + (zx(pldp[j]) + 1),
-                   isize(zx(pldnz[j])) - 1,
-                 },
-                 I(permuted_pos),
-                 false,
-                 stack));
+      auto [_, new_current_col, computed_difference] =
+        sparse::merge_second_col_into_first(
+          pdifference,
+          static_cast<T*>(nullptr),
+          pldi + (zx(pldp[permuted_pos]) + 1),
+          isize(zx(pldp[permuted_pos + 1]) - zx(pldp[permuted_pos])) - 1,
+          pldnz[permuted_pos] - 1,
+          {
+            pldi + (zx(pldp[j]) + 1),
+            isize(zx(pldnz[j])) - 1,
+          },
+          I(permuted_pos),
+          false,
+          stack);
       (void)_;
       (void)new_current_col;
 
@@ -366,7 +348,7 @@ add_row(MatMut<T, I> ld,
       diag_element -= l12_elem * l12_elem / d;
 
       // check that we have enough space to insert one element
-      VEG_ASSERT(zx(pldnz[j]) < (zx(pldp[j + 1]) - zx(pldp[j])));
+      assert(zx(pldnz[j]) < (zx(pldp[j + 1]) - zx(pldp[j])));
 
       // find the first element greater than k
       auto it =
@@ -385,7 +367,7 @@ add_row(MatMut<T, I> ld,
         it,
         usize((pldi + col_end) - it) * sizeof(I));
 
-      VEG_CHECK_CONCEPT(trivially_copyable<T>);
+      static_assert(std::is_trivially_copyable<T>::value, ".");
 
       // shift the values  up by one position to provide enough space for the
       // new element

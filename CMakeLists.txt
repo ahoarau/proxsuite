@@ -265,47 +265,6 @@ jrl_target_headers(proxsuite INTERFACE
     include/proxsuite/linalg/sparse/factorize.hpp
     include/proxsuite/linalg/sparse/rowmod.hpp
     include/proxsuite/linalg/sparse/update.hpp
-    include/proxsuite/linalg/veg/internal/external/hedley.ext.hpp
-    include/proxsuite/linalg/veg/internal/external/unhedley.ext.hpp
-    include/proxsuite/linalg/veg/internal/assert_impl.hpp
-    include/proxsuite/linalg/veg/internal/collection_algo.hpp
-    include/proxsuite/linalg/veg/internal/dbg.hpp
-    include/proxsuite/linalg/veg/internal/delete_special_members.hpp
-    include/proxsuite/linalg/veg/internal/dyn_index.hpp
-    include/proxsuite/linalg/veg/internal/epilogue.hpp
-    include/proxsuite/linalg/veg/internal/fix_index.hpp
-    include/proxsuite/linalg/veg/internal/has_asan.hpp
-    include/proxsuite/linalg/veg/internal/integer_seq.hpp
-    include/proxsuite/linalg/veg/internal/macros.hpp
-    include/proxsuite/linalg/veg/internal/narrow.hpp
-    include/proxsuite/linalg/veg/internal/preprocessor.hpp
-    include/proxsuite/linalg/veg/internal/prologue.hpp
-    include/proxsuite/linalg/veg/internal/std.hpp
-    include/proxsuite/linalg/veg/internal/terminate.hpp
-    include/proxsuite/linalg/veg/internal/typedefs.hpp
-    include/proxsuite/linalg/veg/memory/address.hpp
-    include/proxsuite/linalg/veg/memory/alloc.hpp
-    include/proxsuite/linalg/veg/memory/dynamic_stack.hpp
-    include/proxsuite/linalg/veg/memory/placement.hpp
-    include/proxsuite/linalg/veg/memory/stack_alloc.hpp
-    include/proxsuite/linalg/veg/type_traits/alloc.hpp
-    include/proxsuite/linalg/veg/type_traits/assignable.hpp
-    include/proxsuite/linalg/veg/type_traits/constructible.hpp
-    include/proxsuite/linalg/veg/type_traits/core.hpp
-    include/proxsuite/linalg/veg/type_traits/invocable.hpp
-    include/proxsuite/linalg/veg/type_traits/primitives.hpp
-    include/proxsuite/linalg/veg/type_traits/tags.hpp
-    include/proxsuite/linalg/veg/util/assert.hpp
-    include/proxsuite/linalg/veg/util/dbg.hpp
-    include/proxsuite/linalg/veg/util/defer.hpp
-    include/proxsuite/linalg/veg/util/dynstack_alloc.hpp
-    include/proxsuite/linalg/veg/util/get.hpp
-    include/proxsuite/linalg/veg/util/index.hpp
-    include/proxsuite/linalg/veg/util/unreachable.hpp
-    include/proxsuite/linalg/veg/ref.hpp
-    include/proxsuite/linalg/veg/slice.hpp
-    include/proxsuite/linalg/veg/tuple.hpp
-    include/proxsuite/linalg/veg/vec.hpp
     include/proxsuite/proxqp/dense/preconditioner/identity.hpp
     include/proxsuite/proxqp/dense/preconditioner/ruiz.hpp
     include/proxsuite/proxqp/dense/backward_data.hpp

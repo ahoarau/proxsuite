@@ -5,358 +5,321 @@
 #ifndef PROXSUITE_LINALG_SPARSE_LDLT_CORE_HPP
 #define PROXSUITE_LINALG_SPARSE_LDLT_CORE_HPP
 
-#include <proxsuite/linalg/veg/slice.hpp>
-#include <proxsuite/linalg/veg/memory/dynamic_stack.hpp>
+#include <proxsuite/fwd.hpp>
+#include <proxsuite/linalg/dynstack.hpp>
+#include <proxsuite/linalg/slice.hpp>
+
+#include <cassert>
 #include <type_traits>
 #include <Eigen/SparseCore>
-
-#define SPARSE_LDLT_CONCEPT(...)                                               \
-  VEG_CONCEPT_MACRO(::proxsuite::linalg::sparse::concepts, __VA_ARGS__)
-#define SPARSE_LDLT_CHECK_CONCEPT(...)                                         \
-  VEG_CONCEPT_MACRO(::proxsuite::linalg::sparse::concepts, __VA_ARGS__)
 
 namespace proxsuite {
 namespace linalg {
 namespace sparse {
-using proxsuite::linalg::veg::dynstack::DynStackMut;
-using namespace proxsuite::linalg::veg::literals;
 
-using proxsuite::linalg::veg::isize;
-using proxsuite::linalg::veg::usize;
+using proxsuite::isize;
+using proxsuite::usize;
 
-using proxsuite::linalg::veg::Slice;
-using proxsuite::linalg::veg::SliceMut;
-
-using proxsuite::linalg::veg::mut;
-using proxsuite::linalg::veg::Ref;
-using proxsuite::linalg::veg::ref;
-using proxsuite::linalg::veg::RefMut;
+using proxsuite::linalg::Slice;
+using proxsuite::linalg::SliceMut;
+using proxsuite::linalg::dynstack::DynStackMut;
 
 inline namespace tags {
-using proxsuite::linalg::veg::Unsafe;
-using proxsuite::linalg::veg::unsafe;
+/// Tag disambiguating constructors that take the raw components of a view.
+struct FromRawParts
+{};
+inline constexpr FromRawParts from_raw_parts{};
 
-using proxsuite::linalg::veg::from_raw_parts;
-using proxsuite::linalg::veg::FromRawParts;
-VEG_TAG(from_eigen, FromEigen);
+/// Tag disambiguating constructors that borrow from an Eigen object.
+struct FromEigen
+{};
+inline constexpr FromEigen from_eigen{};
 } // namespace tags
 
-namespace concepts {
-} // namespace concepts
-
-namespace _detail {
-template<typename I, bool = sizeof(I) < sizeof(int)>
-struct WrappingPlusType;
-
-template<typename I>
-struct WrappingPlusType<I, true>
-{
-  using Promoted = unsigned;
-};
-template<typename I>
-struct WrappingPlusType<I, false>
-{
-  using Promoted = typename std::make_unsigned<I>::type;
-};
-} // namespace _detail
 namespace util {
-namespace nb {
-struct wrapping_plus
-{
-  template<typename I>
-  auto operator()(I a, I b) const noexcept -> I
-  {
-    using U = typename _detail::WrappingPlusType<I>::Promoted;
-    return I(U(a) + U(b));
-  }
-};
-struct checked_non_negative_plus
-{
-  template<typename I>
-  auto operator()(I a, I b) const noexcept -> I
-  {
-    return (VEG_ASSERT(wrapping_plus{}(a, b) >= a), //
-            wrapping_plus{}(a, b));
-  }
-};
 
-struct wrapping_inc
+/*!
+ * Unsigned type in which wrapping arithmetic on `I` is performed. Types
+ * narrower than `int` would otherwise be promoted to `int`, where overflow is
+ * undefined behavior.
+ */
+template<typename I>
+using WrappingType =
+  typename std::conditional<(sizeof(I) < sizeof(int)),
+                            unsigned,
+                            typename std::make_unsigned<I>::type>::type;
+
+/// `a + b`, wrapping around on overflow instead of being undefined.
+template<typename I>
+auto
+wrapping_plus(I a, I b) noexcept -> I
 {
-  template<typename I>
-  auto operator()(RefMut<I> a) const noexcept -> I
-  {
-    return a.get() = wrapping_plus{}(a.get(), I(1));
-  }
-};
-struct wrapping_dec
+  using U = WrappingType<I>;
+  return I(U(a) + U(b));
+}
+
+/// `a + b`, asserting that the sum does not wrap around.
+template<typename I>
+auto
+checked_non_negative_plus(I a, I b) noexcept -> I
 {
-  template<typename I>
-  auto operator()(RefMut<I> a) const noexcept -> I
-  {
-    return a.get() = wrapping_plus{}(a.get(), I(-1));
-  }
-};
-struct sign_extend
+  I const sum = util::wrapping_plus(a, b);
+  assert(sum >= a);
+  return sum;
+}
+
+/// `++a`, wrapping around on overflow. Returns the new value.
+template<typename I>
+auto
+wrapping_inc(I& a) noexcept -> I
 {
-  template<typename I>
-  auto operator()(I a) const noexcept -> usize
-  {
-    return usize(isize(typename std::make_signed<I>::type(a)));
-  }
-};
-struct zero_extend
+  return a = util::wrapping_plus(a, I(1));
+}
+
+/// `--a`, wrapping around on underflow. Returns the new value.
+template<typename I>
+auto
+wrapping_dec(I& a) noexcept -> I
 {
-  template<typename I>
-  auto operator()(I a) const noexcept -> usize
-  {
-    return usize(typename std::make_unsigned<I>::type(a));
-  }
-};
-} // namespace nb
-VEG_NIEBLOID(wrapping_plus);
-VEG_NIEBLOID(checked_non_negative_plus);
-VEG_NIEBLOID(wrapping_inc);
-VEG_NIEBLOID(wrapping_dec);
-VEG_NIEBLOID(sign_extend);
-VEG_NIEBLOID(zero_extend);
+  return a = util::wrapping_plus(a, I(-1));
+}
+
+/// Reinterprets `a` as signed, then widens it to a `usize` bit pattern.
+template<typename I>
+auto
+sign_extend(I a) noexcept -> usize
+{
+  return usize(isize(typename std::make_signed<I>::type(a)));
+}
+
+/// Narrowing cast, asserting that the value survives the conversion.
+template<typename To, typename From>
+auto
+narrow(From from) noexcept -> To
+{
+  To const to = static_cast<To>(from);
+  assert(static_cast<From>(to) == from);
+  return to;
+}
+
+/// Reinterprets `a` as unsigned, then widens it to `usize`.
+template<typename I>
+auto
+zero_extend(I a) noexcept -> usize
+{
+  return usize(typename std::make_unsigned<I>::type(a));
+}
+
 } // namespace util
 
+/// Read-only view over a dense vector.
 template<typename T>
 struct DenseVecRef
 {
   DenseVecRef() = default;
-  DenseVecRef(FromRawParts /*from_raw_parts*/,
-              T const* data,
-              isize len) noexcept
-    : _{ data, len }
+  DenseVecRef(FromRawParts /*tag*/, T const* data, isize len) noexcept
+    : m_ptr(data)
+    , m_len(len)
   {
   }
   template<typename V>
-  DenseVecRef(FromEigen /*from_eigen*/, V const& v) noexcept
-    : _{ v.data(), v.rows() }
+  DenseVecRef(FromEigen /*tag*/, V const& v) noexcept
+    : m_ptr(v.data())
+    , m_len(v.rows())
   {
     static_assert(V::InnerStrideAtCompileTime == 1, ".");
     static_assert(V::ColsAtCompileTime == 1, ".");
   }
 
-  auto as_slice() const noexcept -> Slice<T>
-  {
-    return {
-      unsafe,
-      from_raw_parts,
-      _.ptr,
-      _.size,
-    };
-  }
-  auto nrows() const noexcept -> isize { return _.size; }
+  auto as_slice() const noexcept -> Slice<T> { return { m_ptr, m_len }; }
+  auto nrows() const noexcept -> isize { return m_len; }
   auto ncols() const noexcept -> isize { return 1; }
 
   auto to_eigen() const noexcept -> Eigen::Map<Eigen::Matrix<T, -1, 1> const>
   {
-    return { _.ptr, _.size };
+    return { m_ptr, m_len };
   }
 
 private:
-  struct
-  {
-    T const* ptr;
-    isize size;
-  } _ = {};
+  T const* m_ptr = nullptr;
+  isize m_len = 0;
 };
 
+/// Mutable view over a dense vector.
 template<typename T>
 struct DenseVecMut
 {
   DenseVecMut() = default;
-  DenseVecMut(FromRawParts /*from_raw_parts*/, T* data, isize len) noexcept
-    : _{ data, len }
+  DenseVecMut(FromRawParts /*tag*/, T* data, isize len) noexcept
+    : m_ptr(data)
+    , m_len(len)
   {
   }
   template<typename V>
-  DenseVecMut(FromEigen /*from_eigen*/, V&& v) noexcept
-    : _{ v.data(), v.rows() }
+  DenseVecMut(FromEigen /*tag*/, V&& v) noexcept
+    : m_ptr(v.data())
+    , m_len(v.rows())
   {
-    static_assert(
-      proxsuite::linalg::veg::uncvref_t<V>::InnerStrideAtCompileTime == 1, ".");
-    static_assert(proxsuite::linalg::veg::uncvref_t<V>::ColsAtCompileTime == 1,
-                  ".");
+    using Vec =
+      typename std::remove_cv<typename std::remove_reference<V>::type>::type;
+    static_assert(Vec::InnerStrideAtCompileTime == 1, ".");
+    static_assert(Vec::ColsAtCompileTime == 1, ".");
   }
 
-  auto as_slice() const noexcept -> Slice<T>
-  {
-    return {
-      unsafe,
-      from_raw_parts,
-      _.ptr,
-      _.size,
-    };
-  }
-  auto as_slice_mut() noexcept -> SliceMut<T>
-  {
-    return {
-      unsafe,
-      from_raw_parts,
-      _.ptr,
-      _.size,
-    };
-  }
+  auto as_slice() const noexcept -> Slice<T> { return { m_ptr, m_len }; }
+  auto as_slice_mut() const noexcept -> SliceMut<T> { return { m_ptr, m_len }; }
 
   auto as_const() const noexcept -> DenseVecRef<T>
   {
-    return { from_raw_parts, _.ptr, _.size };
+    return { from_raw_parts, m_ptr, m_len };
   }
-  auto nrows() const noexcept -> isize { return _.size; }
+  auto nrows() const noexcept -> isize { return m_len; }
   auto ncols() const noexcept -> isize { return 1; }
 
   auto to_eigen() const noexcept -> Eigen::Map<Eigen::Matrix<T, -1, 1>>
   {
-    return { _.ptr, _.size };
+    return { m_ptr, m_len };
   }
 
 private:
-  struct
-  {
-    T* ptr;
-    isize size;
-  } _ = {};
+  T* m_ptr = nullptr;
+  isize m_len = 0;
 };
 
+/// Read-only view over a sparse vector, in (indices, values) form.
 template<typename T, typename I = isize>
 struct VecRef
 {
-  VecRef( //
-    FromRawParts /*from_raw_parts*/,
-    isize nrows,
-    isize nnz,
-    I const* row_indices,
-    T const* values)
-    : _{ nrows, nnz, row_indices, values }
+  VecRef(FromRawParts /*tag*/,
+         isize nrows,
+         isize nnz,
+         I const* row_indices,
+         T const* values) noexcept
+    : m_nrows(nrows)
+    , m_nnz(nnz)
+    , m_row(row_indices)
+    , m_val(values)
   {
   }
 
-  auto nrows() const noexcept -> isize { return _.nrows; }
+  auto nrows() const noexcept -> isize { return m_nrows; }
   auto ncols() const noexcept -> isize { return 1; }
-  auto nnz() const noexcept -> isize { return _.nnz; }
+  auto nnz() const noexcept -> isize { return m_nnz; }
 
-  auto row_indices() const noexcept -> I const* { return _.row; }
-  auto values() const noexcept -> T const* { return _.val; }
+  auto row_indices() const noexcept -> I const* { return m_row; }
+  auto values() const noexcept -> T const* { return m_val; }
 
 private:
-  struct
-  {
-    isize nrows;
-    isize nnz;
-    I const* row;
-    T const* val;
-  } _;
+  isize m_nrows;
+  isize m_nnz;
+  I const* m_row;
+  T const* m_val;
 };
 
 namespace _detail {
-template<typename D, typename I>
-struct SymbolicMatRefInterface
+
+/*!
+ * The structure of a compressed-column sparse matrix, and the read-only
+ * accessors shared by every view of one.
+ *
+ * `m_col[j]` is the start of column `j` in `m_row`. The matrix is *compressed*
+ * when `m_nnz_per_col` is null, meaning column `j` ends where column `j + 1`
+ * starts; otherwise `m_nnz_per_col[j]` gives its length.
+ *
+ * Pointers are stored as `I const*`. The mutable views below hand out non-const
+ * pointers to the same memory: that is well defined because they are only ever
+ * constructed from storage that is itself mutable.
+ */
+template<typename I>
+struct SymbolicMatBase
 {
-private:
-  template<typename U = D>
-  auto _() const noexcept -> decltype((VEG_DECLVAL(U const&)._))
-  {
-    return static_cast<D const*>(this)->_;
-  }
+  isize m_nrows = 0;
+  isize m_ncols = 0;
+  isize m_nnz = 0;
+  I const* m_col = nullptr;
+  I const* m_nnz_per_col = nullptr;
+  I const* m_row = nullptr;
 
-public:
-  auto nrows() const noexcept -> isize { return _().nrows; }
-  auto ncols() const noexcept -> isize { return _().ncols; }
-  auto nnz() const noexcept -> isize { return _().nnz; }
+  auto nrows() const noexcept -> isize { return m_nrows; }
+  auto ncols() const noexcept -> isize { return m_ncols; }
+  auto nnz() const noexcept -> isize { return m_nnz; }
 
-  auto col_ptrs() const noexcept -> I const* { return _().col; }
-  auto nnz_per_col() const noexcept -> I const* { return _().nnz_per_col; }
+  auto col_ptrs() const noexcept -> I const* { return m_col; }
+  auto nnz_per_col() const noexcept -> I const* { return m_nnz_per_col; }
+  auto row_indices() const noexcept -> I const* { return m_row; }
+
   auto is_compressed() const noexcept -> bool
   {
-    return nnz_per_col() == nullptr;
+    return m_nnz_per_col == nullptr;
   }
-
-  auto row_indices() const noexcept -> I const* { return _().row; }
 
   auto col_start(usize j) const noexcept -> usize
   {
-    return VEG_ASSERT(j < usize(ncols())), util::zero_extend(_().col[j]);
+    assert(j < usize(m_ncols));
+    return util::zero_extend(m_col[j]);
   }
-  auto col_start_unchecked(Unsafe /*unsafe*/, usize j) const noexcept -> usize
+  auto col_start_unchecked(usize j) const noexcept -> usize
   {
-    return VEG_DEBUG_ASSERT(j < usize(ncols())), util::zero_extend(_().col[j]);
+    return util::zero_extend(m_col[j]);
   }
   auto col_end(usize j) const noexcept -> usize
   {
-    return VEG_ASSERT(j < usize(ncols())), col_end_unchecked(unsafe, j);
+    assert(j < usize(m_ncols));
+    return col_end_unchecked(j);
   }
-  auto col_end_unchecked(Unsafe /*unsafe*/, usize j) const noexcept -> usize
+  auto col_end_unchecked(usize j) const noexcept -> usize
   {
-    return VEG_DEBUG_ASSERT(j < usize(ncols())),
-           util::zero_extend(is_compressed()
-                               ? _().col[j + 1]
-                               : I(_().col[j] + _().nnz_per_col[j]));
+    return util::zero_extend(is_compressed() ? m_col[j + 1]
+                                             : I(m_col[j] + m_nnz_per_col[j]));
   }
 };
-template<typename D, typename I>
-struct SymbolicMatMutInterface : SymbolicMatRefInterface<D, I>
-{
-private:
-  template<typename U = D>
-  auto _() noexcept -> decltype((VEG_DECLVAL(U&)._))
-  {
-    return static_cast<D*>(this)->_;
-  }
 
-public:
-  auto col_ptrs_mut() noexcept -> I* { return _().col; }
-  auto nnz_per_col_mut() noexcept -> I* { return _().nnz_per_col; }
-  auto row_indices_mut() noexcept -> I* { return _().row; }
-};
 } // namespace _detail
 
+/// Read-only view over the structure of a sparse matrix, without its values.
 template<typename I = isize>
-struct SymbolicMatRef : _detail::SymbolicMatRefInterface<SymbolicMatRef<I>, I>
+struct SymbolicMatRef : _detail::SymbolicMatBase<I>
 {
-  friend struct _detail::SymbolicMatRefInterface<SymbolicMatRef, I>;
-  SymbolicMatRef(FromRawParts /*from_raw_parts*/,
+  SymbolicMatRef(FromRawParts /*tag*/,
                  isize nrows,
                  isize ncols,
                  isize nnz,
                  I const* col_ptrs,
                  I const* nnz_per_col,
-                 I const* row_indices)
-    : _{
-      nrows, ncols, nnz, col_ptrs, nnz_per_col, row_indices,
-    }
+                 I const* row_indices) noexcept
+    : _detail::SymbolicMatBase<I>{ nrows,    ncols,       nnz,
+                                   col_ptrs, nnz_per_col, row_indices }
   {
   }
-
-private:
-  struct
-  {
-    isize nrows;
-    isize ncols;
-    isize nnz;
-    I const* col;
-    I const* nnz_per_col;
-    I const* row;
-  } _;
 };
+
+/// Mutable view over the structure of a sparse matrix, without its values.
 template<typename I = isize>
-struct SymbolicMatMut : _detail::SymbolicMatMutInterface<SymbolicMatMut<I>, I>
+struct SymbolicMatMut : _detail::SymbolicMatBase<I>
 {
-  friend struct _detail::SymbolicMatRefInterface<SymbolicMatMut, I>;
-  friend struct _detail::SymbolicMatMutInterface<SymbolicMatMut, I>;
-  SymbolicMatMut(FromRawParts /*from_raw_parts*/,
+  SymbolicMatMut(FromRawParts /*tag*/,
                  isize nrows,
                  isize ncols,
                  isize nnz,
                  I* col_ptrs,
                  I* nnz_per_col,
-                 I* row_indices)
-    : _{
-      nrows, ncols, nnz, col_ptrs, nnz_per_col, row_indices,
-    }
+                 I* row_indices) noexcept
+    : _detail::SymbolicMatBase<I>{ nrows,    ncols,       nnz,
+                                   col_ptrs, nnz_per_col, row_indices }
   {
+  }
+
+  auto col_ptrs_mut() const noexcept -> I*
+  {
+    return const_cast<I*>(this->m_col);
+  }
+  auto nnz_per_col_mut() const noexcept -> I*
+  {
+    return const_cast<I*>(this->m_nnz_per_col);
+  }
+  auto row_indices_mut() const noexcept -> I*
+  {
+    return const_cast<I*>(this->m_row);
   }
 
   auto as_const() const noexcept -> SymbolicMatRef<I>
@@ -366,53 +329,41 @@ struct SymbolicMatMut : _detail::SymbolicMatMutInterface<SymbolicMatMut<I>, I>
       this->col_ptrs(), this->nnz_per_col(), this->row_indices(),
     };
   }
-
-private:
-  struct
-  {
-    isize nrows;
-    isize ncols;
-    isize nnz;
-    I* col;
-    I* nnz_per_col;
-    I* row;
-  } _;
 };
 
+/// Read-only view over a compressed-column sparse matrix.
 template<typename T, typename I = isize>
-struct MatRef : _detail::SymbolicMatRefInterface<MatRef<T, I>, I>
+struct MatRef : _detail::SymbolicMatBase<I>
 {
-  friend struct _detail::SymbolicMatRefInterface<MatRef, I>;
-  MatRef(FromRawParts /*from_raw_parts*/,
+  MatRef(FromRawParts /*tag*/,
          isize nrows,
          isize ncols,
          isize nnz,
          I const* col_ptrs,
          I const* nnz_per_col,
          I const* row_indices,
-         T const* values)
-    : _{
-      nrows, ncols, nnz, col_ptrs, nnz_per_col, row_indices, values,
-    }
+         T const* values) noexcept
+    : _detail::SymbolicMatBase<I>{ nrows,    ncols,       nnz,
+                                   col_ptrs, nnz_per_col, row_indices }
+    , m_val(values)
   {
   }
 
   template<typename M>
-  MatRef(FromEigen /*from_eigen*/, M const& m)
-    : _{
-      m.rows(),
-      m.cols(),
-      m.nonZeros(),
-      m.outerIndexPtr(),
-      m.innerNonZeroPtr(),
-      m.innerIndexPtr(),
-      m.valuePtr(),
-    }
+  MatRef(FromEigen /*tag*/, M const& m) noexcept
+    : _detail::SymbolicMatBase<I>{ m.rows(),
+                                   m.cols(),
+                                   m.nonZeros(),
+                                   m.outerIndexPtr(),
+                                   m.innerNonZeroPtr(),
+                                   m.innerIndexPtr() }
+    , m_val(m.valuePtr())
   {
     static_assert(!bool(M::IsRowMajor), ".");
   }
 
-  auto values() const noexcept -> T const* { return _.val; }
+  auto values() const noexcept -> T const* { return m_val; }
+
   auto symbolic() const noexcept -> SymbolicMatRef<I>
   {
     return {
@@ -424,62 +375,62 @@ struct MatRef : _detail::SymbolicMatRefInterface<MatRef<T, I>, I>
   auto to_eigen() const noexcept
     -> Eigen::Map<Eigen::SparseMatrix<T, Eigen::ColMajor, I> const>
   {
-    return { _.nrows, _.ncols, _.nnz, _.col, _.row, _.val, _.nnz_per_col };
+    return { this->m_nrows, this->m_ncols, this->m_nnz,        this->m_col,
+             this->m_row,   m_val,         this->m_nnz_per_col };
   }
 
 private:
-  struct
-  {
-    isize nrows;
-    isize ncols;
-    isize nnz;
-    I const* col;
-    I const* nnz_per_col;
-    I const* row;
-    T const* val;
-  } _;
+  T const* m_val;
 };
 
+/// Mutable view over a compressed-column sparse matrix.
 template<typename T, typename I = isize>
-struct MatMut : _detail::SymbolicMatMutInterface<MatMut<T, I>, I>
+struct MatMut : _detail::SymbolicMatBase<I>
 {
-  friend struct _detail::SymbolicMatRefInterface<MatMut, I>;
-  friend struct _detail::SymbolicMatMutInterface<MatMut, I>;
-  MatMut(FromRawParts /*from_raw_parts*/,
+  MatMut(FromRawParts /*tag*/,
          isize nrows,
          isize ncols,
          isize nnz,
          I* col_ptrs,
          I* nnz_per_col,
          I* row_indices,
-         T* values)
-    : _{
-      nrows, ncols, nnz, col_ptrs, nnz_per_col, row_indices, values,
-    }
+         T* values) noexcept
+    : _detail::SymbolicMatBase<I>{ nrows,    ncols,       nnz,
+                                   col_ptrs, nnz_per_col, row_indices }
+    , m_val(values)
   {
   }
 
   template<typename M>
-  MatMut(FromEigen /*from_eigen*/, M&& m)
-    : _{
-      m.rows(),
-      m.cols(),
-      m.nonZeros(),
-      m.outerIndexPtr(),
-      m.innerNonZeroPtr(),
-      m.innerIndexPtr(),
-      m.valuePtr(),
-    }
+  MatMut(FromEigen /*tag*/, M&& m) noexcept
+    : _detail::SymbolicMatBase<I>{ m.rows(),
+                                   m.cols(),
+                                   m.nonZeros(),
+                                   m.outerIndexPtr(),
+                                   m.innerNonZeroPtr(),
+                                   m.innerIndexPtr() }
+    , m_val(m.valuePtr())
   {
-    static_assert(!bool(proxsuite::linalg::veg::uncvref_t<M>::IsRowMajor), ".");
+    using Mat =
+      typename std::remove_cv<typename std::remove_reference<M>::type>::type;
+    static_assert(!bool(Mat::IsRowMajor), ".");
   }
 
-  auto values() const noexcept -> T const* { return _.val; }
-  auto values_mut() const noexcept -> T* { return _.val; }
-  auto is_compressed() const noexcept -> bool
+  auto col_ptrs_mut() const noexcept -> I*
   {
-    return _.nnz_per_col == nullptr;
+    return const_cast<I*>(this->m_col);
   }
+  auto nnz_per_col_mut() const noexcept -> I*
+  {
+    return const_cast<I*>(this->m_nnz_per_col);
+  }
+  auto row_indices_mut() const noexcept -> I*
+  {
+    return const_cast<I*>(this->m_row);
+  }
+
+  auto values() const noexcept -> T const* { return m_val; }
+  auto values_mut() const noexcept -> T* { return const_cast<T*>(m_val); }
 
   auto as_const() const noexcept -> MatRef<T, I>
   {
@@ -496,34 +447,19 @@ struct MatMut : _detail::SymbolicMatMutInterface<MatMut<T, I>, I>
       this->col_ptrs(), this->nnz_per_col(), this->row_indices(),
     };
   }
-  auto symbolic_mut() const noexcept -> SymbolicMatRef<I>
-  {
-    return {
-      from_raw_parts,          this->nrows(),
-      this->ncols(),           this->nnz(),
-      this->col_ptrs_mut(),    this->nnz_per_col_mut(),
-      this->row_indices_mut(),
-    };
-  }
   auto to_eigen() const noexcept
     -> Eigen::Map<Eigen::SparseMatrix<T, Eigen::ColMajor, I>>
   {
-    return { _.nrows, _.ncols, _.nnz, _.col, _.row, _.val, _.nnz_per_col };
+    return { this->m_nrows,     this->m_ncols, this->m_nnz,      col_ptrs_mut(),
+             row_indices_mut(), values_mut(),  nnz_per_col_mut() };
   }
-  void _set_nnz(isize new_nnz) noexcept { _.nnz = new_nnz; }
+
+  void _set_nnz(isize new_nnz) noexcept { this->m_nnz = new_nnz; }
 
 private:
-  struct
-  {
-    isize nrows;
-    isize ncols;
-    isize nnz;
-    I* col;
-    I* nnz_per_col;
-    I* row;
-    T* val;
-  } _;
+  T const* m_val;
 };
+
 } // namespace sparse
 } // namespace linalg
 } // namespace proxsuite

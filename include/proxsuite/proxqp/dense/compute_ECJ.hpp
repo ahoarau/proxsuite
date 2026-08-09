@@ -7,6 +7,7 @@
 
 #ifndef PROXSUITE_PROXQP_DENSE_COMPUTE_ECJ_HPP
 #define PROXSUITE_PROXQP_DENSE_COMPUTE_ECJ_HPP
+#include <proxsuite/helpers/common.hpp>
 #include <proxsuite/proxqp/dense/wrapper.hpp>
 
 namespace proxsuite {

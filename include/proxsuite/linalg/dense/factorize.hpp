@@ -7,7 +7,7 @@
 
 #include "proxsuite/linalg/dense/core.hpp"
 #include <algorithm>
-#include <proxsuite/linalg/veg/memory/dynamic_stack.hpp>
+#include <proxsuite/linalg/dynstack.hpp>
 
 namespace proxsuite {
 namespace linalg {
@@ -15,7 +15,7 @@ namespace dense {
 namespace _detail {
 
 template<typename T>
-VEG_NO_INLINE void
+PROXSUITE_NO_INLINE void
 compute_permutation_impl(isize* perm_indices,
                          isize* perm_inv_indices,
                          isize n,
@@ -46,7 +46,7 @@ compute_permutation_impl(isize* perm_indices,
 }
 
 template<typename Diag>
-VEG_NO_INLINE void
+PROXSUITE_NO_INLINE void
 compute_permutation(isize* perm_indices,
                     isize* perm_inv_indices,
                     Diag const& diagonal)
@@ -63,14 +63,13 @@ template<typename Mat, typename Work>
 void
 apply_permutation_tri_lower(Mat&& mat, Work&& work, isize const* perm_indices)
 {
-  using T = typename proxsuite::linalg::veg::uncvref_t<Mat>::Scalar;
+  using T = typename proxsuite::remove_cvref_t<Mat>::Scalar;
 
   isize n = mat.rows();
-  VEG_ASSERT_ALL_OF( //
-    n == mat.rows(),
-    n == mat.cols(),
-    n == work.rows(),
-    n == work.cols());
+  assert(n == mat.rows());
+  assert(n == mat.cols());
+  assert(n == work.rows());
+  assert(n == work.cols());
 
   auto mat_coeff = [&](isize i, isize j) noexcept -> T& {
     return i >= j ? mat(i, j) : mat(j, i);
@@ -89,7 +88,7 @@ apply_permutation_tri_lower(Mat&& mat, Work&& work, isize const* perm_indices)
 template<typename Mat>
 void
 factorize_unblocked_impl(Mat mat,
-                         proxsuite::linalg::veg::dynstack::DynStackMut stack)
+                         proxsuite::linalg::dynstack::DynStackMut stack)
 {
   // left looking cholesky
   // https://en.wikipedia.org/wiki/Cholesky_decomposition#LDL_decomposition_2
@@ -100,10 +99,7 @@ factorize_unblocked_impl(Mat mat,
     return;
   }
 
-  auto _work = stack.make_new_for_overwrite( //
-    proxsuite::linalg::veg::Tag<T>{},
-    n,
-    _detail::align<T>());
+  auto _work = stack.make_new_for_overwrite<T>(n, _detail::align<T>());
   auto work_storage =
     Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, 1>, Eigen::Unaligned>{
       _work.ptr_mut(),
@@ -151,12 +147,12 @@ template<typename Mat>
 void
 factorize_blocked_impl(Mat mat,
                        isize block_size,
-                       proxsuite::linalg::veg::dynstack::DynStackMut stack)
+                       proxsuite::linalg::dynstack::DynStackMut stack)
 {
   // right looking blocked cholesky
 
   using T = typename Mat::Scalar;
-  VEG_ASSERT(mat.rows() == mat.cols());
+  assert(mat.rows() == mat.cols());
 
   isize n = mat.rows();
 
@@ -179,10 +175,8 @@ factorize_blocked_impl(Mat mat,
 
     isize work_stride = _detail::adjusted_stride<T>(rem);
 
-    auto _work = stack.make_new_for_overwrite( //
-      proxsuite::linalg::veg::Tag<T>{},
-      bs * work_stride,
-      _detail::align<T>());
+    auto _work =
+      stack.make_new_for_overwrite<T>(bs * work_stride, _detail::align<T>());
 
     auto work = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>,
                            Eigen::Unaligned,
@@ -209,18 +203,17 @@ factorize_blocked_impl(Mat mat,
   }
 }
 
-using factorize_recursive_threshold =
-  proxsuite::linalg::veg::meta::constant<isize, 32>;
+using factorize_recursive_threshold = std::integral_constant<isize, 32>;
 
 template<typename Mat>
 void
 factorize_recursive_impl(Mat mat,
-                         proxsuite::linalg::veg::dynstack::DynStackMut stack)
+                         proxsuite::linalg::dynstack::DynStackMut stack)
 {
   // right looking recursive cholesky
 
   using T = typename Mat::Scalar;
-  VEG_ASSERT(mat.rows() == mat.cols());
+  assert(mat.rows() == mat.cols());
 
   isize n = mat.rows();
 
@@ -256,10 +249,8 @@ factorize_recursive_impl(Mat mat,
       .template solveInPlace<Eigen::OnTheRight>(l10);
 
     {
-      auto _work = stack.make_new_for_overwrite( //
-        proxsuite::linalg::veg::Tag<T>{},
-        bs * work_stride,
-        _detail::align<T>());
+      auto _work =
+        stack.make_new_for_overwrite<T>(bs * work_stride, _detail::align<T>());
 
       auto work = Eigen::Map<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>,
                              Eigen::Unaligned,
@@ -281,9 +272,8 @@ factorize_recursive_impl(Mat mat,
 } // namespace _detail
 template<typename T>
 auto
-factorize_unblocked_req(proxsuite::linalg::veg::Tag<T> /*tag*/,
-                        isize n) noexcept
-  -> proxsuite::linalg::veg::dynstack::StackReq
+factorize_unblocked_req(isize n) noexcept
+  -> proxsuite::linalg::dynstack::StackReq
 {
   return {
     n * isize{ sizeof(T) },
@@ -293,13 +283,11 @@ factorize_unblocked_req(proxsuite::linalg::veg::Tag<T> /*tag*/,
 
 template<typename T>
 auto
-factorize_blocked_req(proxsuite::linalg::veg::Tag<T> tag,
-                      isize n,
-                      isize block_size) noexcept
-  -> proxsuite::linalg::veg::dynstack::StackReq
+factorize_blocked_req(isize n, isize block_size) noexcept
+  -> proxsuite::linalg::dynstack::StackReq
 {
-  return proxsuite::linalg::dense::factorize_unblocked_req(tag, block_size) |
-         proxsuite::linalg::veg::dynstack::StackReq{
+  return proxsuite::linalg::dense::factorize_unblocked_req<T>(block_size) |
+         proxsuite::linalg::dynstack::StackReq{
            _detail::adjusted_stride<T>(
              _detail::max2(n - block_size, isize(0))) *
              block_size * isize{ sizeof(T) },
@@ -309,17 +297,17 @@ factorize_blocked_req(proxsuite::linalg::veg::Tag<T> tag,
 
 template<typename T>
 auto
-factorize_recursive_req(proxsuite::linalg::veg::Tag<T> tag, isize n) noexcept
-  -> proxsuite::linalg::veg::dynstack::StackReq
+factorize_recursive_req(isize n) noexcept
+  -> proxsuite::linalg::dynstack::StackReq
 {
-  auto req0 = proxsuite::linalg::dense::factorize_unblocked_req(
-    tag, _detail::min2(n, _detail::factorize_recursive_threshold::value));
+  auto req0 = proxsuite::linalg::dense::factorize_unblocked_req<T>(
+    _detail::min2(n, _detail::factorize_recursive_threshold::value));
   if (n < _detail::factorize_recursive_threshold::value) {
     return req0;
   }
   isize bs = (n + 1) / 2;
   isize rem = n - bs;
-  return req0 | proxsuite::linalg::veg::dynstack::StackReq{
+  return req0 | proxsuite::linalg::dynstack::StackReq{
     bs * _detail::adjusted_stride<T>(rem) * isize{ sizeof(T) },
     _detail::align<T>(),
   };
@@ -327,8 +315,7 @@ factorize_recursive_req(proxsuite::linalg::veg::Tag<T> tag, isize n) noexcept
 
 template<typename Mat>
 void
-factorize_unblocked(Mat&& mat,
-                    proxsuite::linalg::veg::dynstack::DynStackMut stack)
+factorize_unblocked(Mat&& mat, proxsuite::linalg::dynstack::DynStackMut stack)
 {
   _detail::factorize_unblocked_impl(util::to_view_dyn(mat), stack);
 }
@@ -336,30 +323,28 @@ template<typename Mat>
 void
 factorize_blocked(Mat&& mat,
                   isize block_size,
-                  proxsuite::linalg::veg::dynstack::DynStackMut stack)
+                  proxsuite::linalg::dynstack::DynStackMut stack)
 {
   _detail::factorize_blocked_impl(util::to_view_dyn(mat), block_size, stack);
 }
 template<typename Mat>
 void
-factorize_recursive(Mat&& mat,
-                    proxsuite::linalg::veg::dynstack::DynStackMut stack)
+factorize_recursive(Mat&& mat, proxsuite::linalg::dynstack::DynStackMut stack)
 {
   _detail::factorize_recursive_impl(util::to_view_dyn(mat), stack);
 }
 
 template<typename T>
 auto
-factorize_req(proxsuite::linalg::veg::Tag<T> tag, isize n) noexcept
-  -> proxsuite::linalg::veg::dynstack::StackReq
+factorize_req(isize n) noexcept -> proxsuite::linalg::dynstack::StackReq
 {
-  return proxsuite::linalg::dense::factorize_blocked_req(tag, n, 128) |
-         proxsuite::linalg::dense::factorize_recursive_req(tag, n);
+  return proxsuite::linalg::dense::factorize_blocked_req<T>(n, 128) |
+         proxsuite::linalg::dense::factorize_recursive_req<T>(n);
 }
 
 template<typename Mat>
 void
-factorize(Mat&& mat, proxsuite::linalg::veg::dynstack::DynStackMut stack)
+factorize(Mat&& mat, proxsuite::linalg::dynstack::DynStackMut stack)
 {
   isize n = mat.rows();
   if (n > 2048) {

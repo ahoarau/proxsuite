@@ -6,8 +6,11 @@
 #define PROXSUITE_LINALG_SPARSE_LDLT_UPDATE_HPP
 
 #include "proxsuite/linalg/sparse/core.hpp"
-#include <proxsuite/linalg/veg/tuple.hpp>
+
 #include <algorithm>
+#include <cstring>
+#include <tuple>
+#include <type_traits>
 
 namespace proxsuite {
 namespace linalg {
@@ -18,9 +21,8 @@ calcule mémoire nécessaire pour la fonction merge_second_col_into_first
 */
 template<typename I>
 auto
-merge_second_col_into_first_req(proxsuite::linalg::veg::Tag<I> /*tag*/,
-                                isize second_size) noexcept
-  -> proxsuite::linalg::veg::dynstack::StackReq
+merge_second_col_into_first_req(isize second_size) noexcept
+  -> proxsuite::linalg::dynstack::StackReq
 {
   return {
     second_size * isize{ sizeof(I) },
@@ -37,20 +39,19 @@ merge_second_col_into_first( //
   PROXSUITE_MAYBE_UNUSED isize first_full_len,
   isize first_initial_len,
   Slice<I> second,
-  proxsuite::linalg::veg::DoNotDeduce<I> ignore_threshold_inclusive,
+  proxsuite::DoNotDeduce<I> ignore_threshold_inclusive,
   bool move_values,
   DynStackMut stack) noexcept(false)
-  -> proxsuite::linalg::veg::Tuple<SliceMut<T>, SliceMut<I>, SliceMut<I>>
+  -> std::tuple<SliceMut<T>, SliceMut<I>, SliceMut<I>>
 {
-  VEG_CHECK_CONCEPT(trivially_copyable<I>);
-  VEG_CHECK_CONCEPT(trivially_copyable<T>);
+  static_assert(std::is_trivially_copyable<I>::value, ".");
+  static_assert(std::is_trivially_copyable<T>::value, ".");
 
   if (second.len() == 0) {
     return {
-      proxsuite::linalg::veg::tuplify,
-      { unsafe, from_raw_parts, first_values, first_initial_len },
-      { unsafe, from_raw_parts, first_ptr, first_initial_len },
-      { unsafe, from_raw_parts, difference, 0 },
+      SliceMut<T>{ first_values, first_initial_len },
+      SliceMut<I>{ first_ptr, first_initial_len },
+      SliceMut<I>{ difference, 0 },
     };
   }
 
@@ -70,9 +71,7 @@ merge_second_col_into_first( //
   second_len -= index_second;
   index_second = 0;
 
-  proxsuite::linalg::veg::Tag<I> tag{};
-
-  auto _ins_pos = stack.make_new_for_overwrite(tag, isize(second_len));
+  auto _ins_pos = stack.make_new_for_overwrite<I>(isize(second_len));
 
   I* insert_pos_ptr = _ins_pos.ptr_mut();
   usize insert_count = 0;
@@ -106,7 +105,7 @@ merge_second_col_into_first( //
   usize remaining_insert_count = insert_count;
   usize first_new_len =
     ufirst_initial_len + insert_count + (second_len - index_second);
-  VEG_ASSERT(usize(first_full_len) >= first_new_len);
+  assert(usize(first_full_len) >= first_new_len);
 
   usize append_count = second_len - index_second;
   std::memmove( //
@@ -151,10 +150,9 @@ merge_second_col_into_first( //
   }
 
   return {
-    proxsuite::linalg::veg::tuplify,
-    { unsafe, from_raw_parts, first_values, isize(first_new_len) },
-    { unsafe, from_raw_parts, first_ptr, isize(first_new_len) },
-    { unsafe, from_raw_parts, difference, isize(insert_count + append_count) },
+    SliceMut<T>{ first_values, isize(first_new_len) },
+    SliceMut<I>{ first_ptr, isize(first_new_len) },
+    SliceMut<I>{ difference, isize(insert_count + append_count) },
   };
 }
 
@@ -168,20 +166,17 @@ merge_second_col_into_first( //
 template<typename T, typename I>
 auto
 rank1_update_req( //
-  proxsuite::linalg::veg::Tag<T> /*tag*/,
-  proxsuite::linalg::veg::Tag<I> /*tag*/,
   isize n,
   bool id_perm,
-  isize col_nnz) noexcept -> proxsuite::linalg::veg::dynstack::StackReq
+  isize col_nnz) noexcept -> proxsuite::linalg::dynstack::StackReq
 {
-  using proxsuite::linalg::veg::dynstack::StackReq;
+  using proxsuite::linalg::dynstack::StackReq;
   StackReq permuted_indices = { id_perm ? 0 : (col_nnz * isize{ sizeof(I) }),
                                 isize{ alignof(I) } };
   StackReq difference = { n * isize{ sizeof(I) }, isize{ alignof(I) } };
   difference = difference & difference;
 
-  StackReq merge = sparse::merge_second_col_into_first_req(
-    proxsuite::linalg::veg::Tag<I>{}, n);
+  StackReq merge = sparse::merge_second_col_into_first_req<I>(n);
 
   StackReq numerical_workspace = { n * isize{ sizeof(T) },
                                    isize{ alignof(T) } };
@@ -208,21 +203,20 @@ rank1_update(MatMut<T, I> ld,
              I* etree,
              I const* perm_inv,
              VecRef<T, I> w,
-             proxsuite::linalg::veg::DoNotDeduce<T> alpha,
+             proxsuite::DoNotDeduce<T> alpha,
              DynStackMut stack) noexcept(false) -> MatMut<T, I>
 {
-  VEG_ASSERT(!ld.is_compressed());
+  assert(!ld.is_compressed());
 
   if (w.nnz() == 0) {
     return ld;
   }
 
-  proxsuite::linalg::veg::Tag<I> tag;
   usize n = usize(ld.ncols());
   bool id_perm = perm_inv == nullptr;
 
   auto _w_permuted_indices =
-    stack.make_new_for_overwrite(tag, id_perm ? isize(0) : w.nnz());
+    stack.make_new_for_overwrite<I>(id_perm ? isize(0) : w.nnz());
 
   auto w_permuted_indices =
     id_perm ? w.row_indices() : _w_permuted_indices.ptr();
@@ -235,16 +229,15 @@ rank1_update(MatMut<T, I> ld,
     std::sort(pw_permuted_indices, pw_permuted_indices + w.nnz());
   }
 
-  auto sx = util::sign_extend;
-  auto zx = util::zero_extend;
+  auto sx = [](auto i) { return util::sign_extend(i); };
+  auto zx = [](auto i) { return util::zero_extend(i); };
   // symbolic update
   {
     usize current_col = zx(w_permuted_indices[0]);
 
-    auto _difference =
-      stack.make_new_for_overwrite(tag, isize(n - current_col));
+    auto _difference = stack.make_new_for_overwrite<I>(isize(n - current_col));
     auto _difference_backup =
-      stack.make_new_for_overwrite(tag, isize(n - current_col));
+      stack.make_new_for_overwrite<I>(isize(n - current_col));
 
     auto merge_col = w_permuted_indices;
     isize merge_col_len = w.nnz();
@@ -256,21 +249,18 @@ rank1_update(MatMut<T, I> ld,
       usize current_ptr_idx = zx(ld.col_ptrs()[isize(current_col)]);
       usize next_ptr_idx = zx(ld.col_ptrs()[isize(current_col) + 1]);
 
-      VEG_BIND(auto,
-               (_, new_current_col, computed_difference),
-               sparse::merge_second_col_into_first(
-                 difference,
-                 ld.values_mut() + (current_ptr_idx + 1),
-                 ld.row_indices_mut() + (current_ptr_idx + 1),
-                 isize(next_ptr_idx - current_ptr_idx),
-                 isize(zx(ld.nnz_per_col()[isize(current_col)])) - 1,
-                 proxsuite::linalg::veg::Slice<I>{
-                   unsafe, from_raw_parts, merge_col, merge_col_len },
-                 I(current_col),
-                 true,
-                 stack));
-
-      (void)_;
+      auto [merged_values, new_current_col, computed_difference] =
+        sparse::merge_second_col_into_first(
+          difference,
+          ld.values_mut() + (current_ptr_idx + 1),
+          ld.row_indices_mut() + (current_ptr_idx + 1),
+          isize(next_ptr_idx - current_ptr_idx),
+          isize(zx(ld.nnz_per_col()[isize(current_col)])) - 1,
+          Slice<I>{ merge_col, merge_col_len },
+          I(current_col),
+          true,
+          stack);
+      (void)merged_values;
       ld._set_nnz(ld.nnz() + new_current_col.len() + 1 -
                   isize(ld.nnz_per_col()[isize(current_col)]));
       ld.nnz_per_col_mut()[isize(current_col)] = I(new_current_col.len() + 1);
@@ -300,8 +290,7 @@ rank1_update(MatMut<T, I> ld,
   // numerical update
   {
     usize first_col = zx(w_permuted_indices[0]);
-    auto _work =
-      stack.make_new_for_overwrite(proxsuite::linalg::veg::Tag<T>{}, isize(n));
+    auto _work = stack.make_new_for_overwrite<T>(isize(n));
     T* pwork = _work.ptr_mut();
 
     for (usize col = first_col; col != usize(-1); col = sx(etree[isize(col)])) {

@@ -7,156 +7,39 @@
 #ifndef PROXSUITE_PROXQP_DENSE_VIEWS_HPP
 #define PROXSUITE_PROXQP_DENSE_VIEWS_HPP
 
-#include <proxsuite/linalg/veg/type_traits/core.hpp>
-#include <proxsuite/linalg/veg/util/dbg.hpp>
+#include <proxsuite/fwd.hpp>
+
+#include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <type_traits>
 #include <Eigen/Core>
 
-#define LDLT_CONCEPT(...)                                                      \
-  VEG_CONCEPT_MACRO(::proxsuite::proxqp::concepts, __VA_ARGS__)
-#define LDLT_CHECK_CONCEPT(...)                                                \
-  VEG_CHECK_CONCEPT_MACRO(::proxqp::concepts, __VA_ARGS__)
-
 namespace proxsuite {
 namespace proxqp {
 
-using usize = decltype(sizeof(0));
-namespace detail {
-template<typename Fn>
-struct FnInfo;
-template<typename Ret_, typename... Args>
-struct FnInfo<auto(Args...)->Ret_>
-{
-  template<usize I>
-  using Arg = proxsuite::linalg::veg::ith<I, Args...>;
-  using Ret = Ret_;
-};
-} // namespace detail
-
-#define LDLT_IMPL_GET_PARAM(Fn, Idx)                                           \
-  typename ::proxsuite::proxqp::detail::FnInfo<                                \
-    decltype Fn /* NOLINT */>::template Arg<(Idx)>,
-
-#define LDLT_IMPL_GET_PARAMS_0(NParams, ...)                                   \
-  __VEG_PP_TUPLE_FOR_EACH(LDLT_IMPL_GET_PARAM,                                 \
-                          (__VA_ARGS__),                                       \
-                          __VEG_PP_MAKE_TUPLE(__VEG_IMPL_PP_DEC(NParams)))
-
-#define LDLT_IMPL_GET_PARAMS_1(NParams, ...)
-
-#define LDLT_IMPL_GET_PARAMS(NParams, ...)                                     \
-  __VEG_PP_CAT2(LDLT_IMPL_GET_PARAMS_, __VEG_IMPL_PP_IS_1(NParams))            \
-  (NParams, __VA_ARGS__)
-
-#define LDLT_EXPLICIT_TPL_DEF(NParams, ...)                                    \
-  template auto __VA_ARGS__(                                                   \
-    LDLT_IMPL_GET_PARAMS(NParams, __VA_ARGS__)                                 \
-      typename ::proxsuite::proxqp::detail::FnInfo<                            \
-        decltype(__VA_ARGS__)>::template Arg<(NParams) - 1>) ->                \
-    typename ::proxsuite::proxqp::detail::FnInfo<decltype(__VA_ARGS__)>::Ret
-#define LDLT_EXPLICIT_TPL_DECL(NParams, ...)                                   \
-  extern LDLT_EXPLICIT_TPL_DEF(NParams, __VA_ARGS__)
-
-using proxsuite::linalg::veg::i32;
-using proxsuite::linalg::veg::i64;
-using proxsuite::linalg::veg::isize;
-using proxsuite::linalg::veg::u32;
-using proxsuite::linalg::veg::u64;
-using proxsuite::linalg::veg::usize;
+using proxsuite::isize;
+using proxsuite::usize;
+using i32 = std::int32_t;
+using i64 = std::int64_t;
+using u32 = std::uint32_t;
+using u64 = std::uint64_t;
 using f32 = float;
 using f64 = double;
 namespace detail {
 
-struct NoCopy
-{
-  NoCopy() = default;
-  ~NoCopy() = default;
-
-  NoCopy(NoCopy const&) = delete;
-  NoCopy(NoCopy&&) = delete;
-  auto operator=(NoCopy const&) -> NoCopy& = delete;
-  auto operator=(NoCopy&&) -> NoCopy& = delete;
-};
-
-template<typename Fn>
-struct Defer /* NOLINT */
-{
-  Fn fn;
-  NoCopy _;
-
-  VEG_INLINE ~Defer() noexcept(noexcept(VEG_FWD(fn)())) { VEG_FWD(fn)(); }
-};
-
-namespace nb {
-struct defer
-{
-  template<typename Fn>
-  VEG_INLINE constexpr auto operator()(Fn fn) const -> Defer<Fn>
-  {
-    return { VEG_FWD(fn), {} };
-  }
-};
-struct max2
-{
-  template<typename T>
-  VEG_INLINE constexpr auto operator()(T const& a, T const& b) const -> T const&
-  {
-    return a > b ? a : b;
-  }
-};
-struct min2
-{
-  template<typename T>
-  VEG_INLINE constexpr auto operator()(T a, T b) const -> T
-  {
-    return (a < b) ? a : b;
-  }
-};
-
-} // namespace nb
-
 template<typename T>
-constexpr auto
-min_list_impl(T init, T const* arr, usize n) noexcept -> T
+PROXSUITE_INLINE constexpr auto
+max2(T const& a, T const& b) -> T const&
 {
-  return (n == 0)
-           ? init
-           : nb::min2{}(init, detail::min_list_impl(*arr, arr + 1, n - 1));
+  return a > b ? a : b;
 }
-template<typename T, usize N>
-constexpr auto
-cx_min_list(T const (&arr)[N]) noexcept -> T
+template<typename T>
+PROXSUITE_INLINE constexpr auto
+min2(T a, T b) -> T
 {
-  return detail::min_list_impl( //
-    arr[0],
-    arr + 1,
-    N - 1);
+  return (a < b) ? a : b;
 }
-
-namespace nb {
-struct max_list
-{
-  template<typename T>
-  VEG_INLINE auto operator()(std::initializer_list<T> list) const -> T
-  {
-    T const* data = list.begin();
-    isize len = isize(list.size());
-
-    T current_max = data[0];
-    for (isize i = 1; i < len; ++i) {
-      if (data[i] > current_max) {
-        current_max = data[i];
-      }
-    }
-    return current_max;
-  }
-};
-} // namespace nb
-VEG_NIEBLOID(defer);
-VEG_NIEBLOID(max2);
-VEG_NIEBLOID(min2);
-VEG_NIEBLOID(max_list);
 
 template<typename T, bool = std::is_floating_point<T>::value>
 struct SetZeroImpl
@@ -276,23 +159,24 @@ template<>
 struct ElementAccess<Layout::colmajor>
 {
   template<typename T>
-  VEG_INLINE static constexpr auto offset(T* ptr,
-                                          isize row,
-                                          isize col,
-                                          isize outer_stride) noexcept -> T*
+  PROXSUITE_INLINE static constexpr auto offset(T* ptr,
+                                                isize row,
+                                                isize col,
+                                                isize outer_stride) noexcept
+    -> T*
   {
     return ptr + (usize(row) + usize(col) * usize(outer_stride));
   }
 
   using NextRowStride = Eigen::Stride<0, 0>;
   using NextColStride = Eigen::InnerStride<Eigen::Dynamic>;
-  VEG_INLINE static auto next_row_stride(isize outer_stride) noexcept
+  PROXSUITE_INLINE static auto next_row_stride(isize outer_stride) noexcept
     -> NextRowStride
   {
     (void)outer_stride;
     return NextRowStride{};
   }
-  VEG_INLINE static auto next_col_stride(isize outer_stride) noexcept
+  PROXSUITE_INLINE static auto next_col_stride(isize outer_stride) noexcept
     -> NextColStride
   {
     return NextColStride /* NOLINT(modernize-return-braced-init-list) */ (
@@ -300,9 +184,9 @@ struct ElementAccess<Layout::colmajor>
   }
 
   template<typename T>
-  VEG_INLINE static void transpose_if_rowmajor(T* ptr,
-                                               isize dim,
-                                               isize outer_stride)
+  PROXSUITE_INLINE static void transpose_if_rowmajor(T* ptr,
+                                                     isize dim,
+                                                     isize outer_stride)
   {
     (void)ptr, (void)dim, (void)outer_stride;
   }
@@ -312,23 +196,24 @@ template<>
 struct ElementAccess<Layout::rowmajor>
 {
   template<typename T>
-  VEG_INLINE static constexpr auto offset(T* ptr,
-                                          isize row,
-                                          isize col,
-                                          isize outer_stride) noexcept -> T*
+  PROXSUITE_INLINE static constexpr auto offset(T* ptr,
+                                                isize row,
+                                                isize col,
+                                                isize outer_stride) noexcept
+    -> T*
   {
     return ptr + (usize(col) + usize(row) * usize(outer_stride));
   }
 
   using NextColStride = Eigen::Stride<0, 0>;
   using NextRowStride = Eigen::InnerStride<Eigen::Dynamic>;
-  VEG_INLINE static auto next_col_stride(isize outer_stride) noexcept
+  PROXSUITE_INLINE static auto next_col_stride(isize outer_stride) noexcept
     -> NextColStride
   {
     (void)outer_stride;
     return NextColStride{};
   }
-  VEG_INLINE static auto next_row_stride(isize outer_stride) noexcept
+  PROXSUITE_INLINE static auto next_row_stride(isize outer_stride) noexcept
     -> NextRowStride
   {
     return NextRowStride /* NOLINT(modernize-return-braced-init-list) */ (
@@ -336,9 +221,9 @@ struct ElementAccess<Layout::rowmajor>
   }
 
   template<typename T>
-  VEG_INLINE static void transpose_if_rowmajor(T* ptr,
-                                               isize dim,
-                                               isize outer_stride)
+  PROXSUITE_INLINE static void transpose_if_rowmajor(T* ptr,
+                                                     isize dim,
+                                                     isize outer_stride)
   {
     Eigen::Map<                          //
       Eigen::Matrix<                     //
@@ -374,37 +259,34 @@ struct unlref<T&>
 template<typename T>
 auto
 is_eigen_matrix_base_impl(Eigen::MatrixBase<T> const volatile*)
-  -> proxsuite::linalg::veg::meta::true_type;
+  -> std::true_type;
 auto
-is_eigen_matrix_base_impl(void const volatile*)
-  -> proxsuite::linalg::veg::meta::false_type;
+is_eigen_matrix_base_impl(void const volatile*) -> std::false_type;
 
 template<typename T>
 auto
 is_eigen_owning_matrix_base_impl(Eigen::PlainObjectBase<T> const volatile*)
-  -> proxsuite::linalg::veg::meta::true_type;
+  -> std::true_type;
 auto
-is_eigen_owning_matrix_base_impl(void const volatile*)
-  -> proxsuite::linalg::veg::meta::false_type;
+is_eigen_owning_matrix_base_impl(void const volatile*) -> std::false_type;
 
 template<typename... Ts>
 using Void = void;
 
 template<typename Mat, typename T>
-using DataExpr = decltype(static_cast<T*>(VEG_DECLVAL(Mat&).data()));
+using DataExpr = decltype(static_cast<T*>(std::declval<Mat&>().data()));
 
 template<typename Dummy,
          typename Fallback,
          template<typename...> class F,
          typename... Ts>
-struct DetectedImpl : proxsuite::linalg::veg::meta::false_type
+struct DetectedImpl : std::false_type
 {
   using Type = Fallback;
 };
 
 template<typename Fallback, template<typename...> class F, typename... Ts>
-struct DetectedImpl<Void<F<Ts...>>, Fallback, F, Ts...>
-  : proxsuite::linalg::veg::meta::true_type
+struct DetectedImpl<Void<F<Ts...>>, Fallback, F, Ts...> : std::true_type
 {
   using Type = F<Ts...>;
 };
@@ -414,17 +296,16 @@ using Detected = typename DetectedImpl<void, Fallback, F, Ts...>::Type;
 
 template<typename T>
 using CompTimeColsImpl =
-  proxsuite::linalg::veg::meta::constant<isize, isize(T::ColsAtCompileTime)>;
+  std::integral_constant<isize, isize(T::ColsAtCompileTime)>;
 template<typename T>
 using CompTimeRowsImpl =
-  proxsuite::linalg::veg::meta::constant<isize, isize(T::RowsAtCompileTime)>;
+  std::integral_constant<isize, isize(T::RowsAtCompileTime)>;
 template<typename T>
 using CompTimeInnerStrideImpl =
-  proxsuite::linalg::veg::meta::constant<isize,
-                                         isize(T::InnerStrideAtCompileTime)>;
+  std::integral_constant<isize, isize(T::InnerStrideAtCompileTime)>;
 template<typename T>
-using LayoutImpl = proxsuite::linalg::veg::meta::
-  constant<Layout, (bool(T::IsRowMajor) ? rowmajor : colmajor)>;
+using LayoutImpl =
+  std::integral_constant<Layout, (bool(T::IsRowMajor) ? rowmajor : colmajor)>;
 
 template<typename T, Layout L>
 using EigenMatMap = Eigen::Map<      //
@@ -495,93 +376,99 @@ using unref = typename detail::unlref<T&>::Type;
 
 namespace eigen {
 template<typename T>
-using CompTimeCols =
-  detail::Detected<proxsuite::linalg::veg::meta::constant<isize, 0>,
-                   detail::CompTimeColsImpl,
-                   T>;
+using CompTimeCols = detail::
+  Detected<std::integral_constant<isize, 0>, detail::CompTimeColsImpl, T>;
 template<typename T>
-using CompTimeRows =
-  detail::Detected<proxsuite::linalg::veg::meta::constant<isize, 0>,
-                   detail::CompTimeRowsImpl,
-                   T>;
+using CompTimeRows = detail::
+  Detected<std::integral_constant<isize, 0>, detail::CompTimeRowsImpl, T>;
 template<typename T>
-using CompTimeInnerStride =
-  detail::Detected<proxsuite::linalg::veg::meta::constant<isize, 0>,
-                   detail::CompTimeInnerStrideImpl,
-                   T>;
+using CompTimeInnerStride = detail::Detected<std::integral_constant<isize, 0>,
+                                             detail::CompTimeInnerStrideImpl,
+                                             T>;
 template<typename T>
-using GetLayout =
-  detail::Detected<proxsuite::linalg::veg::meta::
-                     constant<Layout, Layout(static_cast<unsigned char>(-1))>,
-                   detail::LayoutImpl,
-                   T>;
+using GetLayout = detail::Detected<
+  std::integral_constant<Layout, Layout(static_cast<unsigned char>(-1))>,
+  detail::LayoutImpl,
+  T>;
 } // namespace eigen
 
+/*!
+ * Compile-time predicates on the Eigen types the views below can be built
+ * from. They are plain `constexpr bool` variable templates, meant to be used
+ * in `std::enable_if_t`.
+ */
 namespace concepts {
-VEG_DEF_CONCEPT(typename T, rvalue_ref, std::is_rvalue_reference<T>::value);
-VEG_DEF_CONCEPT(typename T, lvalue_ref, std::is_lvalue_reference<T>::value);
-VEG_DEF_CONCEPT((template<typename...> class F, typename... Ts),
-                detected,
-                detail::DetectedImpl<void, void, F, Ts...>::value);
+template<typename T>
+inline constexpr bool rvalue_ref = std::is_rvalue_reference<T>::value;
+template<typename T>
+inline constexpr bool lvalue_ref = std::is_lvalue_reference<T>::value;
+template<template<typename...> class F, typename... Ts>
+inline constexpr bool detected =
+  detail::DetectedImpl<void, void, F, Ts...>::value;
 
 namespace aux {
-VEG_DEF_CONCEPT((typename Mat, typename T),
-                has_data_expr,
-                LDLT_CONCEPT(detected<detail::DataExpr, Mat, T>));
+/// `Mat::data()` exists and yields a `T*`.
+template<typename Mat, typename T>
+inline constexpr bool has_data_expr =
+  concepts::detected<detail::DataExpr, Mat, T>;
 
-VEG_DEF_CONCEPT((typename Mat),
-                matrix_base,
-                decltype(detail::is_eigen_matrix_base_impl(
-                  static_cast<Mat*>(nullptr)))::value);
+template<typename Mat>
+inline constexpr bool matrix_base = decltype(detail::is_eigen_matrix_base_impl(
+  static_cast<Mat*>(nullptr)))::value;
 
-VEG_DEF_CONCEPT((typename Mat),
-                is_plain_object_base,
-                decltype(detail::is_eigen_owning_matrix_base_impl(
-                  static_cast<Mat*>(nullptr)))::value);
+template<typename Mat>
+inline constexpr bool is_plain_object_base =
+  decltype(detail::is_eigen_owning_matrix_base_impl(
+    static_cast<Mat*>(nullptr)))::value;
 
-VEG_DEF_CONCEPT((typename Mat),
-                tmp_matrix,
-                (LDLT_CONCEPT(aux::is_plain_object_base<unref<Mat>>) &&
-                 !LDLT_CONCEPT(lvalue_ref<Mat>)));
+/// An owning Eigen object bound to an rvalue: viewing it would dangle.
+template<typename Mat>
+inline constexpr bool tmp_matrix =
+  aux::is_plain_object_base<unref<Mat>> && !concepts::lvalue_ref<Mat>;
 } // namespace aux
 
-VEG_DEF_CONCEPT((typename Mat, typename T),
-                eigen_view,
-                (LDLT_CONCEPT(aux::matrix_base<unref<Mat>>) &&
-                 LDLT_CONCEPT(aux::has_data_expr<Mat, T const>)));
+template<typename Mat, typename T>
+inline constexpr bool eigen_view =
+  aux::matrix_base<unref<Mat>> && aux::has_data_expr<Mat, T const>;
 
-VEG_DEF_CONCEPT((typename Mat, typename T),
-                eigen_view_mut,
-                (LDLT_CONCEPT(aux::matrix_base<unref<Mat>>) &&
-                 LDLT_CONCEPT(aux::has_data_expr<Mat, T>) &&
-                 !LDLT_CONCEPT(aux::tmp_matrix<Mat>)));
+template<typename Mat, typename T>
+inline constexpr bool eigen_view_mut =
+  aux::matrix_base<unref<Mat>> && aux::has_data_expr<Mat, T> &&
+  !aux::tmp_matrix<Mat>;
 
-VEG_DEF_CONCEPT((typename Mat, typename T),
-                eigen_strided_vector_view,
-                (LDLT_CONCEPT(eigen_view<Mat, T>) &&
-                 (eigen::CompTimeCols<unref<Mat>>::value == 1)));
+template<typename Mat, typename T>
+inline constexpr bool eigen_strided_vector_view =
+  eigen_view<Mat, T> && (eigen::CompTimeCols<unref<Mat>>::value == 1);
 
-VEG_DEF_CONCEPT((typename Mat, typename T),
-                eigen_strided_vector_view_mut,
-                (LDLT_CONCEPT(eigen_view_mut<Mat, T>) &&
-                 (eigen::CompTimeCols<unref<Mat>>::value == 1)));
+template<typename Mat, typename T>
+inline constexpr bool eigen_strided_vector_view_mut =
+  eigen_view_mut<Mat, T> && (eigen::CompTimeCols<unref<Mat>>::value == 1);
 
-VEG_DEF_CONCEPT((typename Mat, typename T),
-                eigen_vector_view,
-                (LDLT_CONCEPT(eigen_strided_vector_view<Mat, T>) &&
-                 (eigen::CompTimeInnerStride<unref<Mat>>::value == 1)));
+template<typename Mat, typename T>
+inline constexpr bool eigen_vector_view =
+  eigen_strided_vector_view<Mat, T> &&
+  (eigen::CompTimeInnerStride<unref<Mat>>::value == 1);
 
-VEG_DEF_CONCEPT((typename Mat, typename T),
-                eigen_vector_view_mut,
-                (LDLT_CONCEPT(eigen_strided_vector_view_mut<Mat, T>) &&
-                 (eigen::CompTimeInnerStride<unref<Mat>>::value == 1)));
+template<typename Mat, typename T>
+inline constexpr bool eigen_vector_view_mut =
+  eigen_strided_vector_view_mut<Mat, T> &&
+  (eigen::CompTimeInnerStride<unref<Mat>>::value == 1);
 } // namespace concepts
 
+/// Tags disambiguating the view constructors below.
 inline namespace tags {
-VEG_TAG(from_ptr_size, FromPtrSize);
-VEG_TAG(from_ptr_size_stride, FromPtrSizeStride);
-VEG_TAG(from_ptr_rows_cols_stride, FromPtrRowsColsStride);
-VEG_TAG(from_eigen, FromEigen);
+struct FromPtrSize
+{};
+inline constexpr FromPtrSize from_ptr_size{};
+struct FromPtrSizeStride
+{};
+inline constexpr FromPtrSizeStride from_ptr_size_stride{};
+struct FromPtrRowsColsStride
+{};
+inline constexpr FromPtrRowsColsStride from_ptr_rows_cols_stride{};
+struct FromEigen
+{};
+inline constexpr FromEigen from_eigen{};
 } // namespace tags
 
 template<typename T>
@@ -590,32 +477,31 @@ struct VectorView
   T const* data;
   isize dim;
 
-  VEG_INLINE
+  PROXSUITE_INLINE
   VectorView(FromPtrSize /*tag*/, T const* _data, isize _dim) noexcept
     : data(_data)
     , dim(_dim)
   {
   }
 
-  VEG_TEMPLATE(typename Vec,
-               requires(LDLT_CONCEPT(eigen_vector_view<Vec, T>)),
-               VEG_INLINE VectorView,
-               (/*tag*/, FromEigen),
-               (vec, Vec const&)) noexcept
+  template<typename Vec,
+           typename = std::enable_if_t<concepts::eigen_vector_view<Vec, T>>>
+  PROXSUITE_INLINE VectorView(FromEigen /*tag*/, Vec const& vec) noexcept
     : data(vec.data())
     , dim(vec.rows())
   {
   }
 
-  VEG_INLINE auto ptr(isize index) const noexcept -> T const*
+  PROXSUITE_INLINE auto ptr(isize index) const noexcept -> T const*
   {
     return data + index;
   }
-  VEG_INLINE auto operator()(isize index) const noexcept -> T const&
+  PROXSUITE_INLINE auto operator()(isize index) const noexcept -> T const&
   {
     return *ptr(index);
   }
-  VEG_INLINE auto segment(isize i, isize size) const noexcept -> VectorView
+  PROXSUITE_INLINE auto segment(isize i, isize size) const noexcept
+    -> VectorView
   {
     return {
       from_ptr_size,
@@ -623,7 +509,7 @@ struct VectorView
       size,
     };
   }
-  VEG_INLINE auto to_eigen() const -> detail::VecMap<T>
+  PROXSUITE_INLINE auto to_eigen() const -> detail::VecMap<T>
   {
     return detail::VecMap<T>(data, Eigen::Index(dim));
   }
@@ -635,24 +521,22 @@ struct VectorViewMut
   T* data;
   isize dim;
 
-  VEG_INLINE
+  PROXSUITE_INLINE
   VectorViewMut(FromPtrSize /*tag*/, T* _data, isize _dim) noexcept
     : data(_data)
     , dim(_dim)
   {
   }
 
-  VEG_TEMPLATE(typename Vec,
-               requires(LDLT_CONCEPT(eigen_vector_view_mut<Vec, T>)),
-               VEG_INLINE VectorViewMut,
-               (/*tag*/, FromEigen),
-               (vec, Vec&&)) noexcept
+  template<typename Vec,
+           typename = std::enable_if_t<concepts::eigen_vector_view_mut<Vec, T>>>
+  PROXSUITE_INLINE VectorViewMut(FromEigen /*tag*/, Vec&& vec) noexcept
     : data(vec.data())
     , dim(vec.rows())
   {
   }
 
-  VEG_INLINE auto as_const() const noexcept -> VectorView<T>
+  PROXSUITE_INLINE auto as_const() const noexcept -> VectorView<T>
   {
     return {
       from_ptr_size,
@@ -660,12 +544,16 @@ struct VectorViewMut
       dim,
     };
   }
-  VEG_INLINE auto ptr(isize index) const noexcept -> T* { return data + index; }
-  VEG_INLINE auto operator()(isize index) const noexcept -> T&
+  PROXSUITE_INLINE auto ptr(isize index) const noexcept -> T*
+  {
+    return data + index;
+  }
+  PROXSUITE_INLINE auto operator()(isize index) const noexcept -> T&
   {
     return *ptr(index);
   }
-  VEG_INLINE auto segment(isize i, isize size) const noexcept -> VectorViewMut
+  PROXSUITE_INLINE auto segment(isize i, isize size) const noexcept
+    -> VectorViewMut
   {
     return {
       from_ptr_size,
@@ -673,7 +561,7 @@ struct VectorViewMut
       size,
     };
   }
-  VEG_INLINE auto to_eigen() const -> detail::VecMapMut<T>
+  PROXSUITE_INLINE auto to_eigen() const -> detail::VecMapMut<T>
   {
     return detail::VecMapMut<T>(data, Eigen::Index(dim));
   }
@@ -686,7 +574,7 @@ struct StridedVectorView
   isize dim;
   isize stride;
 
-  VEG_INLINE
+  PROXSUITE_INLINE
   StridedVectorView(FromPtrSizeStride /*tag*/,
                     T const* _data,
                     isize _dim,
@@ -697,26 +585,25 @@ struct StridedVectorView
   {
   }
 
-  VEG_TEMPLATE(typename Vec,
-               requires(LDLT_CONCEPT(eigen_strided_vector_view<Vec, T>)),
-               VEG_INLINE StridedVectorView,
-               (/*tag*/, FromEigen),
-               (vec, Vec const&)) noexcept
+  template<
+    typename Vec,
+    typename = std::enable_if_t<concepts::eigen_strided_vector_view<Vec, T>>>
+  PROXSUITE_INLINE StridedVectorView(FromEigen /*tag*/, Vec const& vec) noexcept
     : data(vec.data())
     , dim(vec.rows())
     , stride(vec.innerStride())
   {
   }
 
-  VEG_INLINE auto ptr(isize index) const noexcept -> T const*
+  PROXSUITE_INLINE auto ptr(isize index) const noexcept -> T const*
   {
     return data + stride * index;
   }
-  VEG_INLINE auto operator()(isize index) const noexcept -> T const&
+  PROXSUITE_INLINE auto operator()(isize index) const noexcept -> T const&
   {
     return *ptr(index);
   }
-  VEG_INLINE auto segment(isize i, isize size) const noexcept
+  PROXSUITE_INLINE auto segment(isize i, isize size) const noexcept
     -> StridedVectorView
   {
     return {
@@ -726,7 +613,7 @@ struct StridedVectorView
       stride,
     };
   }
-  VEG_INLINE auto to_eigen() const
+  PROXSUITE_INLINE auto to_eigen() const
     -> detail::EigenVecMap<T, Eigen::InnerStride<Eigen::Dynamic>>
   {
     return detail::EigenVecMap<T, Eigen::InnerStride<Eigen::Dynamic>>(
@@ -744,7 +631,7 @@ struct StridedVectorViewMut
   isize dim;
   isize stride;
 
-  VEG_INLINE
+  PROXSUITE_INLINE
   StridedVectorViewMut(FromPtrSizeStride /*tag*/,
                        T* _data,
                        isize _dim,
@@ -755,18 +642,17 @@ struct StridedVectorViewMut
   {
   }
 
-  VEG_TEMPLATE(typename Vec,
-               requires(LDLT_CONCEPT(eigen_strided_vector_view_mut<Vec, T>)),
-               VEG_INLINE StridedVectorViewMut,
-               (/*tag*/, FromEigen),
-               (vec, Vec&&)) noexcept
+  template<typename Vec,
+           typename =
+             std::enable_if_t<concepts::eigen_strided_vector_view_mut<Vec, T>>>
+  PROXSUITE_INLINE StridedVectorViewMut(FromEigen /*tag*/, Vec&& vec) noexcept
     : data(vec.data())
     , dim(vec.rows())
     , stride(vec.innerStride())
   {
   }
 
-  VEG_INLINE auto as_const() const noexcept -> StridedVectorView<T>
+  PROXSUITE_INLINE auto as_const() const noexcept -> StridedVectorView<T>
   {
     return {
       from_ptr_size_stride,
@@ -775,15 +661,15 @@ struct StridedVectorViewMut
       stride,
     };
   }
-  VEG_INLINE auto ptr(isize index) const noexcept -> T*
+  PROXSUITE_INLINE auto ptr(isize index) const noexcept -> T*
   {
     return data + stride * index;
   }
-  VEG_INLINE auto operator()(isize index) const noexcept -> T&
+  PROXSUITE_INLINE auto operator()(isize index) const noexcept -> T&
   {
     return *ptr(index);
   }
-  VEG_INLINE auto segment(isize i, isize size) const noexcept
+  PROXSUITE_INLINE auto segment(isize i, isize size) const noexcept
     -> StridedVectorViewMut
   {
     return {
@@ -793,7 +679,7 @@ struct StridedVectorViewMut
       stride,
     };
   }
-  VEG_INLINE auto to_eigen() const
+  PROXSUITE_INLINE auto to_eigen() const
     -> detail::EigenVecMapMut<T, Eigen::InnerStride<Eigen::Dynamic>>
   {
     return detail::EigenVecMapMut<T, Eigen::InnerStride<Eigen::Dynamic>>(
@@ -812,11 +698,11 @@ struct MatrixView
   isize cols;
   isize outer_stride;
 
-  VEG_INLINE MatrixView(FromPtrRowsColsStride /*tag*/,
-                        T const* _data,
-                        isize _rows,
-                        isize _cols,
-                        isize _outer_stride) noexcept
+  PROXSUITE_INLINE MatrixView(FromPtrRowsColsStride /*tag*/,
+                              T const* _data,
+                              isize _rows,
+                              isize _cols,
+                              isize _outer_stride) noexcept
     : data(_data)
     , rows(_rows)
     , cols(_cols)
@@ -824,12 +710,11 @@ struct MatrixView
   {
   }
 
-  VEG_TEMPLATE(typename Mat,
-               requires(LDLT_CONCEPT(eigen_view<Mat, T>) &&
-                        eigen::GetLayout<unref<Mat>>::value == L),
-               VEG_INLINE MatrixView,
-               (/*tag*/, FromEigen),
-               (mat, Mat const&)) noexcept
+  template<
+    typename Mat,
+    typename = std::enable_if_t<concepts::eigen_view<Mat, T> &&
+                                eigen::GetLayout<unref<Mat>>::value == L>>
+  PROXSUITE_INLINE MatrixView(FromEigen /*tag*/, Mat const& mat) noexcept
     : data(mat.data())
     , rows(mat.rows())
     , cols(mat.cols())
@@ -837,18 +722,19 @@ struct MatrixView
   {
   }
 
-  VEG_INLINE auto ptr(isize row, isize col) const noexcept -> T const*
+  PROXSUITE_INLINE auto ptr(isize row, isize col) const noexcept -> T const*
   {
     return detail::ElementAccess<L>::offset(data, row, col, outer_stride);
   }
-  VEG_INLINE auto operator()(isize row, isize col) const noexcept -> T const&
+  PROXSUITE_INLINE auto operator()(isize row, isize col) const noexcept
+    -> T const&
   {
     return *ptr(row, col);
   }
-  VEG_INLINE auto block(isize row,
-                        isize col,
-                        isize nrows,
-                        isize ncols) const noexcept -> MatrixView
+  PROXSUITE_INLINE auto block(isize row,
+                              isize col,
+                              isize nrows,
+                              isize ncols) const noexcept -> MatrixView
   {
     return {
       from_ptr_rows_cols_stride,
@@ -859,48 +745,28 @@ struct MatrixView
     };
   }
 
-private:
-  VEG_INLINE auto col_impl(
-    proxsuite::linalg::veg::meta::constant<Layout, colmajor> /*tag*/,
-    isize c) const noexcept -> VectorView<T>
+  PROXSUITE_INLINE auto col(isize c) const noexcept
+    -> std::conditional_t<(L == colmajor), VectorView<T>, StridedVectorView<T>>
   {
-    return {
-      from_ptr_size,
-      data + c * outer_stride,
-      rows,
-    };
+    if constexpr (L == colmajor) {
+      return { from_ptr_size, data + c * outer_stride, rows };
+    } else {
+      return { from_ptr_size_stride, data + c, rows, outer_stride };
+    }
   }
-  VEG_INLINE auto col_impl(
-    proxsuite::linalg::veg::meta::constant<Layout, rowmajor> /*tag*/,
-    isize c) const noexcept -> StridedVectorView<T>
-  {
-    return {
-      from_ptr_size_stride,
-      data + c,
-      rows,
-      outer_stride,
-    };
-  }
-
-public:
-  VEG_INLINE auto col(isize c) const noexcept -> proxsuite::linalg::veg::meta::
-    if_t<(L == colmajor), VectorView<T>, StridedVectorView<T>>
-  {
-    return col_impl(proxsuite::linalg::veg::meta::constant<Layout, L>{}, c);
-  }
-  VEG_INLINE auto row(isize r) const noexcept -> proxsuite::linalg::veg::meta::
-    if_t<(L == rowmajor), VectorView<T>, StridedVectorView<T>>
+  PROXSUITE_INLINE auto row(isize r) const noexcept
+    -> std::conditional_t<(L == rowmajor), VectorView<T>, StridedVectorView<T>>
   {
     return trans().col(r);
   }
-  VEG_INLINE auto trans() const noexcept
+  PROXSUITE_INLINE auto trans() const noexcept
     -> MatrixView<T, proxqp::flip_layout(L)>
   {
     return {
       from_ptr_rows_cols_stride, data, cols, rows, outer_stride,
     };
   }
-  VEG_INLINE auto to_eigen() const noexcept -> detail::EigenMatMap<T, L>
+  PROXSUITE_INLINE auto to_eigen() const noexcept -> detail::EigenMatMap<T, L>
   {
     return detail::EigenMatMap<T, L>(
       data,
@@ -918,11 +784,11 @@ struct MatrixViewMut
   isize cols;
   isize outer_stride;
 
-  VEG_INLINE MatrixViewMut(FromPtrRowsColsStride /*tag*/,
-                           T* _data,
-                           isize _rows,
-                           isize _cols,
-                           isize _outer_stride) noexcept
+  PROXSUITE_INLINE MatrixViewMut(FromPtrRowsColsStride /*tag*/,
+                                 T* _data,
+                                 isize _rows,
+                                 isize _cols,
+                                 isize _outer_stride) noexcept
     : data(_data)
     , rows(_rows)
     , cols(_cols)
@@ -930,12 +796,11 @@ struct MatrixViewMut
   {
   }
 
-  VEG_TEMPLATE(typename Mat,
-               requires(LDLT_CONCEPT(eigen_view<Mat, T>) &&
-                        eigen::GetLayout<unref<Mat>>::value == L),
-               VEG_INLINE MatrixViewMut,
-               (/*tag*/, FromEigen),
-               (mat, Mat&&)) noexcept
+  template<
+    typename Mat,
+    typename = std::enable_if_t<concepts::eigen_view<Mat, T> &&
+                                eigen::GetLayout<unref<Mat>>::value == L>>
+  PROXSUITE_INLINE MatrixViewMut(FromEigen /*tag*/, Mat&& mat) noexcept
     : data(mat.data())
     , rows(mat.rows())
     , cols(mat.cols())
@@ -943,18 +808,18 @@ struct MatrixViewMut
   {
   }
 
-  VEG_INLINE auto ptr(isize row, isize col) const noexcept -> T*
+  PROXSUITE_INLINE auto ptr(isize row, isize col) const noexcept -> T*
   {
     return detail::ElementAccess<L>::offset(data, row, col, outer_stride);
   }
-  VEG_INLINE auto operator()(isize row, isize col) const noexcept -> T&
+  PROXSUITE_INLINE auto operator()(isize row, isize col) const noexcept -> T&
   {
     return *ptr(row, col);
   }
-  VEG_INLINE auto block(isize row,
-                        isize col,
-                        isize nrows,
-                        isize ncols) const noexcept -> MatrixViewMut
+  PROXSUITE_INLINE auto block(isize row,
+                              isize col,
+                              isize nrows,
+                              isize ncols) const noexcept -> MatrixViewMut
   {
     return {
       from_ptr_rows_cols_stride,
@@ -965,48 +830,29 @@ struct MatrixViewMut
     };
   }
 
-private:
-  VEG_INLINE auto col_impl(
-    proxsuite::linalg::veg::meta::constant<Layout, colmajor> /*tag*/,
-    isize c) const noexcept -> VectorViewMut<T>
+  PROXSUITE_INLINE auto col(isize c) const noexcept -> std::
+    conditional_t<(L == colmajor), VectorViewMut<T>, StridedVectorViewMut<T>>
   {
-    return {
-      from_ptr_size,
-      data + c * outer_stride,
-      rows,
-    };
+    if constexpr (L == colmajor) {
+      return { from_ptr_size, data + c * outer_stride, rows };
+    } else {
+      return { from_ptr_size_stride, data + c, rows, outer_stride };
+    }
   }
-  VEG_INLINE auto col_impl(
-    proxsuite::linalg::veg::meta::constant<Layout, rowmajor> /*tag*/,
-    isize c) const noexcept -> StridedVectorViewMut<T>
-  {
-    return {
-      from_ptr_size_stride,
-      data + c,
-      rows,
-      outer_stride,
-    };
-  }
-
-public:
-  VEG_INLINE auto col(isize c) const noexcept -> proxsuite::linalg::veg::meta::
-    if_t<(L == colmajor), VectorViewMut<T>, StridedVectorViewMut<T>>
-  {
-    return col_impl(proxsuite::linalg::veg::meta::constant<Layout, L>{}, c);
-  }
-  VEG_INLINE auto row(isize r) const noexcept -> proxsuite::linalg::veg::meta::
-    if_t<(L == rowmajor), VectorViewMut<T>, StridedVectorViewMut<T>>
+  PROXSUITE_INLINE auto row(isize r) const noexcept -> std::
+    conditional_t<(L == rowmajor), VectorViewMut<T>, StridedVectorViewMut<T>>
   {
     return trans().col(r);
   }
-  VEG_INLINE auto trans() const noexcept
+  PROXSUITE_INLINE auto trans() const noexcept
     -> MatrixViewMut<T, proxqp::flip_layout(L)>
   {
     return {
       from_ptr_rows_cols_stride, data, cols, rows, outer_stride,
     };
   }
-  VEG_INLINE auto to_eigen() const noexcept -> detail::EigenMatMapMut<T, L>
+  PROXSUITE_INLINE auto to_eigen() const noexcept
+    -> detail::EigenMatMapMut<T, L>
   {
     return detail::EigenMatMapMut<T, L>(
       data,
@@ -1014,7 +860,7 @@ public:
       Eigen::Index(cols),
       Eigen::OuterStride<Eigen::Dynamic>(Eigen::Index(outer_stride)));
   }
-  VEG_INLINE auto as_const() const noexcept -> MatrixView<T, L>
+  PROXSUITE_INLINE auto as_const() const noexcept -> MatrixView<T, L>
   {
     return {
       from_ptr_rows_cols_stride, data, rows, cols, outer_stride,
@@ -1032,20 +878,23 @@ public:
   explicit LdltView(MatrixView<T, colmajor> ld) noexcept
     : ld(ld)
   {
-    VEG_DEBUG_ASSERT(ld.rows == ld.cols);
+    assert(ld.rows == ld.cols);
   }
 
-  VEG_INLINE auto l() const noexcept -> MatrixView<T, colmajor> { return ld; }
-  VEG_INLINE auto d() const noexcept -> StridedVectorView<T>
+  PROXSUITE_INLINE auto l() const noexcept -> MatrixView<T, colmajor>
+  {
+    return ld;
+  }
+  PROXSUITE_INLINE auto d() const noexcept -> StridedVectorView<T>
   {
     return { from_ptr_size_stride, ld.data, ld.rows, ld.outer_stride + 1 };
   }
 
-  VEG_INLINE auto head(isize k) const -> LdltView
+  PROXSUITE_INLINE auto head(isize k) const -> LdltView
   {
     return LdltView{ ld.block(0, 0, k, k) };
   }
-  VEG_INLINE auto tail(isize k) const -> LdltView
+  PROXSUITE_INLINE auto tail(isize k) const -> LdltView
   {
     isize n = ld.rows;
     return LdltView{ ld.block(n - k, n - k, k, k) };
@@ -1061,36 +910,36 @@ public:
   explicit LdltViewMut(MatrixViewMut<T, colmajor> ld) noexcept
     : ld(ld)
   {
-    VEG_DEBUG_ASSERT(ld.rows == ld.cols);
+    assert(ld.rows == ld.cols);
   }
 
-  VEG_INLINE auto l() const noexcept -> MatrixView<T, colmajor>
+  PROXSUITE_INLINE auto l() const noexcept -> MatrixView<T, colmajor>
   {
     return ld.as_const();
   }
-  VEG_INLINE auto l_mut() const noexcept -> MatrixViewMut<T, colmajor>
+  PROXSUITE_INLINE auto l_mut() const noexcept -> MatrixViewMut<T, colmajor>
   {
     return ld;
   }
-  VEG_INLINE auto d() const noexcept -> StridedVectorView<T>
+  PROXSUITE_INLINE auto d() const noexcept -> StridedVectorView<T>
   {
     return { from_ptr_size_stride, ld.data, ld.rows, ld.outer_stride + 1 };
   }
-  VEG_INLINE auto d_mut() const noexcept -> StridedVectorViewMut<T>
+  PROXSUITE_INLINE auto d_mut() const noexcept -> StridedVectorViewMut<T>
   {
     return { from_ptr_size_stride, ld.data, ld.rows, ld.outer_stride + 1 };
   }
 
-  VEG_INLINE auto as_const() const noexcept -> LdltView<T>
+  PROXSUITE_INLINE auto as_const() const noexcept -> LdltView<T>
   {
     return LdltView<T>{ ld.as_const() };
   }
 
-  VEG_INLINE auto head(isize k) const -> LdltViewMut
+  PROXSUITE_INLINE auto head(isize k) const -> LdltViewMut
   {
     return LdltViewMut{ ld.block(0, 0, k, k) };
   }
-  VEG_INLINE auto tail(isize k) const -> LdltViewMut
+  PROXSUITE_INLINE auto tail(isize k) const -> LdltViewMut
   {
     isize n = ld.rows;
     return LdltViewMut{ ld.block(n - k, n - k, k, k) };
@@ -1188,7 +1037,7 @@ noalias_mul_add_vec(VectorViewMut<T> dst,
       1,
       0,
     },
-    VEG_FWD(factor));
+    factor);
 }
 
 template<typename T>
@@ -1377,7 +1226,7 @@ struct QpViewMut
   MatrixViewMut<T, layout> C;
   VectorViewMut<T> d;
 
-  VEG_INLINE constexpr auto as_const() const noexcept -> QpView<T>
+  PROXSUITE_INLINE constexpr auto as_const() const noexcept -> QpView<T>
   {
     return {
       H.as_const(), g.as_const(), A.as_const(),
@@ -1403,7 +1252,7 @@ struct QpViewBoxMut
   VectorViewMut<Scalar> l_box;
   VectorViewMut<Scalar> u_box;
 
-  VEG_INLINE constexpr auto as_const() const noexcept -> QpViewBox<Scalar>
+  PROXSUITE_INLINE constexpr auto as_const() const noexcept -> QpViewBox<Scalar>
   {
     return { H.as_const(),     g.as_const(),    A.as_const(), b.as_const(),
              C.as_const(),     u.as_const(),    l.as_const(), I.as_const(),
@@ -1411,51 +1260,46 @@ struct QpViewBoxMut
   }
 };
 
-namespace nb {
-struct pow
+/*!
+ * `std::pow`, reached through a using-declaration so that a scalar type with
+ * its own `pow` overload is picked up by ADL.
+ */
+template<typename T>
+auto
+pow(T x, T y) -> T
 {
-  template<typename T>
-  auto operator()(T x, T y) const -> T
-  {
-    using std::pow;
-    return pow(x, y);
-  }
-};
-struct infty_norm
+  using std::pow;
+  return pow(x, y);
+}
+
+/// `std::sqrt`, see `pow` above.
+template<typename T>
+auto
+sqrt(T x) -> T
 {
-  template<typename D>
-  auto operator()(Eigen::MatrixBase<D> const& mat) const -> typename D::Scalar
-  {
-    if (mat.rows() == 0 || mat.cols() == 0) {
-      return typename D::Scalar(0);
-    } else {
-      return mat.template lpNorm<Eigen::Infinity>();
-    }
-  }
-};
-struct sqrt
+  using std::sqrt;
+  return sqrt(x);
+}
+
+/// `std::fabs`, see `pow` above.
+template<typename T>
+auto
+fabs(T x) -> T
 {
-  template<typename T>
-  auto operator()(T x) const -> T
-  {
-    using std::sqrt;
-    return sqrt(x);
-  }
-};
-struct fabs
+  using std::fabs;
+  return fabs(x);
+}
+
+/// Largest absolute coefficient of `mat`, or zero if it is empty.
+template<typename D>
+auto
+infty_norm(Eigen::MatrixBase<D> const& mat) -> typename D::Scalar
 {
-  template<typename T>
-  auto operator()(T x) const -> T
-  {
-    using std::fabs;
-    return fabs(x);
+  if (mat.rows() == 0 || mat.cols() == 0) {
+    return typename D::Scalar(0);
   }
-};
-} // namespace nb
-VEG_NIEBLOID(fabs);
-VEG_NIEBLOID(sqrt);
-VEG_NIEBLOID(pow);
-VEG_NIEBLOID(infty_norm);
+  return mat.template lpNorm<Eigen::Infinity>();
+}
 } // namespace dense
 } // namespace proxqp
 } // namespace proxsuite

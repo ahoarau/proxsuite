@@ -5,10 +5,11 @@
 #ifndef PROXSUITE_PROXQP_SPARSE_HELPERS_HPP
 #define PROXSUITE_PROXQP_SPARSE_HELPERS_HPP
 
+#include <proxsuite/helpers/common.hpp>
 #include <Eigen/Sparse>
 #include <proxsuite/helpers/optional.hpp>
 
-#include <proxsuite/linalg/veg/vec.hpp>
+#include <vector>
 #include <proxsuite/proxqp/sparse/fwd.hpp>
 #include <iostream>
 namespace proxsuite {
@@ -303,7 +304,7 @@ qp_setup(QpView<T, I> qp,
     results.z.resize(n_in);
     results.z.setZero();
   }
-  if (work.active_inequalities.len() != n_in) {
+  if (work.active_inequalities.rows() != n_in) {
     work.active_inequalities.resize(n_in);
     for (isize i = 0; i < n_in; ++i) {
       work.active_inequalities[i] = false;
@@ -335,13 +336,12 @@ qp_setup(QpView<T, I> qp,
       break;
   }
   // performs scaling according to options chosen + stored model value
-  work.setup_impl(
-    qp,
-    data,
-    settings,
-    execute_preconditioner_or_not,
-    precond,
-    P::scale_qp_in_place_req(proxsuite::linalg::veg::Tag<T>{}, n, n_eq, n_in));
+  work.setup_impl(qp,
+                  data,
+                  settings,
+                  execute_preconditioner_or_not,
+                  precond,
+                  P::scale_qp_in_place_req(n, n_eq, n_in));
   switch (settings.initial_guess) { // the following is used when initiliazing
                                     // the Qp object or updating it
     case InitialGuessStatus::EQUALITY_CONSTRAINED_INITIAL_GUESS: {

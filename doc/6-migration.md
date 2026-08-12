@@ -269,7 +269,6 @@ util::wrapping_inc(x);       // was util::wrapping_inc(veg::mut(x))
 | all `VEG_*` | the standard C++17 construct it emulated |
 | `VEG_BIND(auto, (a, b), expr)` | `auto [a, b] = expr;` |
 | `LDLT_CONCEPT(x)`, `LDLT_CHECK_CONCEPT(x)` | `concepts::x`, `static_assert(concepts::x)` |
-| `LDLT_EXPLICIT_TPL_DECL` / `_DEF` | write `extern template` / `template` by hand |
 | `PROXSUITE_DEDUCE_RET` | C++14 return type deduction |
 | `PROXSUITE_WITH_CPP_14`, `PROXSUITE_WITH_CPP_17` | nothing; C++17 is required |
 | `PROXSUITE_MAYBE_UNUSED` | `[[maybe_unused]]` |
@@ -286,9 +285,20 @@ util::wrapping_inc(x);       // was util::wrapping_inc(veg::mut(x))
 | `LDLT_TEMP_MAT`, `LDLT_TEMP_MAT_UNINIT` | `PROXSUITE_LDLT_TEMP_MAT`, `PROXSUITE_LDLT_TEMP_MAT_UNINIT` |
 | `LDLT_ID`, `LDLT_CONCAT`, `LDLT_CONCAT_IMPL` | `PROXSUITE_LDLT_ID`, `PROXSUITE_LDLT_CONCAT`, `PROXSUITE_LDLT_CONCAT_IMPL` |
 | `__LDLT_TEMP_VEC_IMPL`, `__LDLT_TEMP_MAT_IMPL` | `PROXSUITE_LDLT_TEMP_VEC_IMPL`, `PROXSUITE_LDLT_TEMP_MAT_IMPL` |
+| `LDLT_EXPLICIT_TPL_DECL`, `LDLT_EXPLICIT_TPL_DEF` | `PROXSUITE_EXPLICIT_TPL_DECL`, `PROXSUITE_EXPLICIT_TPL_DEF` |
 
-The last two, and the old `__proxsuite_fwd_hpp__` include guard, had a leading
-double underscore, which is reserved to the implementation.
+The `__`-prefixed ones, and the old `__proxsuite_fwd_hpp__` include guard, had a
+leading double underscore, which is reserved to the implementation.
+
+`PROXSUITE_EXPLICIT_TPL_DECL` / `_DEF` keep the old call syntax — the number of
+parameters, then the function name:
+
+```cpp
+PROXSUITE_EXPLICIT_TPL_DECL(2, llt_compute<Mat<f32, colmajor>>);
+```
+
+They are no longer built on the veg preprocessor library, so they now support 1
+to 3 parameters rather than an arbitrary number.
 
 ---
 

@@ -25,6 +25,69 @@ using u32 = std::uint32_t;
 using u64 = std::uint64_t;
 using f32 = float;
 using f64 = double;
+
+namespace detail {
+// The I-th type of a pack. Spelled out rather than taken from std::tuple so
+// that this header does not have to pull in <tuple>.
+template<usize I, typename... Ts>
+struct Ith;
+template<typename T, typename... Ts>
+struct Ith<0, T, Ts...>
+{
+  using Type = T;
+};
+template<usize I, typename T, typename... Ts>
+struct Ith<I, T, Ts...> : Ith<I - 1, Ts...>
+{};
+
+// Splits a function type into its return type and its parameter types, so that
+// an explicit instantiation can be spelled with just the function name.
+template<typename Fn>
+struct FnInfo;
+template<typename Ret_, typename... Args>
+struct FnInfo<Ret_(Args...)>
+{
+  template<usize I>
+  using Arg = typename Ith<I, Args...>::Type;
+  using Ret = Ret_;
+};
+} // namespace detail
+
+#define PROXSUITE_EXPLICIT_TPL_ARG(Idx, ...)                                   \
+  typename ::proxsuite::proxqp::detail::FnInfo<                                \
+    decltype(__VA_ARGS__)>::template Arg<(Idx)>
+#define PROXSUITE_EXPLICIT_TPL_RET(...)                                        \
+  typename ::proxsuite::proxqp::detail::FnInfo<decltype(__VA_ARGS__)>::Ret
+
+#define PROXSUITE_EXPLICIT_TPL_DEF_1(...)                                      \
+  template auto __VA_ARGS__(PROXSUITE_EXPLICIT_TPL_ARG(0, __VA_ARGS__))        \
+    -> PROXSUITE_EXPLICIT_TPL_RET(__VA_ARGS__)
+#define PROXSUITE_EXPLICIT_TPL_DEF_2(...)                                      \
+  template auto __VA_ARGS__(PROXSUITE_EXPLICIT_TPL_ARG(0, __VA_ARGS__),        \
+                            PROXSUITE_EXPLICIT_TPL_ARG(1, __VA_ARGS__))        \
+    -> PROXSUITE_EXPLICIT_TPL_RET(__VA_ARGS__)
+#define PROXSUITE_EXPLICIT_TPL_DEF_3(...)                                      \
+  template auto __VA_ARGS__(PROXSUITE_EXPLICIT_TPL_ARG(0, __VA_ARGS__),        \
+                            PROXSUITE_EXPLICIT_TPL_ARG(1, __VA_ARGS__),        \
+                            PROXSUITE_EXPLICIT_TPL_ARG(2, __VA_ARGS__))        \
+    -> PROXSUITE_EXPLICIT_TPL_RET(__VA_ARGS__)
+
+#define PROXSUITE_EXPLICIT_TPL_CAT_IMPL(A, B) A##B
+#define PROXSUITE_EXPLICIT_TPL_CAT(A, B) PROXSUITE_EXPLICIT_TPL_CAT_IMPL(A, B)
+
+/// Explicitly instantiates a function template, deducing the signature from the
+/// function itself so that only its name has to be spelled out:
+///
+///     PROXSUITE_EXPLICIT_TPL_DECL(2, llt_compute<Mat<f32, colmajor>>);
+///
+/// `NParams` is the number of parameters the function takes (1 to 3). `_DECL`
+/// is the `extern template` declaration meant for a header, `_DEF` the matching
+/// instantiation for the one translation unit that provides the symbol.
+#define PROXSUITE_EXPLICIT_TPL_DEF(NParams, ...)                               \
+  PROXSUITE_EXPLICIT_TPL_CAT(PROXSUITE_EXPLICIT_TPL_DEF_, NParams)(__VA_ARGS__)
+#define PROXSUITE_EXPLICIT_TPL_DECL(NParams, ...)                              \
+  extern PROXSUITE_EXPLICIT_TPL_DEF(NParams, __VA_ARGS__)
+
 namespace detail {
 
 template<typename T>
